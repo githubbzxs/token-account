@@ -16,6 +16,7 @@ Report features:
 - Model-level breakdown and token mix
 - Estimated cost in USD using OpenAI API pricing (standard tier)
 - Default range is all-time, with in-page date range filters (Last 7/30/90, or custom)
+- One-click export/import in the report to merge data from multiple machines
 
 ## Date filters
 python src/codex_token_report.py --days 30

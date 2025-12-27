@@ -67,6 +67,11 @@ I18N = {
         "last_30": "近 30 天",
         "last_90": "近 90 天",
         "all_time": "全部时间",
+        "export": "导出",
+        "import": "导入",
+        "import_done": "已合并 {count} 个文件",
+        "import_invalid": "导入文件格式不正确",
+        "import_failed": "导入失败",
         "daily_chart": "每日总 token",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
@@ -114,6 +119,11 @@ I18N = {
         "last_30": "Last 30d",
         "last_90": "Last 90d",
         "all_time": "All time",
+        "export": "Export",
+        "import": "Import",
+        "import_done": "Merged {count} file(s)",
+        "import_invalid": "Invalid import file",
+        "import_failed": "Import failed",
         "daily_chart": "Daily total tokens",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
@@ -621,6 +631,32 @@ body {
   gap: 8px;
 }
 
+.range-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.file-button {
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.8);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.file-button input {
+  display: none;
+}
+
+.import-status {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -834,6 +870,13 @@ body {
       <button type="button" data-range="90" data-i18n="last_90">Last 90d</button>
       <button type="button" data-range="all" data-i18n="all_time">All time</button>
     </div>
+    <div class="range-actions">
+      <button type="button" id="export-data" data-i18n="export">Export</button>
+      <label class="file-button"><span data-i18n="import">Import</span>
+        <input type="file" id="import-data" accept="application/json" multiple>
+      </label>
+      <span class="import-status" id="import-status"></span>
+    </div>
   </div>
   __EMPTY_BANNER__
   <div class="banner hidden" id="range-banner" data-i18n="empty_banner">No token usage found in this range.</div>
@@ -942,6 +985,16 @@ function applyI18n(lang) {
 function labelFor(key) {
   const dict = I18N[currentLang] || I18N.en;
   return dict[key] || key;
+}
+
+function formatI18n(key, vars) {
+  const dict = I18N[currentLang] || I18N.en;
+  let text = dict[key] || key;
+  if (!vars) return text;
+  Object.keys(vars).forEach(k => {
+    text = text.replace(`{${k}}`, vars[k]);
+  });
+  return text;
 }
 
 function lineChart(el, labels, values, color) {
@@ -1059,9 +1112,15 @@ const MIX_COLORS = (() => {
   return out;
 })();
 
-const LABEL_INDEX = new Map(
+let labelIndex = new Map(
   ((DATA.daily && DATA.daily.labels) ? DATA.daily.labels : []).map((d, i) => [d, i])
 );
+
+function rebuildLabelIndex() {
+  labelIndex = new Map(
+    ((DATA.daily && DATA.daily.labels) ? DATA.daily.labels : []).map((d, i) => [d, i])
+  );
+}
 
 let currentRange = {
   start: (DATA.range && DATA.range.start) || "",
@@ -1222,6 +1281,199 @@ function renderModelMix(modelItems) {
   );
 }
 
+function normalizeImportedData(raw) {
+  if (!raw) return null;
+  if (raw.data && raw.data.daily && raw.data.daily.labels) return raw.data;
+  if (raw.daily && raw.daily.labels) return raw;
+  return null;
+}
+
+function mergeDailyInto(dayMap, data) {
+  const daily = data.daily || {};
+  const labels = daily.labels || [];
+  const totals = daily.total || [];
+  const inputs = daily.input || [];
+  const outputs = daily.output || [];
+  const reasoning = daily.reasoning || [];
+  const cached = daily.cached || [];
+  labels.forEach((day, idx) => {
+    if (!dayMap[day]) {
+      dayMap[day] = { total: 0, input: 0, output: 0, reasoning: 0, cached: 0 };
+    }
+    dayMap[day].total += totals[idx] || 0;
+    dayMap[day].input += inputs[idx] || 0;
+    dayMap[day].output += outputs[idx] || 0;
+    dayMap[day].reasoning += reasoning[idx] || 0;
+    dayMap[day].cached += cached[idx] || 0;
+  });
+}
+
+function mergeDailyModelsInto(target, data) {
+  const source = data.daily_models || {};
+  Object.keys(source).forEach(day => {
+    const dayMap = source[day] || {};
+    const outDay = target[day] || (target[day] = {});
+    Object.keys(dayMap).forEach(model => {
+      const rec = dayMap[model] || {};
+      const outRec = outDay[model] || (outDay[model] = {
+        input_tokens: 0,
+        cached_input_tokens: 0,
+        output_tokens: 0,
+        reasoning_output_tokens: 0,
+        total_tokens: 0,
+      });
+      outRec.input_tokens += rec.input_tokens || 0;
+      outRec.cached_input_tokens += rec.cached_input_tokens || 0;
+      outRec.output_tokens += rec.output_tokens || 0;
+      outRec.reasoning_output_tokens += rec.reasoning_output_tokens || 0;
+      outRec.total_tokens += rec.total_tokens || 0;
+    });
+  });
+}
+
+function mergeHourlyDailyInto(target, data) {
+  const source = data.hourly_daily || {};
+  Object.keys(source).forEach(day => {
+    const hours = source[day] || [];
+    const out = target[day] || (target[day] = new Array(24).fill(0));
+    for (let i = 0; i < 24; i++) {
+      out[i] += hours[i] || 0;
+    }
+  });
+}
+
+function buildMergedData(datasets) {
+  const dayMap = {};
+  const dailyModels = {};
+  const hourlyDaily = {};
+  const events = [];
+  const spans = [];
+
+  datasets.forEach(data => {
+    if (!data || !data.daily || !data.daily.labels) return;
+    mergeDailyInto(dayMap, data);
+    mergeDailyModelsInto(dailyModels, data);
+    mergeHourlyDailyInto(hourlyDaily, data);
+    (data.events || []).forEach(ev => events.push(ev));
+    (data.session_spans || []).forEach(span => spans.push(span));
+  });
+
+  const labels = Object.keys(dayMap).sort();
+  const daily = {
+    labels,
+    total: [],
+    input: [],
+    output: [],
+    reasoning: [],
+    cached: [],
+  };
+  labels.forEach(day => {
+    const rec = dayMap[day];
+    daily.total.push(rec.total);
+    daily.input.push(rec.input);
+    daily.output.push(rec.output);
+    daily.reasoning.push(rec.reasoning);
+    daily.cached.push(rec.cached);
+  });
+
+  return {
+    daily,
+    daily_models: dailyModels,
+    hourly_daily: hourlyDaily,
+    events,
+    session_spans: spans,
+    range: {
+      start: labels[0] || "",
+      end: labels[labels.length - 1] || "",
+      days: labels.length,
+    },
+  };
+}
+
+function mergeImportedData(datasets) {
+  const merged = buildMergedData(datasets);
+  if (!merged.daily.labels.length) return false;
+  DATA.daily = merged.daily;
+  DATA.daily_models = merged.daily_models;
+  DATA.hourly_daily = merged.hourly_daily;
+  DATA.events = merged.events;
+  DATA.session_spans = merged.session_spans;
+  DATA.range = merged.range;
+  rebuildLabelIndex();
+  syncRangeControls(DATA.range.start, DATA.range.end);
+  applyRange(DATA.range.start, DATA.range.end);
+  return true;
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error("read failed"));
+    reader.readAsText(file);
+  });
+}
+
+function setupImportExport() {
+  const exportBtn = document.getElementById("export-data");
+  const importInput = document.getElementById("import-data");
+  const statusEl = document.getElementById("import-status");
+
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      const payload = {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        data: DATA,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      const day = new Date().toISOString().slice(0, 10);
+      link.download = `codex-token-export-${day}.json`;
+      link.href = URL.createObjectURL(blob);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    });
+  }
+
+  if (importInput) {
+    importInput.addEventListener("change", async () => {
+      const files = Array.from(importInput.files || []);
+      if (!files.length) return;
+      if (statusEl) statusEl.textContent = "";
+      const imported = [];
+      let invalidCount = 0;
+      for (const file of files) {
+        try {
+          const text = await readFileAsText(file);
+          const raw = JSON.parse(text);
+          const data = normalizeImportedData(raw);
+          if (data) {
+            imported.push(data);
+          } else {
+            invalidCount += 1;
+          }
+        } catch (err) {
+          invalidCount += 1;
+        }
+      }
+      importInput.value = "";
+      if (!imported.length) {
+        if (statusEl) statusEl.textContent = formatI18n("import_invalid");
+        return;
+      }
+      const mergedOk = mergeImportedData([DATA, ...imported]);
+      if (!mergedOk) {
+        if (statusEl) statusEl.textContent = formatI18n("import_failed");
+        return;
+      }
+      if (statusEl) statusEl.textContent = formatI18n("import_done", { count: imported.length });
+    });
+  }
+}
+
 function applyRange(startISO, endISO) {
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
@@ -1236,8 +1488,8 @@ function applyRange(startISO, endISO) {
   }
   currentRange = { start: startISO, end: endISO };
 
-  const startIdx = LABEL_INDEX.has(startISO) ? LABEL_INDEX.get(startISO) : 0;
-  const endIdx = LABEL_INDEX.has(endISO) ? LABEL_INDEX.get(endISO) : (DATA.daily.labels.length - 1);
+  const startIdx = labelIndex.has(startISO) ? labelIndex.get(startISO) : 0;
+  const endIdx = labelIndex.has(endISO) ? labelIndex.get(endISO) : (DATA.daily.labels.length - 1);
 
   const labels = DATA.daily.labels.slice(startIdx, endIdx + 1);
   const totals = DATA.daily.total.slice(startIdx, endIdx + 1);
@@ -1368,6 +1620,18 @@ function applyRange(startISO, endISO) {
   applyI18n(currentLang);
 }
 
+function syncRangeControls(minISO, maxISO) {
+  const startInput = document.getElementById("range-start");
+  const endInput = document.getElementById("range-end");
+  if (!startInput || !endInput || !minISO || !maxISO) return;
+  startInput.min = minISO;
+  startInput.max = maxISO;
+  endInput.min = minISO;
+  endInput.max = maxISO;
+  startInput.value = minISO;
+  endInput.value = maxISO;
+}
+
 function setupRangeControls() {
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
@@ -1375,14 +1639,7 @@ function setupRangeControls() {
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
   if (!startInput || !endInput || !applyBtn || !minISO || !maxISO) return;
-
-  startInput.min = minISO;
-  startInput.max = maxISO;
-  endInput.min = minISO;
-  endInput.max = maxISO;
-
-  startInput.value = minISO;
-  endInput.value = maxISO;
+  syncRangeControls(minISO, maxISO);
 
   applyBtn.addEventListener("click", () => {
     applyRange(startInput.value, endInput.value);
@@ -1411,6 +1668,7 @@ window.addEventListener("load", () => {
   const fallback = stored || langGuess;
   applyI18n(fallback);
   setupRangeControls();
+  setupImportExport();
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
   applyRange(
