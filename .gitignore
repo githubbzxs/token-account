@@ -1,0 +1,18 @@
+# Generated reports (may contain personal usage data)
+report/
+
+# Codex logs (if CODEX_HOME is set here)
+.codex/
+
+# Python artifacts
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
