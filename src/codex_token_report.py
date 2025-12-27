@@ -1600,22 +1600,21 @@ def main() -> int:
             }
         )
     daily_models_serialized = {}
-    for day in daily_series["labels"]:
-        if day in usage["daily_models"]:
-            daily_models_serialized[day] = {}
-            for model, rec in usage["daily_models"][day].items():
-                daily_models_serialized[day][model] = {
-                    "input_tokens": rec["input_tokens"],
-                    "cached_input_tokens": rec["cached_input_tokens"],
-                    "output_tokens": rec["output_tokens"],
-                    "reasoning_output_tokens": rec["reasoning_output_tokens"],
-                    "total_tokens": rec["total_tokens"],
-                }
+    for day, model_map in usage["daily_models"].items():
+        day_key = day.isoformat()
+        daily_models_serialized[day_key] = {}
+        for model, rec in model_map.items():
+            daily_models_serialized[day_key][model] = {
+                "input_tokens": rec["input_tokens"],
+                "cached_input_tokens": rec["cached_input_tokens"],
+                "output_tokens": rec["output_tokens"],
+                "reasoning_output_tokens": rec["reasoning_output_tokens"],  
+                "total_tokens": rec["total_tokens"],
+            }
 
     hourly_daily_serialized = {}
-    for day in daily_series["labels"]:
-        if day in usage["hourly_daily"]:
-            hourly_daily_serialized[day] = usage["hourly_daily"][day]
+    for day, hours in usage["hourly_daily"].items():
+        hourly_daily_serialized[day.isoformat()] = hours
 
     pricing_js = {
         "prices": {
