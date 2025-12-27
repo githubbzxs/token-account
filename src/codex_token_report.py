@@ -1222,7 +1222,7 @@ function renderModelMix(modelItems) {
   );
 }
 
-function applyRange(startISO, endISO, persist) {
+function applyRange(startISO, endISO) {
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
   if (!minISO || !maxISO || !DATA.daily || !DATA.daily.labels) return;
@@ -1365,10 +1365,6 @@ function applyRange(startISO, endISO, persist) {
 
   setText("value-cost", anyPriced ? formatMoneyUSD(totalCost) : "n/a");
 
-  if (persist !== false) {
-    localStorage.setItem("codex_report_range_start", startISO);
-    localStorage.setItem("codex_report_range_end", endISO);
-  }
   applyI18n(currentLang);
 }
 
@@ -1385,10 +1381,8 @@ function setupRangeControls() {
   endInput.min = minISO;
   endInput.max = maxISO;
 
-  const storedStart = localStorage.getItem("codex_report_range_start");
-  const storedEnd = localStorage.getItem("codex_report_range_end");
-  startInput.value = clampISO(storedStart || minISO, minISO, maxISO);
-  endInput.value = clampISO(storedEnd || maxISO, minISO, maxISO);
+  startInput.value = minISO;
+  endInput.value = maxISO;
 
   applyBtn.addEventListener("click", () => {
     applyRange(startInput.value, endInput.value);
@@ -1421,15 +1415,14 @@ window.addEventListener("load", () => {
   const endInput = document.getElementById("range-end");
   applyRange(
     (startInput && startInput.value) || (DATA.range && DATA.range.start) || "",
-    (endInput && endInput.value) || (DATA.range && DATA.range.end) || "",
-    false
+    (endInput && endInput.value) || (DATA.range && DATA.range.end) || ""
   );
   document.querySelectorAll(".lang-toggle button").forEach(btn => {
     btn.addEventListener("click", () => {
       const lang = btn.dataset.lang;
       localStorage.setItem("codex_report_lang", lang);
       applyI18n(lang);
-      applyRange(currentRange.start, currentRange.end, false);
+      applyRange(currentRange.start, currentRange.end);
     });
   });
 });
