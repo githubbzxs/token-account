@@ -803,6 +803,7 @@ body {
 .metric-value-anim {
   animation: metricFade 500ms ease-in-out;
   will-change: opacity;
+  animation-fill-mode: both;
 }
 
 .card .sub {
@@ -1062,7 +1063,7 @@ body {
 
 @keyframes metricFade {
   0% {
-    opacity: 0.22;
+    opacity: 0.62;
   }
   100% {
     opacity: 1;
@@ -1843,10 +1844,13 @@ function resolvePricing(model) {
 function costUSD(rec, pricing) {
   if (!pricing) return null;
   const cachedPrice = pricing.cached_input != null ? pricing.cached_input : pricing.input;
+  const inputTokens = rec.input_tokens || 0;
+  const cachedInputTokens = rec.cached_input_tokens || 0;
+  const billableInputTokens = Math.max(0, inputTokens - cachedInputTokens);
   const outputTotal = (rec.output_tokens || 0) + (rec.reasoning_output_tokens || 0);
   return (
-    ((rec.input_tokens || 0) / 1_000_000) * (pricing.input || 0) +
-    ((rec.cached_input_tokens || 0) / 1_000_000) * (cachedPrice || 0) +
+    (billableInputTokens / 1_000_000) * (pricing.input || 0) +
+    (cachedInputTokens / 1_000_000) * (cachedPrice || 0) +
     (outputTotal / 1_000_000) * (pricing.output || 0)
   );
 }
@@ -2554,11 +2558,14 @@ def main() -> int:
         pricing = resolve_pricing(model, prices, aliases)
         if not pricing:
             continue
-        cached_price = pricing["cached_input"] or pricing["input"]
+        cached_price = pricing["cached_input"] if pricing["cached_input"] is not None else pricing["input"]
+        input_tokens_total = rec["input_tokens"]
+        cached_input_tokens = rec["cached_input_tokens"]
+        billable_input_tokens = max(0, input_tokens_total - cached_input_tokens)
         output_total = rec["output_tokens"] + rec["reasoning_output_tokens"]
         cost = (
-            dollars_from_tokens(rec["input_tokens"], pricing["input"])
-            + dollars_from_tokens(rec["cached_input_tokens"], cached_price)
+            dollars_from_tokens(billable_input_tokens, pricing["input"])
+            + dollars_from_tokens(cached_input_tokens, cached_price)
             + dollars_from_tokens(output_total, pricing["output"])
         )
         model_costs[model] = cost
