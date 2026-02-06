@@ -559,7 +559,7 @@ body {
 }
 
 .page {
-  max-width: 1280px;
+  max-width: 1680px;
   margin: 0 auto;
   padding: 34px 24px 56px;
 }
@@ -614,7 +614,7 @@ body {
 .title p {
   margin: 0;
   color: var(--muted);
-  max-width: 680px;
+  max-width: 900px;
 }
 
 .meta {
@@ -1775,6 +1775,14 @@ function setupImportExport() {
 }
 
 function applyRange(startISO, endISO) {
+  return applyRangeInternal(startISO, endISO, false);
+}
+
+function applyRangePreview(startISO, endISO) {
+  return applyRangeInternal(startISO, endISO, true);
+}
+
+function applyRangeInternal(startISO, endISO, previewOnly) {
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
   if (!minISO || !maxISO || !DATA.daily || !DATA.daily.labels) return;
@@ -1796,6 +1804,17 @@ function applyRange(startISO, endISO) {
   const minuteLabels = minuteSeries.labels;
   const minuteTotals = minuteSeries.totals;
 
+  const startInput = document.getElementById("range-start");
+  const endInput = document.getElementById("range-end");
+  if (startInput) startInput.value = startISO;
+  if (endInput) endInput.value = endISO;
+  setDisplayText("range-text", `${startISO} to ${endISO}`, false);
+  lineChart(document.getElementById("chart-daily"), minuteLabels, minuteTotals, "#22D3EE");
+
+  if (previewOnly) {
+    return;
+  }
+
   const totalTokens = sumSlice(DATA.daily.total, startIdx, endIdx);
   const inputTokens = sumSlice(DATA.daily.input, startIdx, endIdx);
   const outputTokens = sumSlice(DATA.daily.output, startIdx, endIdx);
@@ -1813,13 +1832,6 @@ function applyRange(startISO, endISO) {
   if (banner) {
     banner.classList.toggle("hidden", totalTokens > 0);
   }
-
-  const startInput = document.getElementById("range-start");
-  const endInput = document.getElementById("range-end");
-  if (startInput) startInput.value = startISO;
-  if (endInput) endInput.value = endISO;
-
-  setDisplayText("range-text", `${startISO} to ${endISO}`, false);
   setDisplayText("sessions-count", formatNumber(sessions), animateMetrics);
   setDisplayText("active-days", formatNumber(activeDays), animateMetrics);
   setDisplayText("value-total", formatNumber(totalTokens), animateMetrics);
@@ -1830,8 +1842,6 @@ function applyRange(startISO, endISO) {
   setDisplayText("value-cache-rate", `${(cacheRate * 100).toFixed(1)}%`, animateMetrics);
   setDisplayText("value-avg-day", formatNumber(avgPerDay), animateMetrics);
   setDisplayText("value-avg-session", formatNumber(avgPerSession), animateMetrics);
-
-  lineChart(document.getElementById("chart-daily"), minuteLabels, minuteTotals, "#22D3EE");
 
   const modelTotals = aggregateModels(dayLabels);
   const modelItems = Object.keys(modelTotals).map(model => ({ model, rec: modelTotals[model] }));
@@ -1863,7 +1873,7 @@ function applyRange(startISO, endISO) {
   const tableEl = document.getElementById("table-models");
   if (tableEl) {
     if (tableRows.length === 0) {
-      tableEl.innerHTML = `<tr><td class="muted" data-i18n="no_data">No data</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+      tableEl.innerHTML = `<tr><td class="muted">${escapeHTML(labelFor("no_data"))}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
     } else {
       tableEl.innerHTML = tableRows.join("");
     }
@@ -1872,8 +1882,6 @@ function applyRange(startISO, endISO) {
   const shareCost = anyPriced ? formatMoneyUSD(totalCost) : "n/a";
   setDisplayText("value-cost", shareCost, animateMetrics);
   hasInitialMetricsRender = true;
-
-  applyI18n(currentLang);
 }
 
 function syncRangeControls(minISO, maxISO) {
@@ -1935,23 +1943,37 @@ function setupDailyChartZoom() {
       return Math.round(pixels / Math.max(pxPerDay, 1));
     };
     let queuedRange = null;
-    let applyTimer = null;
+    let previewTimer = null;
+    let fullTimer = null;
     const scheduleRangeApply = (startISO, endISO) => {
       queuedRange = { startISO, endISO };
-      if (applyTimer !== null) return;
-      applyTimer = window.setTimeout(() => {
-        applyTimer = null;
+      if (previewTimer === null) {
+        previewTimer = window.setTimeout(() => {
+          previewTimer = null;
+          if (!queuedRange) return;
+          applyRangePreview(queuedRange.startISO, queuedRange.endISO);
+        }, 32);
+      }
+      if (fullTimer !== null) {
+        clearTimeout(fullTimer);
+      }
+      fullTimer = window.setTimeout(() => {
+        fullTimer = null;
         if (!queuedRange) return;
         const next = queuedRange;
         queuedRange = null;
         applyRange(next.startISO, next.endISO);
-      }, 64);
+      }, 220);
     };
     const flushScheduledRange = () => {
       if (!queuedRange) return;
-      if (applyTimer !== null) {
-        clearTimeout(applyTimer);
-        applyTimer = null;
+      if (previewTimer !== null) {
+        clearTimeout(previewTimer);
+        previewTimer = null;
+      }
+      if (fullTimer !== null) {
+        clearTimeout(fullTimer);
+        fullTimer = null;
       }
       const next = queuedRange;
       queuedRange = null;
