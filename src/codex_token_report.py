@@ -21,26 +21,6 @@ FIELDS = [
     "total_tokens",
 ]
 
-MIX = [
-    ("input_tokens", "input", "#22D3EE"),
-    ("output_tokens", "output", "#FB7185"),
-    ("reasoning_output_tokens", "reasoning", "#F59E0B"),
-    ("cached_input_tokens", "cached", "#34D399"),
-]
-
-MODEL_COLORS = [
-    "#22D3EE",
-    "#FB7185",
-    "#F59E0B",
-    "#34D399",
-    "#60A5FA",
-    "#A78BFA",
-    "#F97316",
-    "#2DD4BF",
-    "#E879F9",
-    "#38BDF8",
-]
-
 I18N = {
     "zh": {
         "title": "Codex Token 用量",
@@ -74,7 +54,7 @@ I18N = {
         "import_done": "已合并 {count} 个文件",
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
-        "daily_chart": "每日总 token",
+        "daily_chart": "每分钟总 token",
         "zoom_hint": "支持滚轮缩放、拖动滑动（Shift+滚轮横移）",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
@@ -141,7 +121,7 @@ I18N = {
         "import_done": "Merged {count} file(s)",
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
-        "daily_chart": "Daily total tokens",
+        "daily_chart": "Per-minute total tokens",
         "zoom_hint": "Wheel to zoom, drag to pan (Shift+wheel to slide)",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
@@ -537,8 +517,6 @@ def fmt_money(value: Decimal | None) -> str:
     return f"${value:.4f}"
 
 def render_html(data: dict, summary: dict, empty: bool) -> str:
-    top_days_html = summary.get("top_days_html", "")
-    top_events_html = summary.get("top_events_html", "")
     empty_banner = ""
     data_json = json.dumps(data, separators=(",", ":"))
     i18n_json = json.dumps(I18N, ensure_ascii=False, separators=(",", ":"))     
@@ -771,11 +749,6 @@ body {
   justify-content: flex-start;
 }
 
-.share-card {
-  grid-column: 1 / -1;
-  min-height: 0;
-}
-
 .card::after {
   content: "";
   position: absolute;
@@ -813,61 +786,6 @@ body {
   line-height: 1.4;
   overflow-wrap: anywhere;
   word-break: break-word;
-}
-
-#value-pricing {
-  display: inline-block;
-  max-width: 100%;
-  line-height: 1.35;
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: bottom;
-}
-
-.share-image-canvas {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  height: 176px;
-  border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text);
-  border-radius: 12px;
-  display: block;
-}
-
-.share-actions {
-  margin-top: 8px;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-}
-
-#share-status {
-  flex: 1 1 260px;
-  min-width: 200px;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.share-action-btn {
-  border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.share-action-btn:hover {
-  border-color: rgba(34, 211, 238, 0.5);
-  background: rgba(34, 211, 238, 0.15);
 }
 
 .panel-grid {
@@ -1050,14 +968,8 @@ body {
   .cards {
     grid-template-columns: minmax(0, 1fr);
   }
-  .share-card {
-    grid-column: span 1;
-  }
   .metric-card {
     min-height: 108px;
-  }
-  #share-status {
-    flex-basis: 100%;
   }
 }
 
@@ -1130,16 +1042,6 @@ body {
     <div class="card metric-card" style="--delay:0.2s">
       <div class="label" data-i18n="card_cost">Estimated cost (USD)</div>
       <div class="value" id="value-cost">__TOTAL_COST__</div>
-      <div class="sub"><span data-i18n="pricing_source">Pricing source</span> <span id="value-pricing">__PRICING_SOURCE__</span></div>
-    </div>
-    <div class="card share-card" style="--delay:0.24s">
-      <div class="label" data-i18n="share_card_title">Share card</div>
-      <canvas id="share-image-canvas" class="share-image-canvas" width="960" height="420"></canvas>
-      <div class="share-actions">
-        <button type="button" id="share-image-download" class="share-action-btn" data-i18n="share_download">Download image</button>
-        <button type="button" id="share-image-native" class="share-action-btn" data-i18n="share_native">Share image</button>
-        <span id="share-status" class="muted" data-i18n="share_hint">Auto-sync latest data</span>
-      </div>
     </div>
   </div>
 
@@ -1149,34 +1051,7 @@ body {
       <div id="chart-daily" class="chart zoomable"></div>
       <div class="chart-tip" data-i18n="zoom_hint">Wheel to zoom, drag to pan (Shift+wheel to slide)</div>
     </div>
-    <div class="panel" style="--delay:0.3s">
-      <h3 data-i18n="mix_chart">Token mix</h3>
-      <div id="chart-mix" class="chart small"></div>
-      <div id="legend-mix" class="legend"></div>
-    </div>
-    <div class="panel" style="--delay:0.33s">
-      <h3 data-i18n="model_mix">Model share</h3>
-      <div id="chart-models" class="chart small"></div>
-      <div id="legend-models" class="legend"></div>
-    </div>
-    <div class="panel" style="--delay:0.37s">
-      <h3 data-i18n="hourly_chart">Hourly pattern</h3>
-      <div id="chart-hourly" class="chart small zoomable"></div>
-      <div class="chart-tip" data-i18n="zoom_hint">Wheel to zoom, drag to pan (Shift+wheel to slide)</div>
-    </div>
-    <div class="panel" style="--delay:0.41s">
-      <h3 data-i18n="top_days">Top days</h3>
-      <ul class="list" id="list-top-days">
-__TOP_DAYS__
-      </ul>
-    </div>
-    <div class="panel" style="--delay:0.45s">
-      <h3 data-i18n="top_spikes">Top spikes</h3>
-      <ul class="list" id="list-top-spikes">
-__TOP_EVENTS__
-      </ul>
-    </div>
-    <div class="panel wide" style="--delay:0.5s">
+    <div class="panel wide" style="--delay:0.35s">
       <h3 data-i18n="model_table">Model breakdown</h3>
       <div class="note" data-i18n="note_reasoning">Reasoning tokens billed as output</div>
       <table class="table">
@@ -1206,7 +1081,6 @@ const I18N = __I18N_JSON__;
 let currentLang = "zh";
 const CHART_AXIS_TEXT = "#94a3b8";
 const CHART_AXIS_LINE = "rgba(148,163,184,0.28)";
-const CHART_CENTER_TEXT = "#f4f4f5";
 
 function formatNumber(value) {
   const num = Number(value);
@@ -1234,14 +1108,6 @@ function applyI18n(lang) {
   document.querySelectorAll(".lang-toggle button").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.lang === lang);
   });
-  const pricingEl = document.getElementById("value-pricing");
-  if (pricingEl) {
-    const fullText = (pricingEl.textContent || "").trim();
-    if (fullText) {
-      pricingEl.title = fullText;
-      pricingEl.setAttribute("aria-label", fullText);
-    }
-  }
 }
 
 function labelFor(key) {
@@ -1302,211 +1168,6 @@ function readDailyValue(dayISO, key) {
   return Number(arr[idx] || 0);
 }
 
-function getTodayUsageSnapshot() {
-  const dayISO = toLocalISODate();
-  const input = readDailyValue(dayISO, "input");
-  const output = readDailyValue(dayISO, "output");
-  const reasoning = readDailyValue(dayISO, "reasoning");
-  const cached = readDailyValue(dayISO, "cached");
-  const total = readDailyValue(dayISO, "total");
-  const cacheRate = input ? (cached / input) : 0;
-  return { dayISO, input, output, reasoning, cached, total, cacheRate };
-}
-
-function drawShareImageCard() {
-  const canvas = document.getElementById("share-image-canvas");
-  if (!canvas) return null;
-  const rect = canvas.getBoundingClientRect();
-  const cssW = Math.max(320, Math.round(rect.width || 320));
-  const cssH = Math.max(176, Math.round(rect.height || 176));
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  const targetW = Math.round(cssW * dpr);
-  const targetH = Math.round(cssH * dpr);
-  if (canvas.width !== targetW || canvas.height !== targetH) {
-    canvas.width = targetW;
-    canvas.height = targetH;
-  }
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, cssW, cssH);
-
-  const grad = ctx.createLinearGradient(0, 0, cssW, cssH);
-  grad.addColorStop(0, "#0f1116");
-  grad.addColorStop(0.6, "#141923");
-  grad.addColorStop(1, "#1b2230");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, cssW, cssH);
-
-  const snapshot = getTodayUsageSnapshot();
-  const totalText = formatNumber(snapshot.total);
-  const subtitle = `${labelFor("today_usage")} ${snapshot.dayISO}`;
-  const line1 = `${labelFor("input")} ${formatNumber(snapshot.input)}   ${labelFor("output")} ${formatNumber(snapshot.output)}`;
-  const line2 = `${labelFor("reasoning")} ${formatNumber(snapshot.reasoning)}   ${labelFor("cached")} ${formatNumber(snapshot.cached)}   ${labelFor("cache_rate")} ${(snapshot.cacheRate * 100).toFixed(1)}%`;
-
-  ctx.fillStyle = "rgba(34, 211, 238, 0.14)";
-  ctx.fillRect(16, 14, cssW - 32, 2);
-
-  ctx.fillStyle = "#a1a1aa";
-  ctx.font = "600 13px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText(subtitle, 18, 38);
-
-  if (cssW >= 420) {
-    ctx.fillStyle = "rgba(248,250,252,0.8)";
-    ctx.font = "600 13px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
-    const brand = "Codex Token Report";
-    const brandW = ctx.measureText(brand).width;
-    ctx.fillText(brand, cssW - brandW - 18, 38);
-  }
-
-  const totalFontSize = Math.max(42, Math.min(82, Math.round(cssW * 0.07)));
-  ctx.fillStyle = "#f8fafc";
-  ctx.font = `700 ${totalFontSize}px 'Space Grotesk', 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
-  ctx.textAlign = "center";
-  ctx.fillText(totalText, Math.round(cssW / 2), Math.round(cssH * 0.56));
-
-  const maxTextWidth = cssW - 40;
-  let line1Font = 12;
-  let line2Font = 12;
-  ctx.font = `600 ${line1Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
-  while (ctx.measureText(line1).width > maxTextWidth && line1Font > 10) {
-    line1Font -= 1;
-    ctx.font = `600 ${line1Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
-  }
-  ctx.font = `600 ${line2Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
-  while (ctx.measureText(line2).width > maxTextWidth && line2Font > 10) {
-    line2Font -= 1;
-    ctx.font = `600 ${line2Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
-  }
-
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#d4d4d8";
-  ctx.font = `600 ${line1Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
-  ctx.fillText(line1, Math.round(cssW / 2), cssH - 38);
-  ctx.font = `600 ${line2Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
-  ctx.fillText(line2, Math.round(cssW / 2), cssH - 16);
-  return canvas;
-}
-
-function canvasToBlob(canvas) {
-  return new Promise(resolve => {
-    canvas.toBlob(blob => resolve(blob), "image/png");
-  });
-}
-
-async function downloadShareImage() {
-  const canvas = drawShareImageCard();
-  if (!canvas) return false;
-  const blob = await canvasToBlob(canvas);
-  if (!blob) return false;
-  const fileName = `codex-today-${toLocalISODate()}.png`;
-  const href = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = href;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(href), 1000);
-  return true;
-}
-
-async function shareTodayImage() {
-  const canvas = drawShareImageCard();
-  if (!canvas) return false;
-  const blob = await canvasToBlob(canvas);
-  if (!blob) return false;
-  const file = new File([blob], `codex-today-${toLocalISODate()}.png`, { type: "image/png" });
-  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({
-        files: [file],
-        title: labelFor("share_card_title"),
-        text: `${labelFor("today_usage")}: ${formatNumber(getTodayUsageSnapshot().total)}`,
-      });
-      return true;
-    } catch (err) {
-      return false;
-    }
-  }
-  return false;
-}
-
-async function copyShareImageToClipboard() {
-  const canvas = drawShareImageCard();
-  if (!canvas) return false;
-  const blob = await canvasToBlob(canvas);
-  if (!blob) return false;
-  if (!navigator.clipboard || typeof ClipboardItem === "undefined") return false;
-  try {
-    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
-
-function updateShareCard() {
-  drawShareImageCard();
-  const statusEl = document.getElementById("share-status");
-  if (statusEl) {
-    statusEl.textContent = formatI18n("share_hint");
-  }
-}
-
-function setupShareCard() {
-  const downloadBtn = document.getElementById("share-image-download");
-  const nativeBtn = document.getElementById("share-image-native");
-  const statusEl = document.getElementById("share-status");
-
-  if (downloadBtn) {
-    downloadBtn.addEventListener("click", async () => {
-      const ok = await downloadShareImage();
-      if (statusEl) {
-        statusEl.textContent = formatI18n(ok ? "share_downloaded" : "share_copy_failed");
-      }
-    });
-  }
-
-  if (nativeBtn) {
-    nativeBtn.addEventListener("click", async () => {
-      if (window.location.protocol === "file:") {
-        const downloaded = await downloadShareImage();
-        if (statusEl) {
-          statusEl.textContent = formatI18n(downloaded ? "share_native_unsupported" : "share_copy_failed");
-        }
-        return;
-      }
-
-      const shared = await shareTodayImage();
-      if (shared) {
-        if (statusEl) {
-          statusEl.textContent = formatI18n("share_copied");
-        }
-        return;
-      }
-
-      const copied = await copyShareImageToClipboard();
-      if (copied) {
-        if (statusEl) {
-          statusEl.textContent = formatI18n("share_copied_image");
-        }
-        return;
-      }
-
-      const downloaded = await downloadShareImage();
-      if (statusEl) {
-        statusEl.textContent = formatI18n(downloaded ? "share_native_unsupported" : "share_copy_failed");
-      }
-    });
-  }
-
-  window.addEventListener("resize", () => {
-    drawShareImageCard();
-  });
-}
-
 let latestDataStamp = (DATA.meta && DATA.meta.generated_at) || "";
 let syncInFlight = false;
 
@@ -1529,8 +1190,6 @@ function applyLatestData(nextData) {
   DATA.hourly_daily = nextData.hourly_daily || {};
   DATA.session_spans = nextData.session_spans || [];
   DATA.events = nextData.events || [];
-  DATA.mix = nextData.mix || [];
-  DATA.model_mix = nextData.model_mix || [];
   DATA.pricing = nextData.pricing || DATA.pricing;
   DATA.meta = nextData.meta || {};
   rebuildLabelIndex();
@@ -1583,21 +1242,65 @@ function setupAutoSync() {
 }
 
 function lineChart(el, labels, values, color) {
+  if (!el) return;
+  const rawLabels = Array.isArray(labels) ? labels : [];
+  const rawValues = Array.isArray(values) ? values : [];
+  if (!rawValues.length) {
+    el.innerHTML = "";
+    return;
+  }
   const width = 860;
   const height = 240;
   const pad = { l: 32, r: 16, t: 16, b: 32 };
-  const max = Math.max(...values, 1);
-  const xStep = values.length > 1 ? (width - pad.l - pad.r) / (values.length - 1) : 0;
+
+  let max = 1;
+  for (let i = 0; i < rawValues.length; i++) {
+    const val = Number(rawValues[i] || 0);
+    if (val > max) max = val;
+  }
+
+  const MAX_POINTS = 2200;
+  let chartLabels = rawLabels;
+  let chartValues = rawValues;
+  if (rawValues.length > MAX_POINTS) {
+    const step = Math.ceil(rawValues.length / MAX_POINTS);
+    const sampledLabels = [];
+    const sampledValues = [];
+    for (let i = 0; i < rawValues.length; i += step) {
+      const end = Math.min(rawValues.length, i + step);
+      let peakValue = 0;
+      let peakIndex = i;
+      for (let j = i; j < end; j++) {
+        const current = Number(rawValues[j] || 0);
+        if (current >= peakValue) {
+          peakValue = current;
+          peakIndex = j;
+        }
+      }
+      sampledLabels.push(rawLabels[peakIndex] || rawLabels[i] || "");
+      sampledValues.push(peakValue);
+    }
+    const lastLabel = rawLabels[rawLabels.length - 1] || "";
+    const lastValue = Number(rawValues[rawValues.length - 1] || 0);
+    if (sampledLabels[sampledLabels.length - 1] !== lastLabel) {
+      sampledLabels.push(lastLabel);
+      sampledValues.push(lastValue);
+    }
+    chartLabels = sampledLabels;
+    chartValues = sampledValues;
+  }
+
+  const xStep = chartValues.length > 1 ? (width - pad.l - pad.r) / (chartValues.length - 1) : 0;
   const baseY = height - pad.b;
 
-  const points = values.map((v, i) => {
+  const points = chartValues.map((v, i) => {
     const x = pad.l + i * xStep;
     const y = pad.t + (height - pad.t - pad.b) * (1 - v / max);
     return [x, y];
   });
 
   const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(2)} ${p[1].toFixed(2)}`).join(" ");
-  const area = `${line} L ${pad.l + (values.length - 1) * xStep} ${baseY} L ${pad.l} ${baseY} Z`;
+  const area = `${line} L ${pad.l + (chartValues.length - 1) * xStep} ${baseY} L ${pad.l} ${baseY} Z`;
 
   const uid = "grad" + Math.random().toString(36).slice(2);
   const svg = `
@@ -1612,8 +1315,8 @@ function lineChart(el, labels, values, color) {
       <path d="${area}" fill="url(#${uid})"></path>
       <path d="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round"></path>
       <line x1="${pad.l}" x2="${width - pad.r}" y1="${baseY}" y2="${baseY}" stroke="${CHART_AXIS_LINE}" />
-      <text x="${pad.l}" y="${height - 8}" fill="${CHART_AXIS_TEXT}" font-size="11">${labels[0] || ""}</text>
-      <text x="${width - pad.r - 80}" y="${height - 8}" fill="${CHART_AXIS_TEXT}" font-size="11">${labels[labels.length - 1] || ""}</text>
+      <text x="${pad.l}" y="${height - 8}" fill="${CHART_AXIS_TEXT}" font-size="11">${chartLabels[0] || ""}</text>
+      <text x="${width - pad.r - 80}" y="${height - 8}" fill="${CHART_AXIS_TEXT}" font-size="11">${chartLabels[chartLabels.length - 1] || ""}</text>
       <text x="${pad.l}" y="${pad.t + 12}" fill="${CHART_AXIS_TEXT}" font-size="11">${formatNumber(max)}</text>
     </svg>
   `;
@@ -1645,57 +1348,6 @@ function barChart(el, labels, values, color) {
   `;
   el.innerHTML = svg;
 }
-
-function donutChart(el, legendEl, segments) {
-  const size = 220;
-  const r = 78;
-  const c = 2 * Math.PI * r;
-  const total = segments.reduce((sum, seg) => sum + seg.value, 0);
-  const denom = total || 1;
-  let offset = 0;
-
-  let rings = "";
-  segments.forEach(seg => {
-    const portion = seg.value / denom;
-    const dash = portion * c;
-    rings += `<circle cx="110" cy="110" r="${r}" fill="transparent" stroke="${seg.color}" stroke-width="18" stroke-dasharray="${dash} ${c - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 110 110)" />`;
-    offset += dash;
-  });
-  const svg = `
-    <svg viewBox="0 0 ${size} ${size}" width="100%" height="100%">
-      <circle cx="110" cy="110" r="${r}" fill="transparent" stroke="rgba(30,42,40,0.08)" stroke-width="18"></circle>
-      ${rings}
-      <text x="110" y="108" text-anchor="middle" font-size="14" fill="${CHART_AXIS_TEXT}">${labelFor("total_label")}</text>
-      <text x="110" y="130" text-anchor="middle" font-size="18" fill="${CHART_CENTER_TEXT}">${formatNumber(total)}</text>
-    </svg>
-  `;
-  el.innerHTML = svg;
-
-  legendEl.innerHTML = segments.map(seg => {
-    return `<span><i style="background:${seg.color}"></i>${seg.label}: ${formatNumber(seg.value)}</span>`;
-  }).join("");
-}
-
-const MODEL_COLORS = [
-  "#22D3EE",
-  "#FB7185",
-  "#F59E0B",
-  "#34D399",
-  "#60A5FA",
-  "#A78BFA",
-  "#F97316",
-  "#2DD4BF",
-  "#E879F9",
-  "#38BDF8",
-];
-
-const MIX_COLORS = (() => {
-  const out = {};
-  (DATA.mix || []).forEach(seg => {
-    out[seg.label_key] = seg.color;
-  });
-  return out;
-})();
 
 let labelIndex = new Map(
   ((DATA.daily && DATA.daily.labels) ? DATA.daily.labels : []).map((d, i) => [d, i])
@@ -1736,6 +1388,40 @@ function addDaysISO(iso, days) {
   const date = parseISODate(iso);
   date.setUTCDate(date.getUTCDate() + days);
   return formatISODate(date);
+}
+
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+
+function formatMinuteLabel(dateObj) {
+  return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())} ${pad2(dateObj.getHours())}:${pad2(dateObj.getMinutes())}`;
+}
+
+function buildMinuteSeries(startISO, endISO) {
+  const labels = [];
+  const totals = [];
+  if (!startISO || !endISO) return { labels, totals };
+  const start = new Date(`${startISO}T00:00:00`);
+  const end = new Date(`${endISO}T23:59:00`);
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start > end) {
+    return { labels, totals };
+  }
+
+  const minuteMap = new Map();
+  (DATA.events || []).forEach(ev => {
+    if (!ev || !ev.ts || !ev.day) return;
+    if (ev.day < startISO || ev.day > endISO) return;
+    const minuteKey = String(ev.ts).slice(0, 16);
+    minuteMap.set(minuteKey, (minuteMap.get(minuteKey) || 0) + Number(ev.value || 0));
+  });
+
+  for (let t = start.getTime(); t <= end.getTime(); t += 60_000) {
+    const key = formatMinuteLabel(new Date(t));
+    labels.push(key);
+    totals.push(minuteMap.get(key) || 0);
+  }
+  return { labels, totals };
 }
 
 function clampISO(iso, minISO, maxISO) {
@@ -1859,45 +1545,6 @@ function formatMoneyUSD(value) {
   if (value == null || !Number.isFinite(value)) return "n/a";
   if (value >= 1) return `$${value.toFixed(2)}`;
   return `$${value.toFixed(4)}`;
-}
-
-function renderTokenMix(inputTokens, outputTokens, reasoningTokens, cachedTokens) {
-  donutChart(
-    document.getElementById("chart-mix"),
-    document.getElementById("legend-mix"),
-    [
-      { label: labelFor("input"), value: inputTokens, color: MIX_COLORS.input || "#1B7F79" },
-      { label: labelFor("output"), value: outputTokens, color: MIX_COLORS.output || "#C45A3C" },
-      { label: labelFor("reasoning"), value: reasoningTokens, color: MIX_COLORS.reasoning || "#D4A373" },
-      { label: labelFor("cached"), value: cachedTokens, color: MIX_COLORS.cached || "#506B64" },
-    ]
-  );
-}
-
-function renderModelMix(modelItems) {
-  const top = modelItems.slice(0, 6);
-  const other = modelItems.slice(6).reduce((sum, item) => sum + item.rec.total_tokens, 0);
-  const segments = [];
-  top.forEach((item, idx) => {
-    if (item.rec.total_tokens <= 0) return;
-    segments.push({
-      label: item.model,
-      value: item.rec.total_tokens,
-      color: MODEL_COLORS[idx % MODEL_COLORS.length],
-    });
-  });
-  if (other > 0) {
-    segments.push({
-      label: labelFor("other"),
-      value: other,
-      color: "#999999",
-    });
-  }
-  donutChart(
-    document.getElementById("chart-models"),
-    document.getElementById("legend-models"),
-    segments
-  );
 }
 
 function normalizeImportedData(raw) {
@@ -2111,8 +1758,10 @@ function applyRange(startISO, endISO) {
   const startIdx = labelIndex.has(startISO) ? labelIndex.get(startISO) : 0;
   const endIdx = labelIndex.has(endISO) ? labelIndex.get(endISO) : (DATA.daily.labels.length - 1);
 
-  const labels = DATA.daily.labels.slice(startIdx, endIdx + 1);
-  const totals = DATA.daily.total.slice(startIdx, endIdx + 1);
+  const dayLabels = DATA.daily.labels.slice(startIdx, endIdx + 1);
+  const minuteSeries = buildMinuteSeries(startISO, endISO);
+  const minuteLabels = minuteSeries.labels;
+  const minuteTotals = minuteSeries.totals;
 
   const totalTokens = sumSlice(DATA.daily.total, startIdx, endIdx);
   const inputTokens = sumSlice(DATA.daily.input, startIdx, endIdx);
@@ -2149,52 +1798,11 @@ function applyRange(startISO, endISO) {
   setDisplayText("value-avg-day", formatNumber(avgPerDay), animateMetrics);
   setDisplayText("value-avg-session", formatNumber(avgPerSession), animateMetrics);
 
-  lineChart(document.getElementById("chart-daily"), labels, totals, "#22D3EE");
-  renderTokenMix(inputTokens, outputTokens, reasoningTokens, cachedTokens);
+  lineChart(document.getElementById("chart-daily"), minuteLabels, minuteTotals, "#22D3EE");
 
-  const hourly = new Array(24).fill(0);
-  const hourlyDaily = DATA.hourly_daily || {};
-  labels.forEach(day => {
-    const arr = hourlyDaily[day];
-    if (!arr) return;
-    for (let h = 0; h < 24; h++) hourly[h] += arr[h] || 0;
-  });
-  barChart(document.getElementById("chart-hourly"), (DATA.hourly && DATA.hourly.labels) || [], hourly, "#FB7185");
-
-  const topDayItems = [];
-  for (let i = startIdx; i <= endIdx; i++) {
-    const value = DATA.daily.total[i] || 0;
-    if (value > 0) topDayItems.push({ day: DATA.daily.labels[i], value });
-  }
-  topDayItems.sort((a, b) => b.value - a.value);
-  const topDaysEl = document.getElementById("list-top-days");
-  if (topDaysEl) {
-    if (topDayItems.length === 0) {
-      topDaysEl.innerHTML = `<li class="muted" data-i18n="no_data">No data</li>`;
-    } else {
-      topDaysEl.innerHTML = topDayItems.slice(0, 5).map(item => {
-        return `<li><span>${escapeHTML(item.day)}</span><span>${formatNumber(item.value)}</span></li>`;
-      }).join("");
-    }
-  }
-
-  const spikes = (DATA.events || []).filter(ev => ev.day >= startISO && ev.day <= endISO);
-  spikes.sort((a, b) => (b.value || 0) - (a.value || 0));
-  const spikesEl = document.getElementById("list-top-spikes");
-  if (spikesEl) {
-    if (spikes.length === 0) {
-      spikesEl.innerHTML = `<li class="muted" data-i18n="no_data">No data</li>`;
-    } else {
-      spikesEl.innerHTML = spikes.slice(0, 5).map(ev => {
-        return `<li><span>${escapeHTML(ev.ts)}</span><span>${formatNumber(ev.value || 0)}</span></li>`;
-      }).join("");
-    }
-  }
-
-  const modelTotals = aggregateModels(labels);
+  const modelTotals = aggregateModels(dayLabels);
   const modelItems = Object.keys(modelTotals).map(model => ({ model, rec: modelTotals[model] }));
   modelItems.sort((a, b) => (b.rec.total_tokens || 0) - (a.rec.total_tokens || 0));
-  renderModelMix(modelItems);
 
   let totalCost = 0;
   let anyPriced = false;
@@ -2230,7 +1838,6 @@ function applyRange(startISO, endISO) {
 
   const shareCost = anyPriced ? formatMoneyUSD(totalCost) : "n/a";
   setDisplayText("value-cost", shareCost, animateMetrics);
-  updateShareCard();
   hasInitialMetricsRender = true;
 
   applyI18n(currentLang);
@@ -2404,7 +2011,6 @@ function setupDailyChartZoom() {
   };
 
   bindZoom(document.getElementById("chart-daily"));
-  bindZoom(document.getElementById("chart-hourly"));
 }
 
 window.addEventListener("load", () => {
@@ -2415,7 +2021,6 @@ window.addEventListener("load", () => {
   setupRangeControls();
   setupDailyChartZoom();
   setupImportExport();
-  setupShareCard();
   setupAutoSync();
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
@@ -2449,10 +2054,7 @@ window.addEventListener("load", () => {
         "AVG_PER_DAY": html.escape(summary.get("avg_per_day", "")),
         "AVG_PER_SESSION": html.escape(summary.get("avg_per_session", "")),
         "TOTAL_COST": html.escape(summary.get("total_cost", "")),
-        "PRICING_SOURCE": html.escape(summary.get("pricing_source", "")),
         "SOURCE_PATH": source_path,
-        "TOP_DAYS": top_days_html or "        <li class=\"muted\" data-i18n=\"no_data\">No data</li>",
-        "TOP_EVENTS": top_events_html or "        <li class=\"muted\" data-i18n=\"no_data\">No data</li>",
         "MODEL_TABLE": summary.get("model_table_html", "") or "          <tr><td class=\"muted\" data-i18n=\"no_data\">No data</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>",
         "GENERATED_AT": html.escape(summary.get("generated_at", "")),
         "EMPTY_BANNER": empty_banner,
@@ -2497,7 +2099,7 @@ def main() -> int:
         codex_root = Path(args.codex_home) if args.codex_home else default_codex_root()
         session_root = codex_root / "sessions"
     pricing_path = Path(args.pricing_file) if args.pricing_file else None
-    prices, pricing_meta, aliases = load_pricing(pricing_path)
+    prices, _, aliases = load_pricing(pricing_path)
     usage = collect_usage(session_root, since, until)
 
     if args.days and since is None and until is None and usage["active_days"]:
@@ -2528,23 +2130,6 @@ def main() -> int:
     avg_per_day = total_tokens / days_active if days_active else 0
     sessions = usage["sessions"]
     avg_per_session = total_tokens / sessions if sessions else 0
-
-    top_days = sorted(
-        ((day, rec["total_tokens"]) for day, rec in usage["daily"].items()),
-        key=lambda item: item[1],
-        reverse=True,
-    )
-    top_days = [item for item in top_days if item[1] > 0][:5]
-    top_days_html = "\n".join(
-        f"        <li><span>{day.isoformat()}</span><span>{fmt_int(total)}</span></li>"
-        for day, total in top_days
-    )
-
-    top_events = usage["top_events"]
-    top_events_html = "\n".join(
-        f"        <li><span>{ts.strftime('%Y-%m-%d %H:%M')}</span><span>{fmt_int(total)}</span></li>"
-        for total, ts in top_events
-    )
 
     model_totals = usage["models"]
     model_items = sorted(
@@ -2586,28 +2171,6 @@ def main() -> int:
         )
     model_table_html = "\n".join(model_table_rows)
 
-    model_mix = []
-    top_mix = model_items[:6]
-    other_tokens = sum(rec["total_tokens"] for _, rec in model_items[6:])
-    for idx, (model, rec) in enumerate(top_mix):
-        if rec["total_tokens"] <= 0:
-            continue
-        model_mix.append(
-            {
-                "label": model,
-                "value": rec["total_tokens"],
-                "color": MODEL_COLORS[idx % len(MODEL_COLORS)],
-            }
-        )
-    if other_tokens > 0:
-        model_mix.append(
-            {
-                "label": "Other",
-                "label_key": "other",
-                "value": other_tokens,
-                "color": "#999999",
-            }
-        )
     daily_models_serialized = {}
     for day, model_map in usage["daily_models"].items():
         day_key = day.isoformat()
@@ -2649,11 +2212,6 @@ def main() -> int:
         "hourly_daily": hourly_daily_serialized,
         "session_spans": usage["session_spans"],
         "events": usage["events"],
-        "mix": [
-            {"label_key": label_key, "value": totals[key], "color": color}
-            for key, label_key, color in MIX
-        ],
-        "model_mix": model_mix,
         "pricing": pricing_js,
     }
 
@@ -2670,11 +2228,8 @@ def main() -> int:
         "avg_per_day": fmt_int(int(round(avg_per_day))),
         "avg_per_session": fmt_int(int(round(avg_per_session))),
         "total_cost": fmt_money(total_cost),
-        "pricing_source": f"{pricing_meta['tier']} {pricing_meta['currency']} | {pricing_meta['source_url']} ({pricing_meta['source_date']})",
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "source_path": str(session_root),
-        "top_days_html": top_days_html,
-        "top_events_html": top_events_html,
         "model_table_html": model_table_html,
     }
     data["meta"] = {
