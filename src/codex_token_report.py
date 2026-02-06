@@ -801,7 +801,7 @@ body {
 }
 
 .metric-value-anim {
-  animation: metricPop 520ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  animation: metricPop 500ms ease-in-out;
   will-change: transform, opacity;
 }
 
