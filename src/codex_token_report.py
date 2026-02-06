@@ -801,7 +801,8 @@ body {
 }
 
 .metric-value-anim {
-  animation: metricPop 220ms ease-out;
+  animation: metricPop 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
 }
 
 .card .sub {
@@ -1061,11 +1062,14 @@ body {
 
 @keyframes metricPop {
   0% {
-    transform: translateY(3px);
-    opacity: 0.45;
+    transform: translateY(6px) scale(0.985);
+    opacity: 0.28;
+  }
+  45% {
+    opacity: 0.86;
   }
   100% {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
