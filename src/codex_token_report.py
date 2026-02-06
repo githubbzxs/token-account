@@ -762,13 +762,13 @@ body {
   animation: rise 0.8s ease both;
   animation-delay: var(--delay, 0s);
   min-width: 0;
-  height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .metric-card {
-  min-height: 172px;
+  min-height: 152px;
+  justify-content: flex-start;
 }
 
 .share-card {
@@ -1075,7 +1075,7 @@ body {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 560px) {
   .cards {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1083,7 +1083,7 @@ body {
     grid-column: span 1;
   }
   .metric-card {
-    min-height: 156px;
+    min-height: 136px;
   }
 }
 
