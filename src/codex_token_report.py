@@ -755,7 +755,7 @@ body {
   background: linear-gradient(145deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
   border: 1px solid var(--stroke);
   border-radius: 20px;
-  padding: 16px 18px;
+  padding: 14px 16px;
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
@@ -767,7 +767,7 @@ body {
 }
 
 .metric-card {
-  min-height: 152px;
+  min-height: 118px;
   justify-content: flex-start;
 }
 
@@ -872,7 +872,7 @@ body {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: 188px;
+  height: 176px;
   border: 1px solid var(--stroke);
   background: rgba(255, 255, 255, 0.03);
   color: var(--text);
@@ -1090,7 +1090,7 @@ body {
     grid-column: span 1;
   }
   .metric-card {
-    min-height: 136px;
+    min-height: 108px;
   }
   #share-status {
     flex-basis: 100%;
@@ -1389,7 +1389,7 @@ function drawShareImageCard() {
   if (!canvas) return null;
   const rect = canvas.getBoundingClientRect();
   const cssW = Math.max(320, Math.round(rect.width || 320));
-  const cssH = Math.max(188, Math.round(rect.height || 188));
+  const cssH = Math.max(176, Math.round(rect.height || 176));
   const dpr = Math.max(1, window.devicePixelRatio || 1);
   const targetW = Math.round(cssW * dpr);
   const targetH = Math.round(cssH * dpr);
@@ -1404,28 +1404,19 @@ function drawShareImageCard() {
 
   const grad = ctx.createLinearGradient(0, 0, cssW, cssH);
   grad.addColorStop(0, "#0f1116");
-  grad.addColorStop(0.55, "#151922");
-  grad.addColorStop(1, "#1b2030");
+  grad.addColorStop(0.6, "#141923");
+  grad.addColorStop(1, "#1b2230");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, cssW, cssH);
 
   const snapshot = getTodayUsageSnapshot();
   const totalText = formatNumber(snapshot.total);
   const subtitle = `${labelFor("today_usage")} ${snapshot.dayISO}`;
-  const stats = [
-    { label: labelFor("input"), value: formatNumber(snapshot.input) },
-    { label: labelFor("output"), value: formatNumber(snapshot.output) },
-    { label: labelFor("reasoning"), value: formatNumber(snapshot.reasoning) },
-    { label: labelFor("cached"), value: formatNumber(snapshot.cached) },
-    { label: labelFor("cache_rate"), value: `${(snapshot.cacheRate * 100).toFixed(1)}%` },
-  ];
+  const line1 = `${labelFor("input")} ${formatNumber(snapshot.input)}   ${labelFor("output")} ${formatNumber(snapshot.output)}`;
+  const line2 = `${labelFor("reasoning")} ${formatNumber(snapshot.reasoning)}   ${labelFor("cached")} ${formatNumber(snapshot.cached)}   ${labelFor("cache_rate")} ${(snapshot.cacheRate * 100).toFixed(1)}%`;
 
   ctx.fillStyle = "rgba(34, 211, 238, 0.14)";
   ctx.fillRect(16, 14, cssW - 32, 2);
-  ctx.fillStyle = "rgba(56, 189, 248, 0.09)";
-  ctx.beginPath();
-  ctx.arc(cssW * 0.86, cssH * 0.18, cssH * 0.7, 0, Math.PI * 2);
-  ctx.fill();
 
   ctx.fillStyle = "#a1a1aa";
   ctx.font = "600 13px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
@@ -1440,29 +1431,32 @@ function drawShareImageCard() {
     ctx.fillText(brand, cssW - brandW - 18, 38);
   }
 
-  const totalFontSize = Math.max(44, Math.min(86, Math.round(cssW * 0.072)));
+  const totalFontSize = Math.max(42, Math.min(82, Math.round(cssW * 0.07)));
   ctx.fillStyle = "#f8fafc";
   ctx.font = `700 ${totalFontSize}px 'Space Grotesk', 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
   ctx.textAlign = "center";
-  ctx.fillText(totalText, Math.round(cssW / 2), Math.round(cssH * 0.58));
+  ctx.fillText(totalText, Math.round(cssW / 2), Math.round(cssH * 0.56));
 
-  const colCount = cssW >= 1280 ? 5 : (cssW >= 980 ? 4 : 3);
-  const rowCount = Math.max(1, Math.ceil(stats.length / colCount));
-  const leftPad = 18;
-  const rightPad = 18;
-  const colW = (cssW - leftPad - rightPad) / colCount;
-  const statsStartY = cssH - 18 - (rowCount - 1) * 22;
+  const maxTextWidth = cssW - 40;
+  let line1Font = 12;
+  let line2Font = 12;
+  ctx.font = `600 ${line1Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
+  while (ctx.measureText(line1).width > maxTextWidth && line1Font > 10) {
+    line1Font -= 1;
+    ctx.font = `600 ${line1Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
+  }
+  ctx.font = `600 ${line2Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
+  while (ctx.measureText(line2).width > maxTextWidth && line2Font > 10) {
+    line2Font -= 1;
+    ctx.font = `600 ${line2Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
+  }
 
-  ctx.textAlign = "left";
-  ctx.font = "600 12px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
-  stats.forEach((item, idx) => {
-    const col = idx % colCount;
-    const row = Math.floor(idx / colCount);
-    const x = leftPad + col * colW;
-    const y = statsStartY + row * 22;
-    ctx.fillStyle = "#d4d4d8";
-    ctx.fillText(`${item.label} ${item.value}`, x, y);
-  });
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#d4d4d8";
+  ctx.font = `600 ${line1Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
+  ctx.fillText(line1, Math.round(cssW / 2), cssH - 38);
+  ctx.font = `600 ${line2Font}px 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
+  ctx.fillText(line2, Math.round(cssW / 2), cssH - 16);
   return canvas;
 }
 
