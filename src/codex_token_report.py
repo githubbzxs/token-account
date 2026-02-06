@@ -106,6 +106,8 @@ I18N = {
         "today_usage": "今天用量",
         "share_native_unsupported": "浏览器不支持直接分享，已改为下载",
         "auto_sync": "自动同步最新数据",
+        "share_downloaded": "图片已下载",
+        "share_copied_image": "图片已复制，可直接粘贴发送",
     },
     "en": {
         "title": "Codex Token Usage",
@@ -171,6 +173,8 @@ I18N = {
         "today_usage": "Today's usage",
         "share_native_unsupported": "Direct share is unavailable, downloaded instead",
         "auto_sync": "Auto-sync latest data",
+        "share_downloaded": "Image downloaded",
+        "share_copied_image": "Image copied, paste to share",
     },
 }
 
@@ -744,6 +748,7 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
   margin: 24px 0 24px;
+  align-items: stretch;
 }
 
 .card {
@@ -756,6 +761,8 @@ body {
   overflow: hidden;
   animation: rise 0.8s ease both;
   animation-delay: var(--delay, 0s);
+  min-width: 0;
+  height: 100%;
 }
 
 .card::after {
@@ -837,10 +844,19 @@ body {
   color: #b4b4bd;
   font-size: 13px;
   line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#value-pricing {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .share-image-canvas {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 152px;
   border: 1px solid var(--stroke);
   background: rgba(255, 255, 255, 0.03);
@@ -855,6 +871,7 @@ body {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .share-action-btn {
@@ -1430,6 +1447,20 @@ async function shareTodayImage() {
   return false;
 }
 
+async function copyShareImageToClipboard() {
+  const canvas = drawShareImageCard();
+  if (!canvas) return false;
+  const blob = await canvasToBlob(canvas);
+  if (!blob) return false;
+  if (!navigator.clipboard || typeof ClipboardItem === "undefined") return false;
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
 function updateShareCard() {
   drawShareImageCard();
   const statusEl = document.getElementById("share-status");
@@ -1447,19 +1478,40 @@ function setupShareCard() {
     downloadBtn.addEventListener("click", async () => {
       const ok = await downloadShareImage();
       if (statusEl) {
-        statusEl.textContent = formatI18n(ok ? "share_copied" : "share_copy_failed");
+        statusEl.textContent = formatI18n(ok ? "share_downloaded" : "share_copy_failed");
       }
     });
   }
 
   if (nativeBtn) {
     nativeBtn.addEventListener("click", async () => {
-      const ok = await shareTodayImage();
-      if (statusEl) {
-        statusEl.textContent = formatI18n(ok ? "share_copied" : "share_native_unsupported");
+      if (window.location.protocol === "file:") {
+        const downloaded = await downloadShareImage();
+        if (statusEl) {
+          statusEl.textContent = formatI18n(downloaded ? "share_native_unsupported" : "share_copy_failed");
+        }
+        return;
       }
-      if (!ok) {
-        await downloadShareImage();
+
+      const shared = await shareTodayImage();
+      if (shared) {
+        if (statusEl) {
+          statusEl.textContent = formatI18n("share_copied");
+        }
+        return;
+      }
+
+      const copied = await copyShareImageToClipboard();
+      if (copied) {
+        if (statusEl) {
+          statusEl.textContent = formatI18n("share_copied_image");
+        }
+        return;
+      }
+
+      const downloaded = await downloadShareImage();
+      if (statusEl) {
+        statusEl.textContent = formatI18n(downloaded ? "share_native_unsupported" : "share_copy_failed");
       }
     });
   }
