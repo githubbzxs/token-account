@@ -801,7 +801,7 @@ body {
 }
 
 .metric-value-anim {
-  animation: metricPop 360ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: metricPop 520ms cubic-bezier(0.2, 0.9, 0.2, 1);
   will-change: transform, opacity;
 }
 
@@ -1062,11 +1062,11 @@ body {
 
 @keyframes metricPop {
   0% {
-    transform: translateY(6px) scale(0.985);
-    opacity: 0.28;
+    transform: translateY(4px) scale(0.992);
+    opacity: 0.22;
   }
-  45% {
-    opacity: 0.86;
+  55% {
+    opacity: 0.9;
   }
   100% {
     transform: translateY(0) scale(1);
