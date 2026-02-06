@@ -864,8 +864,10 @@ body {
   max-width: 100%;
   line-height: 1.35;
   font-size: 12px;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 
 .share-image-canvas {
@@ -1293,6 +1295,14 @@ function applyI18n(lang) {
   document.querySelectorAll(".lang-toggle button").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.lang === lang);
   });
+  const pricingEl = document.getElementById("value-pricing");
+  if (pricingEl) {
+    const fullText = (pricingEl.textContent || "").trim();
+    if (fullText) {
+      pricingEl.title = fullText;
+      pricingEl.setAttribute("aria-label", fullText);
+    }
+  }
 }
 
 function labelFor(key) {
