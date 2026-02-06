@@ -64,6 +64,7 @@ I18N = {
         "from": "起始",
         "to": "结束",
         "apply": "应用",
+        "last_1": "近 1 天",
         "last_7": "近 7 天",
         "last_30": "近 30 天",
         "last_90": "近 90 天",
@@ -94,6 +95,12 @@ I18N = {
         "no_data": "无数据",
         "other": "其他",
         "total_label": "总计",
+        "share_card_title": "分享卡片",
+        "share_hint": "点击复制分享文案",
+        "share_copy": "一键复制",
+        "share_copied": "已复制",
+        "share_copy_failed": "复制失败",
+        "share_template": "范围 {range}\\n总计 {total}\\n输入 {input} | 输出 {output}\\n推理 {reasoning} | 缓存 {cached} | 缓存率 {cache_rate}\\n会话 {sessions} | 活跃 {active_days} 天\\n日均 {avg_day} | 会话均值 {avg_session}\\n估算成本 {cost}",
     },
     "en": {
         "title": "Codex Token Usage",
@@ -117,6 +124,7 @@ I18N = {
         "from": "From",
         "to": "To",
         "apply": "Apply",
+        "last_1": "Last 1d",
         "last_7": "Last 7d",
         "last_30": "Last 30d",
         "last_90": "Last 90d",
@@ -147,6 +155,12 @@ I18N = {
         "no_data": "No data",
         "other": "Other",
         "total_label": "Total",
+        "share_card_title": "Share card",
+        "share_hint": "Click to copy share text",
+        "share_copy": "Copy",
+        "share_copied": "Copied",
+        "share_copy_failed": "Copy failed",
+        "share_template": "Range {range}\\nTotal {total}\\nInput {input} | Output {output}\\nReasoning {reasoning} | Cached {cached} | Cache rate {cache_rate}\\nSessions {sessions} | Active days {active_days}\\nPer day {avg_day} | Per session {avg_session}\\nEstimated cost {cost}",
     },
 }
 
@@ -763,6 +777,43 @@ body {
   line-height: 1.4;
 }
 
+.share-text {
+  width: 100%;
+  min-height: 108px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.share-actions {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.share-copy-btn {
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-copy-btn:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.15);
+}
+
 .panel-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -958,6 +1009,7 @@ body {
       <button type="button" id="apply-range" data-i18n="apply">Apply</button>
     </div>
     <div class="range-buttons">
+      <button type="button" data-range="1" data-i18n="last_1">Last 1d</button>
       <button type="button" data-range="7" data-i18n="last_7">Last 7d</button>
       <button type="button" data-range="30" data-i18n="last_30">Last 30d</button>
       <button type="button" data-range="90" data-i18n="last_90">Last 90d</button>
@@ -993,6 +1045,14 @@ body {
       <div class="label" data-i18n="card_cost">Estimated cost (USD)</div>
       <div class="value" id="value-cost">__TOTAL_COST__</div>
       <div class="sub"><span data-i18n="pricing_source">Pricing source</span> <span id="value-pricing">__PRICING_SOURCE__</span></div>
+    </div>
+    <div class="card" style="--delay:0.24s">
+      <div class="label" data-i18n="share_card_title">Share card</div>
+      <textarea id="share-text" class="share-text" readonly></textarea>
+      <div class="share-actions">
+        <button type="button" id="share-copy" class="share-copy-btn" data-i18n="share_copy">Copy</button>
+        <span id="share-status" class="muted" data-i18n="share_hint">Click to copy share text</span>
+      </div>
     </div>
   </div>
 
@@ -1102,6 +1162,57 @@ function formatI18n(key, vars) {
     text = text.replace(`{${k}}`, vars[k]);
   });
   return text;
+}
+
+function buildShareText(metrics) {
+  return formatI18n("share_template", metrics);
+}
+
+function updateShareCard(metrics) {
+  const textEl = document.getElementById("share-text");
+  if (textEl) {
+    textEl.value = buildShareText(metrics);
+    textEl.scrollTop = 0;
+  }
+  const statusEl = document.getElementById("share-status");
+  if (statusEl) {
+    statusEl.textContent = formatI18n("share_hint");
+  }
+}
+
+async function copyShareText() {
+  const textEl = document.getElementById("share-text");
+  if (!textEl || !textEl.value) return false;
+  const text = textEl.value;
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+    }
+  }
+  textEl.focus();
+  textEl.select();
+  try {
+    return document.execCommand("copy");
+  } catch (err) {
+    return false;
+  } finally {
+    textEl.setSelectionRange(text.length, text.length);
+    textEl.blur();
+  }
+}
+
+function setupShareCard() {
+  const copyBtn = document.getElementById("share-copy");
+  const statusEl = document.getElementById("share-status");
+  if (!copyBtn) return;
+  copyBtn.addEventListener("click", async () => {
+    const ok = await copyShareText();
+    if (statusEl) {
+      statusEl.textContent = formatI18n(ok ? "share_copied" : "share_copy_failed");
+    }
+  });
 }
 
 function lineChart(el, labels, values, color) {
@@ -1753,7 +1864,23 @@ function applyRange(startISO, endISO) {
     }
   }
 
-  setText("value-cost", anyPriced ? formatMoneyUSD(totalCost) : "n/a");
+  const shareCost = anyPriced ? formatMoneyUSD(totalCost) : "n/a";
+  setText("value-cost", shareCost);
+
+  updateShareCard({
+    range: `${startISO} ${labelFor("to")} ${endISO}`,
+    total: formatNumber(totalTokens),
+    input: formatNumber(inputTokens),
+    output: formatNumber(outputTokens),
+    reasoning: formatNumber(reasoningTokens),
+    cached: formatNumber(cachedTokens),
+    cache_rate: `${(cacheRate * 100).toFixed(1)}%`,
+    sessions: formatNumber(sessions),
+    active_days: formatNumber(activeDays),
+    avg_day: formatNumber(avgPerDay),
+    avg_session: formatNumber(avgPerSession),
+    cost: shareCost,
+  });
 
   applyI18n(currentLang);
 }
@@ -1937,6 +2064,7 @@ window.addEventListener("load", () => {
   setupRangeControls();
   setupDailyChartZoom();
   setupImportExport();
+  setupShareCard();
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
   applyRange(
