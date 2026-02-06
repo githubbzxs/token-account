@@ -186,7 +186,9 @@ PRICING_DEFAULT = {
     "source_url": "https://platform.openai.com/pricing",
     "source_date": "2025-12-27",
     "aliases": {
-        "gpt-5.2-codex": "gpt-5.2"
+        "gpt-5.2-codex": "gpt-5.2",
+        "gpt-5.3-codex": "gpt-5.2",
+        "gpt-5.3-codex-latest": "gpt-5.2",
     },
     "prices": {
         "gpt-5.2": {"input": "1.75", "cached_input": "0.175", "output": "14.00"},
@@ -282,6 +284,8 @@ def resolve_pricing(model: str, prices: dict, aliases: dict) -> dict | None:
     for key in prices.keys():
         if base.startswith(key + "-"):
             return prices[key]
+    if "gpt-5.3" in base:
+        return prices.get("gpt-5.2") or prices.get("gpt-5")
     if "gpt-5.2" in base:
         return prices.get("gpt-5.2")
     if "gpt-5.1" in base:
@@ -1231,13 +1235,32 @@ function aggregateModels(dayLabels) {
 function resolvePricing(model) {
   const pricing = (DATA.pricing && DATA.pricing.prices) || {};
   const aliases = (DATA.pricing && DATA.pricing.aliases) || {};
-  let name = model;
-  const seen = new Set();
-  while (aliases[name] && !seen.has(name)) {
-    seen.add(name);
-    name = aliases[name];
+  const resolveAlias = (value) => {
+    let name = value;
+    const seen = new Set();
+    while (aliases[name] && !seen.has(name)) {
+      seen.add(name);
+      name = aliases[name];
+    }
+    return name;
+  };
+
+  const modelName = resolveAlias(String(model || ""));
+  if (pricing[modelName]) return pricing[modelName];
+
+  const base = modelName.split(":")[0];
+  const baseName = resolveAlias(base);
+  if (pricing[baseName]) return pricing[baseName];
+
+  for (const key of Object.keys(pricing)) {
+    if (baseName.startsWith(`${key}-`)) return pricing[key];
   }
-  return pricing[name] || null;
+
+  if (baseName.includes("gpt-5.3")) return pricing["gpt-5.2"] || pricing["gpt-5"] || null;
+  if (baseName.includes("gpt-5.2")) return pricing["gpt-5.2"] || null;
+  if (baseName.includes("gpt-5.1")) return pricing["gpt-5.1"] || null;
+  if (baseName.startsWith("gpt-5")) return pricing["gpt-5"] || null;
+  return null;
 }
 
 function costUSD(rec, pricing) {
