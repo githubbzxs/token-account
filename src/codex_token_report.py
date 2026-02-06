@@ -796,58 +796,12 @@ body {
   font-size: 26px;
   font-weight: 700;
   letter-spacing: 0.2px;
-}
-
-.swift-value {
-  display: inline-flex;
-  align-items: baseline;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
 }
 
-.swift-cell {
-  position: relative;
-  display: inline-flex;
-  height: 1em;
-  line-height: 1em;
-  overflow: hidden;
-  min-width: 0.52em;
-}
-
-.swift-cell.swift-space {
-  min-width: 0.22em;
-}
-
-.swift-static {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.swift-change {
-  align-items: center;
-  justify-content: center;
-}
-
-.swift-prev,
-.swift-next {
-  position: absolute;
-  inset: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  will-change: transform, opacity, filter;
-}
-
-.swift-prev {
-  animation: swiftOut 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.swift-next {
-  transform: translateY(100%);
-  opacity: 0;
-  filter: blur(1px);
-  animation: swiftIn 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.metric-value-anim {
+  animation: metricPop 220ms ease-out;
 }
 
 .card .sub {
@@ -1105,29 +1059,14 @@ body {
   }
 }
 
-@keyframes swiftOut {
+@keyframes metricPop {
   0% {
-    transform: translateY(0);
-    opacity: 1;
-    filter: blur(0);
-  }
-  100% {
-    transform: translateY(-95%);
-    opacity: 0;
-    filter: blur(1.5px);
-  }
-}
-
-@keyframes swiftIn {
-  0% {
-    transform: translateY(100%);
-    opacity: 0;
-    filter: blur(1.5px);
+    transform: translateY(3px);
+    opacity: 0.45;
   }
   100% {
     transform: translateY(0);
     opacity: 1;
-    filter: blur(0);
   }
 }
 </style>
@@ -1328,52 +1267,18 @@ function toLocalISODate(d) {
   return `${y}-${m}-${day}`;
 }
 
-function metricCharHTML(ch) {
-  if (!ch || ch === " ") return "&nbsp;";
-  return escapeHTML(ch);
-}
-
-function renderSwiftValue(el, text) {
+function animateMetricValue(el, text) {
   const nextText = String(text ?? "");
-  const prevText = el.dataset.swiftText != null ? el.dataset.swiftText : (el.textContent || "");
+  const prevText = el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || "");
   if (prevText === nextText) return;
   const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (prevText.length !== nextText.length) {
-    el.textContent = nextText;
-    el.dataset.swiftText = nextText;
-    el.classList.add("swift-value");
-    el.setAttribute("aria-label", nextText);
-    return;
-  }
-  if (!prevText || reduceMotion) {
-    el.textContent = nextText;
-    el.dataset.swiftText = nextText;
-    el.classList.add("swift-value");
-    return;
-  }
-
-  const maxLen = Math.max(prevText.length, nextText.length);
-  const prevPad = prevText.padStart(maxLen, " ");
-  const nextPad = nextText.padStart(maxLen, " ");
-  let htmlParts = "";
-  for (let i = 0; i < maxLen; i++) {
-    const prevCh = prevPad[i];
-    const nextCh = nextPad[i];
-    if (prevCh === " " && nextCh === " " && i < maxLen - 1) {
-      htmlParts += `<span class="swift-cell swift-space">&nbsp;</span>`;
-      continue;
-    }
-    if (prevCh === nextCh) {
-      htmlParts += `<span class="swift-cell swift-static"><span>${metricCharHTML(nextCh)}</span></span>`;
-      continue;
-    }
-    htmlParts += `<span class="swift-cell swift-change"><span class="swift-prev">${metricCharHTML(prevCh)}</span><span class="swift-next">${metricCharHTML(nextCh)}</span></span>`;
-  }
-
-  el.classList.add("swift-value");
-  el.innerHTML = htmlParts;
-  el.dataset.swiftText = nextText;
+  el.textContent = nextText;
+  el.dataset.metricText = nextText;
   el.setAttribute("aria-label", nextText);
+  if (reduceMotion) return;
+  el.classList.remove("metric-value-anim");
+  void el.offsetWidth;
+  el.classList.add("metric-value-anim");
 }
 
 function setDisplayText(id, value, animate) {
@@ -1382,10 +1287,11 @@ function setDisplayText(id, value, animate) {
   const text = String(value ?? "");
   if (animate === false) {
     el.textContent = text;
-    el.dataset.swiftText = text;
+    el.dataset.metricText = text;
+    el.setAttribute("aria-label", text);
     return;
   }
-  renderSwiftValue(el, text);
+  animateMetricValue(el, text);
 }
 
 function readDailyValue(dayISO, key) {
