@@ -95,12 +95,17 @@ I18N = {
         "no_data": "无数据",
         "other": "其他",
         "total_label": "总计",
-        "share_card_title": "分享卡片",
-        "share_hint": "点击复制分享文案",
+        "share_card_title": "今日分享图",
+        "share_hint": "自动同步最新数据，可下载或分享今日图片",
         "share_copy": "一键复制",
-        "share_copied": "已复制",
-        "share_copy_failed": "复制失败",
+        "share_copied": "图片已准备好",
+        "share_copy_failed": "生成图片失败",
         "share_template": "范围 {range}\\n总计 {total}\\n输入 {input} | 输出 {output}\\n推理 {reasoning} | 缓存 {cached} | 缓存率 {cache_rate}\\n会话 {sessions} | 活跃 {active_days} 天\\n日均 {avg_day} | 会话均值 {avg_session}\\n估算成本 {cost}",
+        "share_download": "下载图片",
+        "share_native": "分享图片",
+        "today_usage": "今天用量",
+        "share_native_unsupported": "浏览器不支持直接分享，已改为下载",
+        "auto_sync": "自动同步最新数据",
     },
     "en": {
         "title": "Codex Token Usage",
@@ -155,12 +160,17 @@ I18N = {
         "no_data": "No data",
         "other": "Other",
         "total_label": "Total",
-        "share_card_title": "Share card",
-        "share_hint": "Click to copy share text",
+        "share_card_title": "Today's share card",
+        "share_hint": "Auto-sync latest data, download or share today's image",
         "share_copy": "Copy",
-        "share_copied": "Copied",
-        "share_copy_failed": "Copy failed",
+        "share_copied": "Image ready",
+        "share_copy_failed": "Image generation failed",
         "share_template": "Range {range}\\nTotal {total}\\nInput {input} | Output {output}\\nReasoning {reasoning} | Cached {cached} | Cache rate {cache_rate}\\nSessions {sessions} | Active days {active_days}\\nPer day {avg_day} | Per session {avg_session}\\nEstimated cost {cost}",
+        "share_download": "Download image",
+        "share_native": "Share image",
+        "today_usage": "Today's usage",
+        "share_native_unsupported": "Direct share is unavailable, downloaded instead",
+        "auto_sync": "Auto-sync latest data",
     },
 }
 
@@ -770,6 +780,58 @@ body {
   letter-spacing: 0.2px;
 }
 
+.swift-value {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.swift-cell {
+  position: relative;
+  display: inline-flex;
+  height: 1em;
+  line-height: 1em;
+  overflow: hidden;
+  min-width: 0.52em;
+}
+
+.swift-cell.swift-space {
+  min-width: 0.22em;
+}
+
+.swift-static {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swift-change {
+  align-items: center;
+  justify-content: center;
+}
+
+.swift-prev,
+.swift-next {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity, filter;
+}
+
+.swift-prev {
+  animation: swiftOut 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.swift-next {
+  transform: translateY(100%);
+  opacity: 0;
+  filter: blur(1px);
+  animation: swiftIn 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .card .sub {
   margin-top: 8px;
   color: #b4b4bd;
@@ -777,17 +839,14 @@ body {
   line-height: 1.4;
 }
 
-.share-text {
+.share-image-canvas {
   width: 100%;
-  min-height: 108px;
+  height: 152px;
   border: 1px solid var(--stroke);
   background: rgba(255, 255, 255, 0.03);
   color: var(--text);
   border-radius: 12px;
-  padding: 10px 12px;
-  font-size: 12px;
-  line-height: 1.45;
-  resize: vertical;
+  display: block;
 }
 
 .share-actions {
@@ -798,7 +857,7 @@ body {
   flex-wrap: wrap;
 }
 
-.share-copy-btn {
+.share-action-btn {
   border: 1px solid var(--stroke);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
@@ -809,7 +868,7 @@ body {
   transition: all 0.2s ease;
 }
 
-.share-copy-btn:hover {
+.share-action-btn:hover {
   border-color: rgba(34, 211, 238, 0.5);
   background: rgba(34, 211, 238, 0.15);
 }
@@ -983,6 +1042,32 @@ body {
     gap: 10px;
   }
 }
+
+@keyframes swiftOut {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: translateY(-95%);
+    opacity: 0;
+    filter: blur(1.5px);
+  }
+}
+
+@keyframes swiftIn {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+    filter: blur(1.5px);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
 </style>
 </head>
 <body>
@@ -1048,10 +1133,11 @@ body {
     </div>
     <div class="card" style="--delay:0.24s">
       <div class="label" data-i18n="share_card_title">Share card</div>
-      <textarea id="share-text" class="share-text" readonly></textarea>
+      <canvas id="share-image-canvas" class="share-image-canvas" width="960" height="420"></canvas>
       <div class="share-actions">
-        <button type="button" id="share-copy" class="share-copy-btn" data-i18n="share_copy">Copy</button>
-        <span id="share-status" class="muted" data-i18n="share_hint">Click to copy share text</span>
+        <button type="button" id="share-image-download" class="share-action-btn" data-i18n="share_download">Download image</button>
+        <button type="button" id="share-image-native" class="share-action-btn" data-i18n="share_native">Share image</button>
+        <span id="share-status" class="muted" data-i18n="share_hint">Auto-sync latest data</span>
       </div>
     </div>
   </div>
@@ -1164,53 +1250,296 @@ function formatI18n(key, vars) {
   return text;
 }
 
-function buildShareText(metrics) {
-  return formatI18n("share_template", metrics);
+function toLocalISODate(d) {
+  const date = d || new Date();
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
-function updateShareCard(metrics) {
-  const textEl = document.getElementById("share-text");
-  if (textEl) {
-    textEl.value = buildShareText(metrics);
-    textEl.scrollTop = 0;
+function metricCharHTML(ch) {
+  if (!ch || ch === " ") return "&nbsp;";
+  return escapeHTML(ch);
+}
+
+function renderSwiftValue(el, text) {
+  const nextText = String(text ?? "");
+  const prevText = el.dataset.swiftText != null ? el.dataset.swiftText : (el.textContent || "");
+  if (prevText === nextText) return;
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!prevText || reduceMotion) {
+    el.textContent = nextText;
+    el.dataset.swiftText = nextText;
+    el.classList.add("swift-value");
+    return;
   }
+
+  const maxLen = Math.max(prevText.length, nextText.length);
+  const prevPad = prevText.padStart(maxLen, " ");
+  const nextPad = nextText.padStart(maxLen, " ");
+  let htmlParts = "";
+  for (let i = 0; i < maxLen; i++) {
+    const prevCh = prevPad[i];
+    const nextCh = nextPad[i];
+    if (prevCh === " " && nextCh === " " && i < maxLen - 1) {
+      htmlParts += `<span class="swift-cell swift-space">&nbsp;</span>`;
+      continue;
+    }
+    if (prevCh === nextCh) {
+      htmlParts += `<span class="swift-cell swift-static"><span>${metricCharHTML(nextCh)}</span></span>`;
+      continue;
+    }
+    htmlParts += `<span class="swift-cell swift-change"><span class="swift-prev">${metricCharHTML(prevCh)}</span><span class="swift-next">${metricCharHTML(nextCh)}</span></span>`;
+  }
+
+  el.classList.add("swift-value");
+  el.innerHTML = htmlParts;
+  el.dataset.swiftText = nextText;
+  el.setAttribute("aria-label", nextText);
+}
+
+function setDisplayText(id, value, animate) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = String(value ?? "");
+  if (animate === false) {
+    el.textContent = text;
+    el.dataset.swiftText = text;
+    return;
+  }
+  renderSwiftValue(el, text);
+}
+
+function readDailyValue(dayISO, key) {
+  const labels = (DATA.daily && DATA.daily.labels) || [];
+  const idx = labels.indexOf(dayISO);
+  if (idx < 0) return 0;
+  const arr = (DATA.daily && DATA.daily[key]) || [];
+  return Number(arr[idx] || 0);
+}
+
+function getTodayUsageSnapshot() {
+  const dayISO = toLocalISODate();
+  const input = readDailyValue(dayISO, "input");
+  const output = readDailyValue(dayISO, "output");
+  const reasoning = readDailyValue(dayISO, "reasoning");
+  const cached = readDailyValue(dayISO, "cached");
+  const total = readDailyValue(dayISO, "total");
+  const cacheRate = input ? (cached / input) : 0;
+  return { dayISO, input, output, reasoning, cached, total, cacheRate };
+}
+
+function drawShareImageCard() {
+  const canvas = document.getElementById("share-image-canvas");
+  if (!canvas) return null;
+  const rect = canvas.getBoundingClientRect();
+  const cssW = Math.max(320, Math.round(rect.width || 320));
+  const cssH = Math.max(152, Math.round(rect.height || 152));
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const targetW = Math.round(cssW * dpr);
+  const targetH = Math.round(cssH * dpr);
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+  }
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const grad = ctx.createLinearGradient(0, 0, cssW, cssH);
+  grad.addColorStop(0, "#111318");
+  grad.addColorStop(1, "#1a1f2a");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, cssW, cssH);
+
+  const snapshot = getTodayUsageSnapshot();
+  const totalText = formatNumber(snapshot.total);
+  const subtitle = `${labelFor("today_usage")} ${snapshot.dayISO}`;
+  const line1 = `${labelFor("input")} ${formatNumber(snapshot.input)} | ${labelFor("output")} ${formatNumber(snapshot.output)}`;
+  const line2 = `${labelFor("reasoning")} ${formatNumber(snapshot.reasoning)} | ${labelFor("cached")} ${formatNumber(snapshot.cached)}`;
+  const line3 = `${labelFor("cache_rate")} ${(snapshot.cacheRate * 100).toFixed(1)}%`;
+
+  ctx.fillStyle = "rgba(34,211,238,0.16)";
+  ctx.fillRect(14, 14, cssW - 28, 2);
+
+  ctx.fillStyle = "#9ca3af";
+  ctx.font = "12px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
+  ctx.fillText(subtitle, 16, 34);
+
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = "700 32px 'Space Grotesk', 'IBM Plex Sans', sans-serif";
+  ctx.fillText(totalText, 16, 76);
+
+  ctx.fillStyle = "#d4d4d8";
+  ctx.font = "12px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
+  ctx.fillText(line1, 16, 102);
+  ctx.fillText(line2, 16, 122);
+  ctx.fillText(line3, 16, 142);
+
+  ctx.fillStyle = "rgba(248,250,252,0.78)";
+  ctx.font = "12px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
+  const brand = "Codex Token Report";
+  const brandW = ctx.measureText(brand).width;
+  ctx.fillText(brand, cssW - brandW - 16, cssH - 12);
+  return canvas;
+}
+
+function canvasToBlob(canvas) {
+  return new Promise(resolve => {
+    canvas.toBlob(blob => resolve(blob), "image/png");
+  });
+}
+
+async function downloadShareImage() {
+  const canvas = drawShareImageCard();
+  if (!canvas) return false;
+  const blob = await canvasToBlob(canvas);
+  if (!blob) return false;
+  const fileName = `codex-today-${toLocalISODate()}.png`;
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 1000);
+  return true;
+}
+
+async function shareTodayImage() {
+  const canvas = drawShareImageCard();
+  if (!canvas) return false;
+  const blob = await canvasToBlob(canvas);
+  if (!blob) return false;
+  const file = new File([blob], `codex-today-${toLocalISODate()}.png`, { type: "image/png" });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: labelFor("share_card_title"),
+        text: `${labelFor("today_usage")}: ${formatNumber(getTodayUsageSnapshot().total)}`,
+      });
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+  return false;
+}
+
+function updateShareCard() {
+  drawShareImageCard();
   const statusEl = document.getElementById("share-status");
   if (statusEl) {
     statusEl.textContent = formatI18n("share_hint");
   }
 }
 
-async function copyShareText() {
-  const textEl = document.getElementById("share-text");
-  if (!textEl || !textEl.value) return false;
-  const text = textEl.value;
-  if (navigator.clipboard && window.isSecureContext) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch (err) {
-    }
+function setupShareCard() {
+  const downloadBtn = document.getElementById("share-image-download");
+  const nativeBtn = document.getElementById("share-image-native");
+  const statusEl = document.getElementById("share-status");
+
+  if (downloadBtn) {
+    downloadBtn.addEventListener("click", async () => {
+      const ok = await downloadShareImage();
+      if (statusEl) {
+        statusEl.textContent = formatI18n(ok ? "share_copied" : "share_copy_failed");
+      }
+    });
   }
-  textEl.focus();
-  textEl.select();
+
+  if (nativeBtn) {
+    nativeBtn.addEventListener("click", async () => {
+      const ok = await shareTodayImage();
+      if (statusEl) {
+        statusEl.textContent = formatI18n(ok ? "share_copied" : "share_native_unsupported");
+      }
+      if (!ok) {
+        await downloadShareImage();
+      }
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    drawShareImageCard();
+  });
+}
+
+let latestDataStamp = (DATA.meta && DATA.meta.generated_at) || "";
+let syncInFlight = false;
+
+function getDataStamp(doc) {
+  if (doc && doc.meta && doc.meta.generated_at) return String(doc.meta.generated_at);
+  const start = doc && doc.range ? doc.range.start : "";
+  const end = doc && doc.range ? doc.range.end : "";
+  const count = doc && doc.daily && Array.isArray(doc.daily.labels) ? doc.daily.labels.length : 0;
+  return `${start}:${end}:${count}`;
+}
+
+function applyLatestData(nextData) {
+  if (!nextData || !nextData.range || !nextData.daily || !Array.isArray(nextData.daily.labels)) {
+    return false;
+  }
+  DATA.range = nextData.range;
+  DATA.daily = nextData.daily;
+  DATA.daily_models = nextData.daily_models || {};
+  DATA.hourly = nextData.hourly || { labels: [], total: [] };
+  DATA.hourly_daily = nextData.hourly_daily || {};
+  DATA.session_spans = nextData.session_spans || [];
+  DATA.events = nextData.events || [];
+  DATA.mix = nextData.mix || [];
+  DATA.model_mix = nextData.model_mix || [];
+  DATA.pricing = nextData.pricing || DATA.pricing;
+  DATA.meta = nextData.meta || {};
+  rebuildLabelIndex();
+
+  const minISO = (DATA.range && DATA.range.start) || "";
+  const maxISO = (DATA.range && DATA.range.end) || "";
+  if (!minISO || !maxISO) return true;
+  syncRangeControls(minISO, maxISO);
+  const desiredStart = clampISO(currentRange.start || minISO, minISO, maxISO);
+  const desiredEnd = clampISO(currentRange.end || maxISO, minISO, maxISO);
+  applyRange(desiredStart, desiredEnd);
+  return true;
+}
+
+async function syncLatestData() {
+  if (window.location.protocol === "file:") return false;
+  if (syncInFlight) return false;
+  syncInFlight = true;
   try {
-    return document.execCommand("copy");
+    const response = await fetch(`data.json?ts=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) return false;
+    const incoming = await response.json();
+    const incomingStamp = getDataStamp(incoming);
+    if (incomingStamp === latestDataStamp) return false;
+    const ok = applyLatestData(incoming);
+    if (ok) {
+      latestDataStamp = incomingStamp;
+    }
+    return ok;
   } catch (err) {
     return false;
   } finally {
-    textEl.setSelectionRange(text.length, text.length);
-    textEl.blur();
+    syncInFlight = false;
   }
 }
 
-function setupShareCard() {
-  const copyBtn = document.getElementById("share-copy");
-  const statusEl = document.getElementById("share-status");
-  if (!copyBtn) return;
-  copyBtn.addEventListener("click", async () => {
-    const ok = await copyShareText();
-    if (statusEl) {
-      statusEl.textContent = formatI18n(ok ? "share_copied" : "share_copy_failed");
+function setupAutoSync() {
+  syncLatestData();
+  window.setInterval(() => {
+    syncLatestData();
+  }, 15000);
+  window.addEventListener("focus", () => {
+    syncLatestData();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      syncLatestData();
     }
   });
 }
@@ -1344,6 +1673,7 @@ let currentRange = {
   start: (DATA.range && DATA.range.start) || "",
   end: (DATA.range && DATA.range.end) || "",
 };
+let hasInitialMetricsRender = false;
 
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, ch => ({
@@ -1754,6 +2084,7 @@ function applyRange(startISO, endISO) {
   const avgPerDay = activeDays ? Math.round(totalTokens / activeDays) : 0;
   const avgPerSession = sessions ? Math.round(totalTokens / sessions) : 0;
   const cacheRate = inputTokens ? (cachedTokens / inputTokens) : 0;
+  const animateMetrics = hasInitialMetricsRender;
 
   const banner = document.getElementById("range-banner");
   if (banner) {
@@ -1765,25 +2096,17 @@ function applyRange(startISO, endISO) {
   if (startInput) startInput.value = startISO;
   if (endInput) endInput.value = endISO;
 
-  const rangeText = document.getElementById("range-text");
-  if (rangeText) rangeText.textContent = `${startISO} to ${endISO}`;
-  const sessionsEl = document.getElementById("sessions-count");
-  if (sessionsEl) sessionsEl.textContent = formatNumber(sessions);
-  const activeDaysEl = document.getElementById("active-days");
-  if (activeDaysEl) activeDaysEl.textContent = formatNumber(activeDays);
-
-  const setText = (id, value) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
-  };
-  setText("value-total", formatNumber(totalTokens));
-  setText("value-input", formatNumber(inputTokens));
-  setText("value-output", formatNumber(outputTokens));
-  setText("value-cached", formatNumber(cachedTokens));
-  setText("value-reasoning", formatNumber(reasoningTokens));
-  setText("value-cache-rate", `${(cacheRate * 100).toFixed(1)}%`);
-  setText("value-avg-day", formatNumber(avgPerDay));
-  setText("value-avg-session", formatNumber(avgPerSession));
+  setDisplayText("range-text", `${startISO} to ${endISO}`, false);
+  setDisplayText("sessions-count", formatNumber(sessions), animateMetrics);
+  setDisplayText("active-days", formatNumber(activeDays), animateMetrics);
+  setDisplayText("value-total", formatNumber(totalTokens), animateMetrics);
+  setDisplayText("value-input", formatNumber(inputTokens), animateMetrics);
+  setDisplayText("value-output", formatNumber(outputTokens), animateMetrics);
+  setDisplayText("value-cached", formatNumber(cachedTokens), animateMetrics);
+  setDisplayText("value-reasoning", formatNumber(reasoningTokens), animateMetrics);
+  setDisplayText("value-cache-rate", `${(cacheRate * 100).toFixed(1)}%`, animateMetrics);
+  setDisplayText("value-avg-day", formatNumber(avgPerDay), animateMetrics);
+  setDisplayText("value-avg-session", formatNumber(avgPerSession), animateMetrics);
 
   lineChart(document.getElementById("chart-daily"), labels, totals, "#22D3EE");
   renderTokenMix(inputTokens, outputTokens, reasoningTokens, cachedTokens);
@@ -1865,22 +2188,9 @@ function applyRange(startISO, endISO) {
   }
 
   const shareCost = anyPriced ? formatMoneyUSD(totalCost) : "n/a";
-  setText("value-cost", shareCost);
-
-  updateShareCard({
-    range: `${startISO} ${labelFor("to")} ${endISO}`,
-    total: formatNumber(totalTokens),
-    input: formatNumber(inputTokens),
-    output: formatNumber(outputTokens),
-    reasoning: formatNumber(reasoningTokens),
-    cached: formatNumber(cachedTokens),
-    cache_rate: `${(cacheRate * 100).toFixed(1)}%`,
-    sessions: formatNumber(sessions),
-    active_days: formatNumber(activeDays),
-    avg_day: formatNumber(avgPerDay),
-    avg_session: formatNumber(avgPerSession),
-    cost: shareCost,
-  });
+  setDisplayText("value-cost", shareCost, animateMetrics);
+  updateShareCard();
+  hasInitialMetricsRender = true;
 
   applyI18n(currentLang);
 }
@@ -2065,6 +2375,7 @@ window.addEventListener("load", () => {
   setupDailyChartZoom();
   setupImportExport();
   setupShareCard();
+  setupAutoSync();
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
   applyRange(
@@ -2122,7 +2433,7 @@ def main() -> int:
     parser.add_argument("--days", type=int, help="Limit to last N days when no dates set.")
     parser.add_argument("--out", default="report", help="Output directory for report.")
     parser.add_argument("--pricing-file", help="Path to pricing json.")
-    parser.add_argument("--json", action="store_true", help="Write data.json alongside report.")
+    parser.add_argument("--json", action="store_true", help="Deprecated: data.json is always written.")
     parser.add_argument("--open", action="store_true", help="Open report in default browser.")
     args = parser.parse_args()
     try:
@@ -2322,6 +2633,10 @@ def main() -> int:
         "top_events_html": top_events_html,
         "model_table_html": model_table_html,
     }
+    data["meta"] = {
+        "generated_at": summary["generated_at"],
+        "source_path": str(session_root),
+    }
 
     html_text = render_html(data, summary, empty)
     out_dir = Path(args.out)
@@ -2329,9 +2644,8 @@ def main() -> int:
     index_path = out_dir / "index.html"
     index_path.write_text(html_text, encoding="utf-8")
 
-    if args.json:
-        data_path = out_dir / "data.json"
-        data_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    data_path = out_dir / "data.json"
+    data_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
     print(f"Report written to {index_path}")
     if args.open:
