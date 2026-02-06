@@ -1008,7 +1008,8 @@ body {
     </div>
     <div class="panel" style="--delay:0.37s">
       <h3 data-i18n="hourly_chart">Hourly pattern</h3>
-      <div id="chart-hourly" class="chart small"></div>
+      <div id="chart-hourly" class="chart small zoomable"></div>
+      <div class="chart-tip" data-i18n="zoom_hint">Use mouse wheel to zoom</div>
     </div>
     <div class="panel" style="--delay:0.41s">
       <h3 data-i18n="top_days">Top days</h3>
@@ -1794,40 +1795,44 @@ function setupRangeControls() {
 }
 
 function setupDailyChartZoom() {
-  const chartEl = document.getElementById("chart-daily");
-  if (!chartEl) return;
-  chartEl.addEventListener("wheel", (event) => {
-    event.preventDefault();
-    const labels = (DATA.daily && DATA.daily.labels) || [];
-    if (!labels.length) return;
+  const bindZoom = (chartEl) => {
+    if (!chartEl) return;
+    chartEl.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const labels = (DATA.daily && DATA.daily.labels) || [];
+      if (!labels.length) return;
 
-    const startIdx = labelIndex.has(currentRange.start) ? labelIndex.get(currentRange.start) : 0;
-    const endIdx = labelIndex.has(currentRange.end) ? labelIndex.get(currentRange.end) : labels.length - 1;
-    const visible = Math.max(1, endIdx - startIdx + 1);
+      const startIdx = labelIndex.has(currentRange.start) ? labelIndex.get(currentRange.start) : 0;
+      const endIdx = labelIndex.has(currentRange.end) ? labelIndex.get(currentRange.end) : labels.length - 1;
+      const visible = Math.max(1, endIdx - startIdx + 1);
 
-    const nextVisible = event.deltaY > 0
-      ? Math.min(labels.length, Math.round(visible * 1.2))
-      : Math.max(1, Math.round(visible * 0.8));
-    if (nextVisible === visible) return;
+      const nextVisible = event.deltaY > 0
+        ? Math.min(labels.length, Math.round(visible * 1.2))
+        : Math.max(1, Math.round(visible * 0.8));
+      if (nextVisible === visible) return;
 
-    const rect = chartEl.getBoundingClientRect();
-    const ratioRaw = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0.5;
-    const ratio = Math.min(1, Math.max(0, ratioRaw));
-    const anchor = Math.round(startIdx + (visible - 1) * ratio);
+      const rect = chartEl.getBoundingClientRect();
+      const ratioRaw = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0.5;
+      const ratio = Math.min(1, Math.max(0, ratioRaw));
+      const anchor = Math.round(startIdx + (visible - 1) * ratio);
 
-    let nextStart = Math.round(anchor - (nextVisible - 1) * ratio);
-    let nextEnd = nextStart + nextVisible - 1;
+      let nextStart = Math.round(anchor - (nextVisible - 1) * ratio);
+      let nextEnd = nextStart + nextVisible - 1;
 
-    if (nextStart < 0) {
-      nextStart = 0;
-      nextEnd = nextVisible - 1;
-    }
-    if (nextEnd >= labels.length) {
-      nextEnd = labels.length - 1;
-      nextStart = Math.max(0, nextEnd - nextVisible + 1);
-    }
-    applyRange(labels[nextStart], labels[nextEnd]);
-  }, { passive: false });
+      if (nextStart < 0) {
+        nextStart = 0;
+        nextEnd = nextVisible - 1;
+      }
+      if (nextEnd >= labels.length) {
+        nextEnd = labels.length - 1;
+        nextStart = Math.max(0, nextEnd - nextVisible + 1);
+      }
+      applyRange(labels[nextStart], labels[nextEnd]);
+    }, { passive: false });
+  };
+
+  bindZoom(document.getElementById("chart-daily"));
+  bindZoom(document.getElementById("chart-hourly"));
 }
 
 window.addEventListener("load", () => {
