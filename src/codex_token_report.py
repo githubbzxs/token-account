@@ -1193,6 +1193,7 @@ function applyLatestData(nextData) {
   DATA.pricing = nextData.pricing || DATA.pricing;
   DATA.meta = nextData.meta || {};
   rebuildLabelIndex();
+  rebuildMinuteEventMap();
 
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
@@ -1364,6 +1365,28 @@ let currentRange = {
   end: (DATA.range && DATA.range.end) || "",
 };
 let hasInitialMetricsRender = false;
+const MINUTE_MS = 60_000;
+const MAX_CHART_POINTS = 1600;
+let minuteEventMap = new Map();
+
+function parseMinuteMs(ts) {
+  if (!ts) return null;
+  const iso = String(ts).replace(" ", "T");
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return null;
+  return Math.floor(ms / MINUTE_MS) * MINUTE_MS;
+}
+
+function rebuildMinuteEventMap() {
+  const next = new Map();
+  (DATA.events || []).forEach(ev => {
+    if (!ev || !ev.ts) return;
+    const minuteMs = parseMinuteMs(ev.ts);
+    if (minuteMs == null) return;
+    next.set(minuteMs, (next.get(minuteMs) || 0) + Number(ev.value || 0));
+  });
+  minuteEventMap = next;
+}
 
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, ch => ({
@@ -1402,24 +1425,33 @@ function buildMinuteSeries(startISO, endISO) {
   const labels = [];
   const totals = [];
   if (!startISO || !endISO) return { labels, totals };
-  const start = new Date(`${startISO}T00:00:00`);
-  const end = new Date(`${endISO}T23:59:00`);
-  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start > end) {
+  const startMs = new Date(`${startISO}T00:00:00`).getTime();
+  const endMs = new Date(`${endISO}T23:59:00`).getTime();
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || startMs > endMs) {
     return { labels, totals };
   }
+  const totalMinutes = Math.floor((endMs - startMs) / MINUTE_MS) + 1;
+  const bucketMinutes = Math.max(1, Math.ceil(totalMinutes / MAX_CHART_POINTS));
 
-  const minuteMap = new Map();
-  (DATA.events || []).forEach(ev => {
-    if (!ev || !ev.ts || !ev.day) return;
-    if (ev.day < startISO || ev.day > endISO) return;
-    const minuteKey = String(ev.ts).slice(0, 16);
-    minuteMap.set(minuteKey, (minuteMap.get(minuteKey) || 0) + Number(ev.value || 0));
-  });
+  for (let bucketStart = startMs; bucketStart <= endMs; bucketStart += bucketMinutes * MINUTE_MS) {
+    const bucketEnd = Math.min(endMs, bucketStart + (bucketMinutes - 1) * MINUTE_MS);
+    let peakValue = 0;
+    let peakMinute = bucketEnd;
+    for (let minute = bucketStart; minute <= bucketEnd; minute += MINUTE_MS) {
+      const current = Number(minuteEventMap.get(minute) || 0);
+      if (current >= peakValue) {
+        peakValue = current;
+        peakMinute = minute;
+      }
+    }
+    labels.push(formatMinuteLabel(new Date(peakMinute)));
+    totals.push(peakValue);
+  }
 
-  for (let t = start.getTime(); t <= end.getTime(); t += 60_000) {
-    const key = formatMinuteLabel(new Date(t));
-    labels.push(key);
-    totals.push(minuteMap.get(key) || 0);
+  const endLabel = formatMinuteLabel(new Date(endMs));
+  if (labels[labels.length - 1] !== endLabel) {
+    labels.push(endLabel);
+    totals.push(Number(minuteEventMap.get(endMs) || 0));
   }
   return { labels, totals };
 }
@@ -1667,6 +1699,7 @@ function mergeImportedData(datasets) {
   DATA.session_spans = merged.session_spans;
   DATA.range = merged.range;
   rebuildLabelIndex();
+  rebuildMinuteEventMap();
   syncRangeControls(DATA.range.start, DATA.range.end);
   applyRange(DATA.range.start, DATA.range.end);
   return true;
@@ -1901,6 +1934,29 @@ function setupDailyChartZoom() {
       const pxPerDay = rectWidth > 0 ? rectWidth / Math.max(1, visible - 1) : 12;
       return Math.round(pixels / Math.max(pxPerDay, 1));
     };
+    let queuedRange = null;
+    let applyTimer = null;
+    const scheduleRangeApply = (startISO, endISO) => {
+      queuedRange = { startISO, endISO };
+      if (applyTimer !== null) return;
+      applyTimer = window.setTimeout(() => {
+        applyTimer = null;
+        if (!queuedRange) return;
+        const next = queuedRange;
+        queuedRange = null;
+        applyRange(next.startISO, next.endISO);
+      }, 64);
+    };
+    const flushScheduledRange = () => {
+      if (!queuedRange) return;
+      if (applyTimer !== null) {
+        clearTimeout(applyTimer);
+        applyTimer = null;
+      }
+      const next = queuedRange;
+      queuedRange = null;
+      applyRange(next.startISO, next.endISO);
+    };
     const panByDays = (deltaDays, labels, baseWindow) => {
       if (!deltaDays || !labels.length) return;
       const activeWindow = baseWindow || getWindowState(labels);
@@ -1910,7 +1966,7 @@ function setupDailyChartZoom() {
       if (nextStart < 0) nextStart = 0;
       if (nextStart > maxStart) nextStart = maxStart;
       const nextEnd = nextStart + activeWindow.visible - 1;
-      applyRange(labels[nextStart], labels[nextEnd]);
+      scheduleRangeApply(labels[nextStart], labels[nextEnd]);
     };
 
     chartEl.addEventListener("wheel", (event) => {
@@ -1949,7 +2005,7 @@ function setupDailyChartZoom() {
         nextEnd = labels.length - 1;
         nextStart = Math.max(0, nextEnd - nextVisible + 1);
       }
-      applyRange(labels[nextStart], labels[nextEnd]);
+      scheduleRangeApply(labels[nextStart], labels[nextEnd]);
     }, { passive: false });
 
     const beginPan = (clientX) => {
@@ -1975,6 +2031,7 @@ function setupDailyChartZoom() {
 
     const endPan = () => {
       if (!panState) return;
+      flushScheduledRange();
       panState = null;
       chartEl.classList.remove("is-panning");
     };
@@ -2018,6 +2075,7 @@ window.addEventListener("load", () => {
   const langGuess = (navigator.language || "en").startsWith("zh") ? "zh" : "en";
   const fallback = stored || langGuess;
   applyI18n(fallback);
+  rebuildMinuteEventMap();
   setupRangeControls();
   setupDailyChartZoom();
   setupImportExport();
