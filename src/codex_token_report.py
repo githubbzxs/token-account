@@ -74,7 +74,7 @@ I18N = {
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
         "daily_chart": "每日总 token",
-        "zoom_hint": "支持鼠标滚轮缩放",
+        "zoom_hint": "支持滚轮缩放、拖动滑动（Shift+滚轮横移）",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
         "model_mix": "模型占比",
@@ -127,7 +127,7 @@ I18N = {
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
         "daily_chart": "Daily total tokens",
-        "zoom_hint": "Use mouse wheel to zoom",
+        "zoom_hint": "Wheel to zoom, drag to pan (Shift+wheel to slide)",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
         "model_mix": "Model share",
@@ -523,18 +523,18 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 <title>Codex Token Report</title>
 <style>
 :root {
-  --background: #09090b;
-  --surface: #0f1115;
-  --surface-soft: #12161f;
-  --surface-strong: #171c27;
-  --text: #f4f4f5;
+  --background: #0a0a0a;
+  --surface: #111113;
+  --surface-soft: #141418;
+  --surface-strong: #1a1b20;
+  --text: #f8fafc;
   --muted: #a1a1aa;
-  --stroke: rgba(148, 163, 184, 0.22);
+  --stroke: rgba(148, 163, 184, 0.16);
   --accent: #22d3ee;
   --accent-2: #fb7185;
   --accent-3: #34d399;
-  --shadow: 0 22px 52px rgba(2, 6, 23, 0.5);
-  --ring: rgba(34, 211, 238, 0.35);
+  --shadow: 0 22px 52px rgba(0, 0, 0, 0.62);
+  --ring: rgba(34, 211, 238, 0.28);
 }
 
 * {
@@ -544,9 +544,9 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 body {
   margin: 0;
   background:
-    radial-gradient(1200px 620px at 12% 0%, rgba(34, 211, 238, 0.18), transparent 58%),
-    radial-gradient(1000px 580px at 92% 5%, rgba(251, 113, 133, 0.16), transparent 62%),
-    linear-gradient(165deg, #09090b 0%, #0d111a 100%);
+    radial-gradient(1200px 620px at 12% 0%, rgba(34, 211, 238, 0.12), transparent 58%),
+    radial-gradient(1000px 580px at 92% 5%, rgba(251, 113, 133, 0.1), transparent 62%),
+    linear-gradient(165deg, #0a0a0a 0%, #101114 100%);
   color: var(--text);
   font-family: "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
   line-height: 1.45;
@@ -574,13 +574,13 @@ body {
   padding: 4px;
   border: 1px solid var(--stroke);
   border-radius: 999px;
-  background: rgba(15, 17, 21, 0.78);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background: rgba(17, 17, 19, 0.86);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .lang-toggle button {
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--muted);
   padding: 6px 12px;
   border-radius: 999px;
@@ -619,7 +619,7 @@ body {
 
 .pill {
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.03);
   padding: 8px 12px;
   border-radius: 999px;
   font-size: 13px;
@@ -644,7 +644,7 @@ body {
   margin: 18px 0 10px;
   padding: 14px 16px;
   border: 1px solid var(--stroke);
-  background: linear-gradient(140deg, rgba(23, 28, 39, 0.84), rgba(15, 17, 21, 0.82));
+  background: linear-gradient(140deg, rgba(26, 27, 32, 0.9), rgba(17, 17, 19, 0.88));
   border-radius: 16px;
   display: flex;
   flex-wrap: wrap;
@@ -664,7 +664,7 @@ body {
 
 .range-fields input {
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text);
   border-radius: 8px;
   padding: 5px 10px;
@@ -674,7 +674,7 @@ body {
 .range-controls button,
 .file-button {
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: #e4e4e7;
   padding: 6px 10px;
   border-radius: 999px;
@@ -723,7 +723,7 @@ body {
 }
 
 .card {
-  background: linear-gradient(145deg, rgba(23, 28, 39, 0.92), rgba(18, 22, 31, 0.88));
+  background: linear-gradient(145deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
   border: 1px solid var(--stroke);
   border-radius: 20px;
   padding: 16px 18px;
@@ -738,7 +738,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.07), transparent 65%);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), transparent 65%);
   pointer-events: none;
 }
 
@@ -770,7 +770,7 @@ body {
 }
 
 .panel {
-  background: linear-gradient(150deg, rgba(20, 24, 33, 0.94), rgba(16, 19, 27, 0.9));
+  background: linear-gradient(150deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
   border: 1px solid var(--stroke);
   border-radius: 20px;
   padding: 18px;
@@ -795,7 +795,7 @@ body {
   height: 240px;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 14px;
-  background: rgba(15, 17, 21, 0.75);
+  background: rgba(17, 17, 19, 0.82);
   overflow: hidden;
 }
 
@@ -804,7 +804,13 @@ body {
 }
 
 .chart.zoomable {
-  cursor: zoom-in;
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.chart.zoomable.is-panning {
+  cursor: grabbing;
 }
 
 .chart-tip {
@@ -845,7 +851,7 @@ body {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px dashed rgba(148, 163, 184, 0.2);
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.16);
   font-size: 13px;
 }
 
@@ -868,7 +874,7 @@ body {
 .table th,
 .table td {
   padding: 8px 6px;
-  border-bottom: 1px dashed rgba(148, 163, 184, 0.2);
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.16);
   text-align: left;
 }
 
@@ -994,7 +1000,7 @@ body {
     <div class="panel wide" style="--delay:0.25s">
       <h3 data-i18n="daily_chart">Daily total tokens</h3>
       <div id="chart-daily" class="chart zoomable"></div>
-      <div class="chart-tip" data-i18n="zoom_hint">Use mouse wheel to zoom</div>
+      <div class="chart-tip" data-i18n="zoom_hint">Wheel to zoom, drag to pan (Shift+wheel to slide)</div>
     </div>
     <div class="panel" style="--delay:0.3s">
       <h3 data-i18n="mix_chart">Token mix</h3>
@@ -1009,7 +1015,7 @@ body {
     <div class="panel" style="--delay:0.37s">
       <h3 data-i18n="hourly_chart">Hourly pattern</h3>
       <div id="chart-hourly" class="chart small zoomable"></div>
-      <div class="chart-tip" data-i18n="zoom_hint">Use mouse wheel to zoom</div>
+      <div class="chart-tip" data-i18n="zoom_hint">Wheel to zoom, drag to pan (Shift+wheel to slide)</div>
     </div>
     <div class="panel" style="--delay:0.41s">
       <h3 data-i18n="top_days">Top days</h3>
@@ -1797,24 +1803,55 @@ function setupRangeControls() {
 function setupDailyChartZoom() {
   const bindZoom = (chartEl) => {
     if (!chartEl) return;
-    chartEl.addEventListener("wheel", (event) => {
-      event.preventDefault();
-      const labels = (DATA.daily && DATA.daily.labels) || [];
-      if (!labels.length) return;
+    let panState = null;
 
+    const getLabels = () => (DATA.daily && DATA.daily.labels) || [];
+    const getWindowState = (labels) => {
       const startIdx = labelIndex.has(currentRange.start) ? labelIndex.get(currentRange.start) : 0;
       const endIdx = labelIndex.has(currentRange.end) ? labelIndex.get(currentRange.end) : labels.length - 1;
       const visible = Math.max(1, endIdx - startIdx + 1);
+      return { startIdx, endIdx, visible };
+    };
+    const daysFromPixels = (rectWidth, pixels, visible) => {
+      const pxPerDay = rectWidth > 0 ? rectWidth / Math.max(1, visible - 1) : 12;
+      return Math.round(pixels / Math.max(pxPerDay, 1));
+    };
+    const panByDays = (deltaDays, labels, baseWindow) => {
+      if (!deltaDays || !labels.length) return;
+      const activeWindow = baseWindow || getWindowState(labels);
+      if (activeWindow.visible >= labels.length) return;
+      const maxStart = Math.max(0, labels.length - activeWindow.visible);
+      let nextStart = activeWindow.startIdx + deltaDays;
+      if (nextStart < 0) nextStart = 0;
+      if (nextStart > maxStart) nextStart = maxStart;
+      const nextEnd = nextStart + activeWindow.visible - 1;
+      applyRange(labels[nextStart], labels[nextEnd]);
+    };
+
+    chartEl.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const labels = getLabels();
+      if (!labels.length) return;
+      const windowState = getWindowState(labels);
+      const rect = chartEl.getBoundingClientRect();
+
+      if (event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+        const wheelDelta = event.shiftKey && Math.abs(event.deltaX) < Math.abs(event.deltaY)
+          ? event.deltaY
+          : event.deltaX;
+        const deltaDays = daysFromPixels(rect.width, wheelDelta, windowState.visible);
+        panByDays(deltaDays, labels, windowState);
+        return;
+      }
 
       const nextVisible = event.deltaY > 0
-        ? Math.min(labels.length, Math.round(visible * 1.2))
-        : Math.max(1, Math.round(visible * 0.8));
-      if (nextVisible === visible) return;
+        ? Math.min(labels.length, Math.round(windowState.visible * 1.2))
+        : Math.max(1, Math.round(windowState.visible * 0.8));
+      if (nextVisible === windowState.visible) return;
 
-      const rect = chartEl.getBoundingClientRect();
       const ratioRaw = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0.5;
       const ratio = Math.min(1, Math.max(0, ratioRaw));
-      const anchor = Math.round(startIdx + (visible - 1) * ratio);
+      const anchor = Math.round(windowState.startIdx + (windowState.visible - 1) * ratio);
 
       let nextStart = Math.round(anchor - (nextVisible - 1) * ratio);
       let nextEnd = nextStart + nextVisible - 1;
@@ -1829,6 +1866,63 @@ function setupDailyChartZoom() {
       }
       applyRange(labels[nextStart], labels[nextEnd]);
     }, { passive: false });
+
+    const beginPan = (clientX) => {
+      const labels = getLabels();
+      if (!labels.length) return;
+      const windowState = getWindowState(labels);
+      panState = {
+        startX: clientX,
+        startIdx: windowState.startIdx,
+        visible: windowState.visible,
+      };
+      chartEl.classList.add("is-panning");
+    };
+
+    const movePan = (clientX) => {
+      if (!panState) return;
+      const labels = getLabels();
+      if (!labels.length) return;
+      const rect = chartEl.getBoundingClientRect();
+      const deltaDays = daysFromPixels(rect.width, panState.startX - clientX, panState.visible);
+      panByDays(deltaDays, labels, panState);
+    };
+
+    const endPan = () => {
+      if (!panState) return;
+      panState = null;
+      chartEl.classList.remove("is-panning");
+    };
+
+    chartEl.addEventListener("mousedown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      beginPan(event.clientX);
+    });
+
+    window.addEventListener("mousemove", (event) => {
+      if (!panState) return;
+      event.preventDefault();
+      movePan(event.clientX);
+    });
+
+    window.addEventListener("mouseup", () => {
+      endPan();
+    });
+
+    chartEl.addEventListener("touchstart", (event) => {
+      if (!event.touches || event.touches.length !== 1) return;
+      beginPan(event.touches[0].clientX);
+    }, { passive: true });
+
+    chartEl.addEventListener("touchmove", (event) => {
+      if (!panState || !event.touches || event.touches.length !== 1) return;
+      event.preventDefault();
+      movePan(event.touches[0].clientX);
+    }, { passive: false });
+
+    chartEl.addEventListener("touchend", endPan);
+    chartEl.addEventListener("touchcancel", endPan);
   };
 
   bindZoom(document.getElementById("chart-daily"));
