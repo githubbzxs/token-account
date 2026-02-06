@@ -456,7 +456,13 @@ def build_day_series(daily, end_date: date, days: int):
 
 
 def fmt_int(value: int) -> str:
-    return f"{value:,}"
+    n = int(value)
+    abs_n = abs(n)
+    if abs_n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.1f}".rstrip("0").rstrip(".") + "B"
+    if abs_n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}".rstrip("0").rstrip(".") + "M"
+    return f"{n:,}"
 
 
 def fmt_pct(value: float) -> str:
@@ -964,7 +970,16 @@ const I18N = __I18N_JSON__;
 let currentLang = "zh";
 
 function formatNumber(value) {
-  return new Intl.NumberFormat("en-US").format(value);
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "0";
+  const absNum = Math.abs(num);
+  if (absNum >= 1_000_000_000) {
+    return `${(num / 1_000_000_000).toFixed(1).replace(/\\.0$/, "")}B`;
+  }
+  if (absNum >= 1_000_000) {
+    return `${(num / 1_000_000).toFixed(1).replace(/\\.0$/, "")}M`;
+  }
+  return new Intl.NumberFormat("en-US").format(num);
 }
 
 function applyI18n(lang) {
