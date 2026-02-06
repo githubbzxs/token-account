@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 from __future__ import annotations
 
 import argparse
@@ -745,7 +745,7 @@ body {
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin: 24px 0 24px;
   align-items: stretch;
@@ -767,7 +767,7 @@ body {
 }
 
 .metric-card {
-  min-height: 118px;
+  min-height: 124px;
   justify-content: flex-start;
 }
 
@@ -1082,7 +1082,13 @@ body {
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 1280px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
   .cards {
     grid-template-columns: minmax(0, 1fr);
   }
