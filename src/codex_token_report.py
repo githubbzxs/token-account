@@ -1328,6 +1328,13 @@ function renderSwiftValue(el, text) {
   const prevText = el.dataset.swiftText != null ? el.dataset.swiftText : (el.textContent || "");
   if (prevText === nextText) return;
   const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (prevText.length !== nextText.length) {
+    el.textContent = nextText;
+    el.dataset.swiftText = nextText;
+    el.classList.add("swift-value");
+    el.setAttribute("aria-label", nextText);
+    return;
+  }
   if (!prevText || reduceMotion) {
     el.textContent = nextText;
     el.dataset.swiftText = nextText;
