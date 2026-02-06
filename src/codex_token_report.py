@@ -872,7 +872,7 @@ body {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: 152px;
+  height: 188px;
   border: 1px solid var(--stroke);
   background: rgba(255, 255, 255, 0.03);
   color: var(--text);
@@ -883,10 +883,17 @@ body {
 .share-actions {
   margin-top: 8px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-start;
+}
+
+#share-status {
+  flex: 1 1 260px;
+  min-width: 200px;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .share-action-btn {
@@ -1084,6 +1091,9 @@ body {
   }
   .metric-card {
     min-height: 136px;
+  }
+  #share-status {
+    flex-basis: 100%;
   }
 }
 
@@ -1379,7 +1389,7 @@ function drawShareImageCard() {
   if (!canvas) return null;
   const rect = canvas.getBoundingClientRect();
   const cssW = Math.max(320, Math.round(rect.width || 320));
-  const cssH = Math.max(152, Math.round(rect.height || 152));
+  const cssH = Math.max(188, Math.round(rect.height || 188));
   const dpr = Math.max(1, window.devicePixelRatio || 1);
   const targetW = Math.round(cssW * dpr);
   const targetH = Math.round(cssH * dpr);
@@ -1393,40 +1403,66 @@ function drawShareImageCard() {
   ctx.clearRect(0, 0, cssW, cssH);
 
   const grad = ctx.createLinearGradient(0, 0, cssW, cssH);
-  grad.addColorStop(0, "#111318");
-  grad.addColorStop(1, "#1a1f2a");
+  grad.addColorStop(0, "#0f1116");
+  grad.addColorStop(0.55, "#151922");
+  grad.addColorStop(1, "#1b2030");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, cssW, cssH);
 
   const snapshot = getTodayUsageSnapshot();
   const totalText = formatNumber(snapshot.total);
   const subtitle = `${labelFor("today_usage")} ${snapshot.dayISO}`;
-  const line1 = `${labelFor("input")} ${formatNumber(snapshot.input)} | ${labelFor("output")} ${formatNumber(snapshot.output)}`;
-  const line2 = `${labelFor("reasoning")} ${formatNumber(snapshot.reasoning)} | ${labelFor("cached")} ${formatNumber(snapshot.cached)}`;
-  const line3 = `${labelFor("cache_rate")} ${(snapshot.cacheRate * 100).toFixed(1)}%`;
+  const stats = [
+    { label: labelFor("input"), value: formatNumber(snapshot.input) },
+    { label: labelFor("output"), value: formatNumber(snapshot.output) },
+    { label: labelFor("reasoning"), value: formatNumber(snapshot.reasoning) },
+    { label: labelFor("cached"), value: formatNumber(snapshot.cached) },
+    { label: labelFor("cache_rate"), value: `${(snapshot.cacheRate * 100).toFixed(1)}%` },
+  ];
 
-  ctx.fillStyle = "rgba(34,211,238,0.16)";
-  ctx.fillRect(14, 14, cssW - 28, 2);
+  ctx.fillStyle = "rgba(34, 211, 238, 0.14)";
+  ctx.fillRect(16, 14, cssW - 32, 2);
+  ctx.fillStyle = "rgba(56, 189, 248, 0.09)";
+  ctx.beginPath();
+  ctx.arc(cssW * 0.86, cssH * 0.18, cssH * 0.7, 0, Math.PI * 2);
+  ctx.fill();
 
-  ctx.fillStyle = "#9ca3af";
-  ctx.font = "12px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
-  ctx.fillText(subtitle, 16, 34);
+  ctx.fillStyle = "#a1a1aa";
+  ctx.font = "600 13px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(subtitle, 18, 38);
 
+  if (cssW >= 420) {
+    ctx.fillStyle = "rgba(248,250,252,0.8)";
+    ctx.font = "600 13px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
+    const brand = "Codex Token Report";
+    const brandW = ctx.measureText(brand).width;
+    ctx.fillText(brand, cssW - brandW - 18, 38);
+  }
+
+  const totalFontSize = Math.max(44, Math.min(86, Math.round(cssW * 0.072)));
   ctx.fillStyle = "#f8fafc";
-  ctx.font = "700 32px 'Space Grotesk', 'IBM Plex Sans', sans-serif";
-  ctx.fillText(totalText, 16, 76);
+  ctx.font = `700 ${totalFontSize}px 'Space Grotesk', 'IBM Plex Sans', 'Noto Sans SC', sans-serif`;
+  ctx.textAlign = "center";
+  ctx.fillText(totalText, Math.round(cssW / 2), Math.round(cssH * 0.58));
 
-  ctx.fillStyle = "#d4d4d8";
-  ctx.font = "12px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
-  ctx.fillText(line1, 16, 102);
-  ctx.fillText(line2, 16, 122);
-  ctx.fillText(line3, 16, 142);
+  const colCount = cssW >= 1280 ? 5 : (cssW >= 980 ? 4 : 3);
+  const rowCount = Math.max(1, Math.ceil(stats.length / colCount));
+  const leftPad = 18;
+  const rightPad = 18;
+  const colW = (cssW - leftPad - rightPad) / colCount;
+  const statsStartY = cssH - 18 - (rowCount - 1) * 22;
 
-  ctx.fillStyle = "rgba(248,250,252,0.78)";
-  ctx.font = "12px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
-  const brand = "Codex Token Report";
-  const brandW = ctx.measureText(brand).width;
-  ctx.fillText(brand, cssW - brandW - 16, cssH - 12);
+  ctx.textAlign = "left";
+  ctx.font = "600 12px 'IBM Plex Sans', 'Noto Sans SC', sans-serif";
+  stats.forEach((item, idx) => {
+    const col = idx % colCount;
+    const row = Math.floor(idx / colCount);
+    const x = leftPad + col * colW;
+    const y = statsStartY + row * 22;
+    ctx.fillStyle = "#d4d4d8";
+    ctx.fillText(`${item.label} ${item.value}`, x, y);
+  });
   return canvas;
 }
 
