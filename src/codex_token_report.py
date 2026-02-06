@@ -768,7 +768,7 @@ body {
 }
 
 .metric-card {
-  min-height: 188px;
+  min-height: 172px;
 }
 
 .share-card {
@@ -1058,12 +1058,6 @@ body {
   .page {
     padding: 24px 14px 42px;
   }
-  .cards {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .share-card {
-    grid-column: span 1;
-  }
   .hero {
     gap: 12px;
   }
@@ -1078,6 +1072,18 @@ body {
   }
   .range-controls {
     gap: 10px;
+  }
+}
+
+@media (max-width: 720px) {
+  .cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .share-card {
+    grid-column: span 1;
+  }
+  .metric-card {
+    min-height: 156px;
   }
 }
 
