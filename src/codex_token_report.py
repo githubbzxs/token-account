@@ -6,6 +6,7 @@ import heapq
 import html
 import json
 import os
+import re
 import sys
 from collections import defaultdict
 from decimal import Decimal
@@ -21,23 +22,23 @@ FIELDS = [
 ]
 
 MIX = [
-    ("input_tokens", "input", "#1B7F79"),
-    ("output_tokens", "output", "#C45A3C"),
-    ("reasoning_output_tokens", "reasoning", "#D4A373"),
-    ("cached_input_tokens", "cached", "#506B64"),
+    ("input_tokens", "input", "#22D3EE"),
+    ("output_tokens", "output", "#FB7185"),
+    ("reasoning_output_tokens", "reasoning", "#F59E0B"),
+    ("cached_input_tokens", "cached", "#34D399"),
 ]
 
 MODEL_COLORS = [
-    "#1B7F79",
-    "#C45A3C",
-    "#D4A373",
-    "#506B64",
-    "#2C6E63",
-    "#A44A3F",
-    "#6B705C",
-    "#8E7DBE",
-    "#B56576",
-    "#38686A",
+    "#22D3EE",
+    "#FB7185",
+    "#F59E0B",
+    "#34D399",
+    "#60A5FA",
+    "#A78BFA",
+    "#F97316",
+    "#2DD4BF",
+    "#E879F9",
+    "#38BDF8",
 ]
 
 I18N = {
@@ -73,6 +74,7 @@ I18N = {
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
         "daily_chart": "每日总 token",
+        "zoom_hint": "支持鼠标滚轮缩放",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
         "model_mix": "模型占比",
@@ -125,6 +127,7 @@ I18N = {
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
         "daily_chart": "Daily total tokens",
+        "zoom_hint": "Use mouse wheel to zoom",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
         "model_mix": "Model share",
@@ -173,6 +176,26 @@ def to_local(dt: datetime | None) -> datetime | None:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone()
+
+
+PAREN_SUFFIX_RE = re.compile(r"\s*[\(\（][^\)\）]*[\)\）]\s*")
+
+
+def normalize_model_name(model: str | None) -> str:
+    name = str(model or "").strip()
+    if not name:
+        return "unknown"
+    head, sep, tail = name.partition(":")
+    head = PAREN_SUFFIX_RE.sub(" ", head)
+    head = re.sub(r"\s+", " ", head).strip()
+    if not head:
+        head = "unknown"
+    if not sep:
+        return head
+    tail = tail.strip()
+    if not tail:
+        return head
+    return f"{head}:{tail}"
 
 def default_codex_root() -> Path:
     env = os.environ.get("CODEX_HOME")
@@ -272,6 +295,7 @@ def load_pricing(pricing_path: Path | None):
 
 
 def resolve_pricing(model: str, prices: dict, aliases: dict) -> dict | None:
+    model = normalize_model_name(model)
     if model in aliases:
         alias_target = aliases.get(model)
         if alias_target in prices:
@@ -326,7 +350,7 @@ def iter_token_deltas(path: Path):
                     or payload.get("model_id")
                 )
                 if model:
-                    current_model = model
+                    current_model = normalize_model_name(model)
                 continue
             if event_type != "event_msg":
                 continue
@@ -499,15 +523,18 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 <title>Codex Token Report</title>
 <style>
 :root {
-  --paper: #f7f2e9;
-  --ink: #1e2a28;
-  --muted: #6f6a63;
-  --accent: #c45a3c;
-  --accent-2: #1b7f79;
-  --accent-3: #d4a373;
-  --card: rgba(255, 255, 255, 0.78);
-  --stroke: rgba(30, 42, 40, 0.12);
-  --shadow: 0 18px 40px rgba(30, 42, 40, 0.15);
+  --background: #09090b;
+  --surface: #0f1115;
+  --surface-soft: #12161f;
+  --surface-strong: #171c27;
+  --text: #f4f4f5;
+  --muted: #a1a1aa;
+  --stroke: rgba(148, 163, 184, 0.22);
+  --accent: #22d3ee;
+  --accent-2: #fb7185;
+  --accent-3: #34d399;
+  --shadow: 0 22px 52px rgba(2, 6, 23, 0.5);
+  --ring: rgba(34, 211, 238, 0.35);
 }
 
 * {
@@ -517,80 +544,96 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 body {
   margin: 0;
   background:
-    radial-gradient(1000px 520px at 8% 8%, rgba(196, 90, 60, 0.16), transparent 60%),
-    radial-gradient(900px 520px at 92% 12%, rgba(27, 127, 121, 0.18), transparent 60%),
-    linear-gradient(120deg, #f7f2e9 0%, #efe6d8 100%);
-  color: var(--ink);
-  font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+    radial-gradient(1200px 620px at 12% 0%, rgba(34, 211, 238, 0.18), transparent 58%),
+    radial-gradient(1000px 580px at 92% 5%, rgba(251, 113, 133, 0.16), transparent 62%),
+    linear-gradient(165deg, #09090b 0%, #0d111a 100%);
+  color: var(--text);
+  font-family: "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
+  line-height: 1.45;
 }
 
 .page {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 36px 28px 60px;
+  padding: 34px 24px 56px;
 }
 
 .hero {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
+  margin-bottom: 12px;
 }
 
 .lang-toggle {
   display: inline-flex;
   gap: 8px;
   align-items: center;
+  padding: 4px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  background: rgba(15, 17, 21, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .lang-toggle button {
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.7);
-  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  padding: 6px 12px;
   border-radius: 999px;
   font-size: 12px;
   cursor: pointer;
+  transition: all 0.18s ease;
 }
 
 .lang-toggle button.active {
-  background: var(--accent-2);
-  color: #fff;
+  background: rgba(34, 211, 238, 0.2);
+  color: #ecfeff;
   border-color: transparent;
+  box-shadow: 0 0 0 1px var(--ring);
 }
 
 .title h1 {
-  margin: 0 0 6px;
-  font-size: 34px;
-  letter-spacing: 1px;
-  font-family: "Copperplate Gothic Bold", "Palatino Linotype", serif;
+  margin: 0 0 8px;
+  font-size: clamp(30px, 5vw, 42px);
+  letter-spacing: 0.5px;
+  font-family: "Space Grotesk", "IBM Plex Sans", "Noto Sans SC", sans-serif;
+  font-weight: 700;
+  text-wrap: balance;
 }
 
 .title p {
   margin: 0;
   color: var(--muted);
+  max-width: 680px;
 }
 
 .meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .pill {
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.04);
   padding: 8px 12px;
   border-radius: 999px;
   font-size: 13px;
+  color: #d4d4d8;
+  backdrop-filter: blur(6px);
 }
 
 .banner {
   margin-top: 18px;
   padding: 12px 14px;
   border: 1px dashed var(--stroke);
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 10px;
+  background: rgba(251, 113, 133, 0.08);
+  border-radius: 12px;
+  color: #fecdd3;
 }
 
 .hidden {
@@ -598,15 +641,16 @@ body {
 }
 
 .range-controls {
-  margin: 16px 0 10px;
-  padding: 12px 14px;
+  margin: 18px 0 10px;
+  padding: 14px 16px;
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 14px;
+  background: linear-gradient(140deg, rgba(23, 28, 39, 0.84), rgba(15, 17, 21, 0.82));
+  border-radius: 16px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
+  box-shadow: var(--shadow);
 }
 
 .range-fields {
@@ -620,19 +664,29 @@ body {
 
 .range-fields input {
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
   border-radius: 8px;
-  padding: 4px 8px;
+  padding: 5px 10px;
   font-size: 12px;
 }
 
-.range-controls button {
+.range-controls button,
+.file-button {
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e4e4e7;
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.range-controls button:hover,
+.file-button:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.15);
 }
 
 .range-buttons {
@@ -649,12 +703,6 @@ body {
 }
 
 .file-button {
-  border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.8);
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  cursor: pointer;
   color: var(--text);
 }
 
@@ -669,15 +717,15 @@ body {
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
   margin: 24px 0 24px;
 }
 
 .card {
-  background: var(--card);
+  background: linear-gradient(145deg, rgba(23, 28, 39, 0.92), rgba(18, 22, 31, 0.88));
   border: 1px solid var(--stroke);
-  border-radius: 18px;
+  border-radius: 20px;
   padding: 16px 18px;
   box-shadow: var(--shadow);
   position: relative;
@@ -690,7 +738,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(140deg, rgba(255, 255, 255, 0.4), transparent 60%);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.07), transparent 65%);
   pointer-events: none;
 }
 
@@ -705,11 +753,12 @@ body {
   margin-top: 10px;
   font-size: 26px;
   font-weight: 700;
+  letter-spacing: 0.2px;
 }
 
 .card .sub {
   margin-top: 8px;
-  color: var(--muted);
+  color: #b4b4bd;
   font-size: 13px;
   line-height: 1.4;
 }
@@ -721,9 +770,9 @@ body {
 }
 
 .panel {
-  background: var(--card);
+  background: linear-gradient(150deg, rgba(20, 24, 33, 0.94), rgba(16, 19, 27, 0.9));
   border: 1px solid var(--stroke);
-  border-radius: 18px;
+  border-radius: 20px;
   padding: 18px;
   box-shadow: var(--shadow);
   animation: rise 0.9s ease both;
@@ -732,7 +781,9 @@ body {
 
 .panel h3 {
   margin: 0 0 12px;
-  font-size: 18px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
 .panel.wide {
@@ -742,10 +793,24 @@ body {
 .chart {
   width: 100%;
   height: 240px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 14px;
+  background: rgba(15, 17, 21, 0.75);
+  overflow: hidden;
 }
 
 .chart.small {
   height: 200px;
+}
+
+.chart.zoomable {
+  cursor: zoom-in;
+}
+
+.chart-tip {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .legend {
@@ -780,7 +845,7 @@ body {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px dashed var(--stroke);
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.2);
   font-size: 13px;
 }
 
@@ -803,7 +868,7 @@ body {
 .table th,
 .table td {
   padding: 8px 6px;
-  border-bottom: 1px dashed var(--stroke);
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.2);
   text-align: left;
 }
 
@@ -824,7 +889,7 @@ body {
 }
 
 .footer {
-  margin-top: 26px;
+  margin-top: 24px;
   font-size: 12px;
   color: var(--muted);
   text-align: right;
@@ -842,11 +907,23 @@ body {
 }
 
 @media (max-width: 900px) {
+  .page {
+    padding: 24px 14px 42px;
+  }
+  .hero {
+    gap: 12px;
+  }
   .panel.wide {
     grid-column: span 1;
   }
   .chart {
     height: 200px;
+  }
+  .chart.small {
+    height: 180px;
+  }
+  .range-controls {
+    gap: 10px;
   }
 }
 </style>
@@ -916,7 +993,8 @@ body {
   <div class="panel-grid">
     <div class="panel wide" style="--delay:0.25s">
       <h3 data-i18n="daily_chart">Daily total tokens</h3>
-      <div id="chart-daily" class="chart"></div>
+      <div id="chart-daily" class="chart zoomable"></div>
+      <div class="chart-tip" data-i18n="zoom_hint">Use mouse wheel to zoom</div>
     </div>
     <div class="panel" style="--delay:0.3s">
       <h3 data-i18n="mix_chart">Token mix</h3>
@@ -972,6 +1050,9 @@ __MODEL_TABLE__
 const DATA = __DATA_JSON__;
 const I18N = __I18N_JSON__;
 let currentLang = "zh";
+const CHART_AXIS_TEXT = "#94a3b8";
+const CHART_AXIS_LINE = "rgba(148,163,184,0.28)";
+const CHART_CENTER_TEXT = "#f4f4f5";
 
 function formatNumber(value) {
   const num = Number(value);
@@ -1045,10 +1126,10 @@ function lineChart(el, labels, values, color) {
       <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
       <path d="${area}" fill="url(#${uid})"></path>
       <path d="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round"></path>
-      <line x1="${pad.l}" x2="${width - pad.r}" y1="${baseY}" y2="${baseY}" stroke="rgba(30,42,40,0.2)" />
-      <text x="${pad.l}" y="${height - 8}" fill="#6f6a63" font-size="11">${labels[0] || ""}</text>
-      <text x="${width - pad.r - 80}" y="${height - 8}" fill="#6f6a63" font-size="11">${labels[labels.length - 1] || ""}</text>
-      <text x="${pad.l}" y="${pad.t + 12}" fill="#6f6a63" font-size="11">${formatNumber(max)}</text>
+      <line x1="${pad.l}" x2="${width - pad.r}" y1="${baseY}" y2="${baseY}" stroke="${CHART_AXIS_LINE}" />
+      <text x="${pad.l}" y="${height - 8}" fill="${CHART_AXIS_TEXT}" font-size="11">${labels[0] || ""}</text>
+      <text x="${width - pad.r - 80}" y="${height - 8}" fill="${CHART_AXIS_TEXT}" font-size="11">${labels[labels.length - 1] || ""}</text>
+      <text x="${pad.l}" y="${pad.t + 12}" fill="${CHART_AXIS_TEXT}" font-size="11">${formatNumber(max)}</text>
     </svg>
   `;
   el.innerHTML = svg;
@@ -1072,9 +1153,9 @@ function barChart(el, labels, values, color) {
   const svg = `
     <svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="none">
       <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
-      <line x1="${pad.l}" x2="${width - pad.r}" y1="${height - pad.b}" y2="${height - pad.b}" stroke="rgba(30,42,40,0.2)" />
+      <line x1="${pad.l}" x2="${width - pad.r}" y1="${height - pad.b}" y2="${height - pad.b}" stroke="${CHART_AXIS_LINE}" />
       ${bars}
-      <text x="${pad.l}" y="${pad.t + 12}" fill="#6f6a63" font-size="11">${formatNumber(max)}</text>
+      <text x="${pad.l}" y="${pad.t + 12}" fill="${CHART_AXIS_TEXT}" font-size="11">${formatNumber(max)}</text>
     </svg>
   `;
   el.innerHTML = svg;
@@ -1099,8 +1180,8 @@ function donutChart(el, legendEl, segments) {
     <svg viewBox="0 0 ${size} ${size}" width="100%" height="100%">
       <circle cx="110" cy="110" r="${r}" fill="transparent" stroke="rgba(30,42,40,0.08)" stroke-width="18"></circle>
       ${rings}
-      <text x="110" y="108" text-anchor="middle" font-size="14" fill="#6f6a63">${labelFor("total_label")}</text>
-      <text x="110" y="130" text-anchor="middle" font-size="18" fill="#1e2a28">${formatNumber(total)}</text>
+      <text x="110" y="108" text-anchor="middle" font-size="14" fill="${CHART_AXIS_TEXT}">${labelFor("total_label")}</text>
+      <text x="110" y="130" text-anchor="middle" font-size="18" fill="${CHART_CENTER_TEXT}">${formatNumber(total)}</text>
     </svg>
   `;
   el.innerHTML = svg;
@@ -1111,16 +1192,16 @@ function donutChart(el, legendEl, segments) {
 }
 
 const MODEL_COLORS = [
-  "#1B7F79",
-  "#C45A3C",
-  "#D4A373",
-  "#506B64",
-  "#2C6E63",
-  "#A44A3F",
-  "#6B705C",
-  "#8E7DBE",
-  "#B56576",
-  "#38686A",
+  "#22D3EE",
+  "#FB7185",
+  "#F59E0B",
+  "#34D399",
+  "#60A5FA",
+  "#A78BFA",
+  "#F97316",
+  "#2DD4BF",
+  "#E879F9",
+  "#38BDF8",
 ];
 
 const MIX_COLORS = (() => {
@@ -1205,6 +1286,16 @@ function sessionsInRange(startISO, endISO) {
   return count;
 }
 
+function normalizeModelName(model) {
+  const raw = String(model || "").trim();
+  if (!raw) return "unknown";
+  const parts = raw.split(":");
+  const head = (parts.shift() || "").replace(/\\s*[\\(（][^\\)）]*[\\)）]\\s*/g, " ").replace(/\\s+/g, " ").trim();
+  const base = head || "unknown";
+  const tail = parts.join(":").trim();
+  return tail ? `${base}:${tail}` : base;
+}
+
 function aggregateModels(dayLabels) {
   const out = {};
   const dailyModels = DATA.daily_models || {};
@@ -1212,9 +1303,10 @@ function aggregateModels(dayLabels) {
     const dayMap = dailyModels[day];
     if (!dayMap) return;
     Object.keys(dayMap).forEach(model => {
+      const modelKey = normalizeModelName(model);
       const rec = dayMap[model] || {};
-      if (!out[model]) {
-        out[model] = {
+      if (!out[modelKey]) {
+        out[modelKey] = {
           input_tokens: 0,
           cached_input_tokens: 0,
           output_tokens: 0,
@@ -1222,11 +1314,11 @@ function aggregateModels(dayLabels) {
           total_tokens: 0,
         };
       }
-      out[model].input_tokens += rec.input_tokens || 0;
-      out[model].cached_input_tokens += rec.cached_input_tokens || 0;
-      out[model].output_tokens += rec.output_tokens || 0;
-      out[model].reasoning_output_tokens += rec.reasoning_output_tokens || 0;
-      out[model].total_tokens += rec.total_tokens || 0;
+      out[modelKey].input_tokens += rec.input_tokens || 0;
+      out[modelKey].cached_input_tokens += rec.cached_input_tokens || 0;
+      out[modelKey].output_tokens += rec.output_tokens || 0;
+      out[modelKey].reasoning_output_tokens += rec.reasoning_output_tokens || 0;
+      out[modelKey].total_tokens += rec.total_tokens || 0;
     });
   });
   return out;
@@ -1245,7 +1337,7 @@ function resolvePricing(model) {
     return name;
   };
 
-  const modelName = resolveAlias(String(model || ""));
+  const modelName = resolveAlias(normalizeModelName(model));
   if (pricing[modelName]) return pricing[modelName];
 
   const base = modelName.split(":")[0];
@@ -1353,7 +1445,8 @@ function mergeDailyModelsInto(target, data) {
     const outDay = target[day] || (target[day] = {});
     Object.keys(dayMap).forEach(model => {
       const rec = dayMap[model] || {};
-      const outRec = outDay[model] || (outDay[model] = {
+      const modelKey = normalizeModelName(model);
+      const outRec = outDay[modelKey] || (outDay[modelKey] = {
         input_tokens: 0,
         cached_input_tokens: 0,
         output_tokens: 0,
@@ -1574,7 +1667,7 @@ function applyRange(startISO, endISO) {
   setText("value-avg-day", formatNumber(avgPerDay));
   setText("value-avg-session", formatNumber(avgPerSession));
 
-  lineChart(document.getElementById("chart-daily"), labels, totals, "#1B7F79");
+  lineChart(document.getElementById("chart-daily"), labels, totals, "#22D3EE");
   renderTokenMix(inputTokens, outputTokens, reasoningTokens, cachedTokens);
 
   const hourly = new Array(24).fill(0);
@@ -1584,7 +1677,7 @@ function applyRange(startISO, endISO) {
     if (!arr) return;
     for (let h = 0; h < 24; h++) hourly[h] += arr[h] || 0;
   });
-  barChart(document.getElementById("chart-hourly"), (DATA.hourly && DATA.hourly.labels) || [], hourly, "#C45A3C");
+  barChart(document.getElementById("chart-hourly"), (DATA.hourly && DATA.hourly.labels) || [], hourly, "#FB7185");
 
   const topDayItems = [];
   for (let i = startIdx; i <= endIdx; i++) {
@@ -1700,12 +1793,50 @@ function setupRangeControls() {
   });
 }
 
+function setupDailyChartZoom() {
+  const chartEl = document.getElementById("chart-daily");
+  if (!chartEl) return;
+  chartEl.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    const labels = (DATA.daily && DATA.daily.labels) || [];
+    if (!labels.length) return;
+
+    const startIdx = labelIndex.has(currentRange.start) ? labelIndex.get(currentRange.start) : 0;
+    const endIdx = labelIndex.has(currentRange.end) ? labelIndex.get(currentRange.end) : labels.length - 1;
+    const visible = Math.max(1, endIdx - startIdx + 1);
+
+    const nextVisible = event.deltaY > 0
+      ? Math.min(labels.length, Math.round(visible * 1.2))
+      : Math.max(1, Math.round(visible * 0.8));
+    if (nextVisible === visible) return;
+
+    const rect = chartEl.getBoundingClientRect();
+    const ratioRaw = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0.5;
+    const ratio = Math.min(1, Math.max(0, ratioRaw));
+    const anchor = Math.round(startIdx + (visible - 1) * ratio);
+
+    let nextStart = Math.round(anchor - (nextVisible - 1) * ratio);
+    let nextEnd = nextStart + nextVisible - 1;
+
+    if (nextStart < 0) {
+      nextStart = 0;
+      nextEnd = nextVisible - 1;
+    }
+    if (nextEnd >= labels.length) {
+      nextEnd = labels.length - 1;
+      nextStart = Math.max(0, nextEnd - nextVisible + 1);
+    }
+    applyRange(labels[nextStart], labels[nextEnd]);
+  }, { passive: false });
+}
+
 window.addEventListener("load", () => {
   const stored = localStorage.getItem("codex_report_lang");
   const langGuess = (navigator.language || "en").startsWith("zh") ? "zh" : "en";
   const fallback = stored || langGuess;
   applyI18n(fallback);
   setupRangeControls();
+  setupDailyChartZoom();
   setupImportExport();
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
