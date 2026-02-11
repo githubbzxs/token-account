@@ -541,10 +541,25 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --accent-3: #34d399;
   --shadow: 0 22px 52px rgba(0, 0, 0, 0.62);
   --ring: rgba(34, 211, 238, 0.28);
+  --font-zh: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --font-en: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --app-font: var(--font-en);
+  --swift-duration-fast: 220ms;
+  --swift-duration-normal: 320ms;
+  --swift-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --swift-ease-spring: cubic-bezier(0.2, 0.9, 0.2, 1.12);
 }
 
 * {
   box-sizing: border-box;
+}
+
+html[lang="zh"] {
+  --app-font: var(--font-zh);
+}
+
+html[lang="en"] {
+  --app-font: var(--font-en);
 }
 
 body {
@@ -554,8 +569,10 @@ body {
     radial-gradient(1000px 580px at 92% 5%, rgba(251, 113, 133, 0.1), transparent 62%),
     linear-gradient(165deg, #0a0a0a 0%, #101114 100%);
   color: var(--text);
-  font-family: "IBM Plex Sans", "Noto Sans SC", "Segoe UI", sans-serif;
+  font-family: var(--app-font);
   line-height: 1.45;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 .page {
@@ -574,39 +591,84 @@ body {
 }
 
 .lang-toggle {
-  display: inline-flex;
-  gap: 8px;
+  --indicator-x: 0%;
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  padding: 4px;
+  min-width: 136px;
+  padding: 3px;
+  gap: 0;
   border: 1px solid var(--stroke);
   border-radius: 999px;
   background: rgba(17, 17, 19, 0.86);
+  overflow: hidden;
+  isolation: isolate;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
+.lang-toggle[data-active-lang="en"] {
+  --indicator-x: 100%;
+}
+
+.lang-toggle-indicator {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  height: calc(100% - 6px);
+  border-radius: 999px;
+  background: linear-gradient(140deg, rgba(74, 222, 255, 0.44), rgba(34, 211, 238, 0.22));
+  box-shadow: 0 8px 16px rgba(34, 211, 238, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateX(var(--indicator-x));
+  transition:
+    transform var(--swift-duration-normal) var(--swift-ease-spring),
+    background-color var(--swift-duration-normal) var(--swift-ease-standard),
+    box-shadow var(--swift-duration-normal) var(--swift-ease-standard);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.lang-toggle.lang-toggle-snap .lang-toggle-indicator {
+  transition: none;
+}
+
 .lang-toggle button {
-  border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.03);
+  border: 0;
+  background: transparent;
   color: var(--muted);
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 999px;
   font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: all 0.18s ease;
+  position: relative;
+  z-index: 1;
+  transition:
+    color var(--swift-duration-fast) var(--swift-ease-standard),
+    transform var(--swift-duration-fast) var(--swift-ease-standard);
 }
 
 .lang-toggle button.active {
-  background: rgba(34, 211, 238, 0.2);
   color: #ecfeff;
-  border-color: transparent;
-  box-shadow: 0 0 0 1px var(--ring);
+  transform: translateY(-0.5px);
+}
+
+.lang-toggle button:active {
+  transform: scale(0.975);
+}
+
+.lang-toggle button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
 }
 
 .title h1 {
   margin: 0 0 8px;
   font-size: clamp(30px, 5vw, 42px);
   letter-spacing: 0.5px;
-  font-family: "Space Grotesk", "IBM Plex Sans", "Noto Sans SC", sans-serif;
+  font-family: var(--app-font);
   font-weight: 700;
   text-wrap: balance;
 }
@@ -774,9 +836,16 @@ body {
 }
 
 .metric-value-anim {
-  animation: metricFade 500ms ease-in-out;
-  will-change: opacity;
+  animation: metricFade var(--swift-duration-normal) var(--swift-ease-standard);
+  will-change: opacity, transform;
+  transform-origin: center bottom;
   animation-fill-mode: both;
+}
+
+.i18n-switch-anim {
+  animation: i18nSwap var(--swift-duration-fast) var(--swift-ease-standard);
+  animation-fill-mode: both;
+  will-change: opacity, transform;
 }
 
 .card .sub {
@@ -975,10 +1044,40 @@ body {
 
 @keyframes metricFade {
   0% {
-    opacity: 0.62;
+    opacity: 0.35;
+    transform: translateY(2px);
+    filter: blur(1.3px);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
   }
   100% {
     opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes i18nSwap {
+  0% {
+    opacity: 0.72;
+    transform: translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lang-toggle-indicator,
+  .lang-toggle button,
+  .metric-value-anim,
+  .i18n-switch-anim {
+    animation: none !important;
+    transition: none !important;
   }
 }
 </style>
@@ -995,7 +1094,8 @@ body {
       <div class="pill"><span data-i18n="sessions">Sessions</span>: <span id="sessions-count">__SESSIONS__</span></div>
       <div class="pill"><span data-i18n="active_days">Active days</span>: <span id="active-days">__DAYS_ACTIVE__</span></div>
     </div>
-    <div class="lang-toggle">
+    <div class="lang-toggle" data-active-lang="zh">
+      <span class="lang-toggle-indicator" aria-hidden="true"></span>
       <button type="button" data-lang="zh">中文</button>
       <button type="button" data-lang="en">EN</button>
     </div>
@@ -1082,6 +1182,29 @@ let currentLang = "zh";
 const CHART_AXIS_TEXT = "#94a3b8";
 const CHART_AXIS_LINE = "rgba(148,163,184,0.28)";
 
+function prefersReducedMotion() {
+  return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
+function triggerSwapAnimation(el, className) {
+  if (!el || prefersReducedMotion()) return;
+  el.classList.remove(className);
+  void el.offsetWidth;
+  el.classList.add(className);
+}
+
+function updateLangToggleState(lang, animate) {
+  const toggle = document.querySelector(".lang-toggle");
+  const shouldAnimate = Boolean(animate && !prefersReducedMotion());
+  if (toggle) {
+    toggle.classList.toggle("lang-toggle-snap", !shouldAnimate);
+    toggle.dataset.activeLang = lang;
+  }
+  document.querySelectorAll(".lang-toggle button").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.lang === lang);
+  });
+}
+
 function formatNumber(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "0";
@@ -1095,19 +1218,24 @@ function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(num);
 }
 
-function applyI18n(lang) {
+function applyI18n(lang, options) {
+  const opts = options || {};
+  const source = opts.source || "system";
+  const shouldAnimate = opts.animate !== false && source === "user";
   currentLang = lang;
   const dict = I18N[lang] || I18N.en;
   document.documentElement.lang = lang;
   document.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.dataset.i18n;
-    if (dict[key]) {
-      el.textContent = dict[key];
+    const nextText = dict[key];
+    if (nextText && el.textContent !== nextText) {
+      el.textContent = nextText;
+      if (shouldAnimate) {
+        triggerSwapAnimation(el, "i18n-switch-anim");
+      }
     }
   });
-  document.querySelectorAll(".lang-toggle button").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.lang === lang);
-  });
+  updateLangToggleState(lang, shouldAnimate);
 }
 
 function labelFor(key) {
@@ -1137,7 +1265,7 @@ function animateMetricValue(el, text) {
   const nextText = String(text ?? "");
   const prevText = el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || "");
   if (prevText === nextText) return;
-  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduceMotion = prefersReducedMotion();
   el.textContent = nextText;
   el.dataset.metricText = nextText;
   el.setAttribute("aria-label", nextText);
@@ -1151,7 +1279,8 @@ function setDisplayText(id, value, animate) {
   const el = document.getElementById(id);
   if (!el) return;
   const text = String(value ?? "");
-  if (animate === false) {
+  const useAnimation = typeof animate === "object" ? animate.animate !== false : animate !== false;
+  if (!useAnimation) {
     el.textContent = text;
     el.dataset.metricText = text;
     el.setAttribute("aria-label", text);
@@ -2096,7 +2225,7 @@ window.addEventListener("load", () => {
   const stored = localStorage.getItem("codex_report_lang");
   const langGuess = (navigator.language || "en").startsWith("zh") ? "zh" : "en";
   const fallback = stored || langGuess;
-  applyI18n(fallback);
+  applyI18n(fallback, { animate: false, source: "boot" });
   rebuildMinuteEventMap();
   setupRangeControls();
   setupDailyChartZoom();
@@ -2111,8 +2240,9 @@ window.addEventListener("load", () => {
   document.querySelectorAll(".lang-toggle button").forEach(btn => {
     btn.addEventListener("click", () => {
       const lang = btn.dataset.lang;
+      if (!lang || lang === currentLang) return;
       localStorage.setItem("codex_report_lang", lang);
-      applyI18n(lang);
+      applyI18n(lang, { animate: true, source: "user" });
       applyRange(currentRange.start, currentRange.end);
     });
   });
