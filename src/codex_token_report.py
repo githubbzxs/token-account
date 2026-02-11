@@ -544,10 +544,10 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --font-zh: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
   --font-en: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --app-font: var(--font-en);
-  --swift-duration-fast: 460ms;
-  --swift-duration-normal: 900ms;
+  --swift-duration-fast: 720ms;
+  --swift-duration-normal: 1500ms;
   --swift-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --swift-ease-spring: cubic-bezier(0.2, 0.9, 0.2, 1.12);
+  --swift-ease-spring: cubic-bezier(0.22, 0.8, 0.22, 1.02);
 }
 
 * {
