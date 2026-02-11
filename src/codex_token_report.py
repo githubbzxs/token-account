@@ -836,7 +836,7 @@ body {
 }
 
 .metric-value-out {
-  animation: metricFadeOut var(--metric-out-duration, 140ms) var(--swift-ease-standard);
+  animation: metricFadeOut var(--metric-out-duration, 90ms) var(--swift-ease-standard);
   will-change: opacity, transform;
   animation-fill-mode: both;
 }
@@ -1073,9 +1073,9 @@ body {
     filter: blur(0);
   }
   100% {
-    opacity: 0.84;
-    transform: translateY(-1px);
-    filter: blur(0.8px);
+    opacity: 0.9;
+    transform: translateY(-0.4px);
+    filter: blur(0.35px);
   }
 }
 
@@ -1330,7 +1330,7 @@ function animateMetricValue(el, text) {
   }
 
   const inMs = Math.max(220, readRootDurationMs("--swift-duration-normal", 320));
-  const outMs = Math.max(100, Math.min(160, Math.round(inMs * 0.42)));
+  const outMs = Math.max(60, Math.min(90, Math.round(inMs * 0.08)));
   el.style.setProperty("--metric-out-duration", `${outMs}ms`);
   el.classList.add("metric-value-out");
 
