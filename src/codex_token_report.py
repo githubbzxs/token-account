@@ -835,6 +835,12 @@ body {
   font-feature-settings: "tnum" 1;
 }
 
+.metric-value-out {
+  animation: metricFadeOut var(--metric-out-duration, 140ms) var(--swift-ease-standard);
+  will-change: opacity, transform;
+  animation-fill-mode: both;
+}
+
 .metric-value-anim {
   animation: metricFade var(--swift-duration-normal) var(--swift-ease-standard);
   will-change: opacity, transform;
@@ -1060,6 +1066,19 @@ body {
   }
 }
 
+@keyframes metricFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0.84;
+    transform: translateY(-1px);
+    filter: blur(0.8px);
+  }
+}
+
 @keyframes i18nSwap {
   0% {
     opacity: 0.72;
@@ -1074,6 +1093,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .lang-toggle-indicator,
   .lang-toggle button,
+  .metric-value-out,
   .metric-value-anim,
   .i18n-switch-anim {
     animation: none !important;
@@ -1261,18 +1281,78 @@ function toLocalISODate(d) {
   return `${y}-${m}-${day}`;
 }
 
+const metricSwapTimers = new WeakMap();
+
+function parseDurationMs(value, fallback) {
+  const raw = String(value || "").trim();
+  if (!raw) return fallback;
+  if (raw.endsWith("ms")) {
+    const n = Number(raw.slice(0, -2));
+    return Number.isFinite(n) ? n : fallback;
+  }
+  if (raw.endsWith("s")) {
+    const n = Number(raw.slice(0, -1));
+    return Number.isFinite(n) ? n * 1000 : fallback;
+  }
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function readRootDurationMs(varName, fallback) {
+  const style = window.getComputedStyle(document.documentElement);
+  return parseDurationMs(style.getPropertyValue(varName), fallback);
+}
+
+function clearMetricSwapState(el) {
+  const timers = metricSwapTimers.get(el);
+  if (timers) {
+    if (timers.out) window.clearTimeout(timers.out);
+    if (timers.enter) window.clearTimeout(timers.enter);
+    metricSwapTimers.delete(el);
+  }
+  el.classList.remove("metric-value-out", "metric-value-anim");
+  el.style.removeProperty("--metric-out-duration");
+}
+
 function animateMetricValue(el, text) {
   const nextText = String(text ?? "");
   const prevText = el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || "");
   if (prevText === nextText) return;
+
+  clearMetricSwapState(el);
+
   const reduceMotion = prefersReducedMotion();
-  el.textContent = nextText;
-  el.dataset.metricText = nextText;
-  el.setAttribute("aria-label", nextText);
-  if (reduceMotion) return;
-  el.classList.remove("metric-value-anim");
-  void el.offsetWidth;
-  el.classList.add("metric-value-anim");
+  if (reduceMotion) {
+    el.textContent = nextText;
+    el.dataset.metricText = nextText;
+    el.setAttribute("aria-label", nextText);
+    return;
+  }
+
+  const inMs = Math.max(220, readRootDurationMs("--swift-duration-normal", 320));
+  const outMs = Math.max(100, Math.min(160, Math.round(inMs * 0.42)));
+  el.style.setProperty("--metric-out-duration", `${outMs}ms`);
+  el.classList.add("metric-value-out");
+
+  const outTimer = window.setTimeout(() => {
+    el.classList.remove("metric-value-out");
+    el.textContent = nextText;
+    el.dataset.metricText = nextText;
+    el.setAttribute("aria-label", nextText);
+    el.classList.remove("metric-value-anim");
+    void el.offsetWidth;
+    el.classList.add("metric-value-anim");
+
+    const enterTimer = window.setTimeout(() => {
+      el.classList.remove("metric-value-anim");
+      el.style.removeProperty("--metric-out-duration");
+      metricSwapTimers.delete(el);
+    }, inMs);
+
+    metricSwapTimers.set(el, { enter: enterTimer });
+  }, outMs);
+
+  metricSwapTimers.set(el, { out: outTimer });
 }
 
 function setDisplayText(id, value, animate) {
