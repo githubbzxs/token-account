@@ -544,8 +544,8 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --font-zh: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
   --font-en: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --app-font: var(--font-en);
-  --swift-duration-fast: 720ms;
-  --swift-duration-normal: 1500ms;
+  --swift-duration-fast: 900ms;
+  --swift-duration-normal: 2000ms;
   --swift-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   --swift-ease-spring: cubic-bezier(0.22, 0.8, 0.22, 1.02);
 }
