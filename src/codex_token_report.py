@@ -67,11 +67,8 @@ I18N = {
         "table_tokens": "总 token",
         "table_input": "输入",
         "table_output": "输出",
-        "table_cached": "缓存",
-        "table_reasoning": "推理",
         "table_cost": "估算成本",
         "no_data": "无数据",
-        "note_reasoning": "推理 token 按输出价格计费",
         "empty_banner": "该时间范围内没有 token 使用记录",
         "no_data": "无数据",
         "other": "其他",
@@ -135,11 +132,8 @@ I18N = {
         "table_tokens": "Total tokens",
         "table_input": "Input",
         "table_output": "Output",
-        "table_cached": "Cached",
-        "table_reasoning": "Reasoning",
         "table_cost": "Estimated cost",
         "no_data": "No data",
-        "note_reasoning": "Reasoning tokens billed as output",
         "empty_banner": "No token usage found in this range.",
         "no_data": "No data",
         "other": "Other",
@@ -1105,7 +1099,6 @@ body {
     </div>
     <div class="panel wide" style="--delay:0.35s">
       <h3 data-i18n="model_table">Model breakdown</h3>
-      <div class="note" data-i18n="note_reasoning">Reasoning tokens billed as output</div>
       <table class="table">
         <thead>
           <tr>
@@ -1113,8 +1106,6 @@ body {
             <th data-i18n="table_tokens">Total tokens</th>
             <th data-i18n="table_input">Input</th>
             <th data-i18n="table_output">Output</th>
-            <th data-i18n="table_cached">Cached</th>
-            <th data-i18n="table_reasoning">Reasoning</th>
             <th data-i18n="table_cost">Estimated cost</th>
           </tr>
         </thead>
@@ -1991,8 +1982,6 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
       `<td>${formatNumber(item.rec.total_tokens || 0)}</td>` +
       `<td>${formatNumber(item.rec.input_tokens || 0)}</td>` +
       `<td>${formatNumber(item.rec.output_tokens || 0)}</td>` +
-      `<td>${formatNumber(item.rec.cached_input_tokens || 0)}</td>` +
-      `<td>${formatNumber(item.rec.reasoning_output_tokens || 0)}</td>` +
       `<td>${cost != null ? formatMoneyUSD(cost) : "n/a"}</td>` +
       "</tr>"
     );
@@ -2001,7 +1990,7 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   const tableEl = document.getElementById("table-models");
   if (tableEl) {
     if (tableRows.length === 0) {
-      tableEl.innerHTML = `<tr><td class="muted">${escapeHTML(labelFor("no_data"))}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+      tableEl.innerHTML = `<tr><td class="muted">${escapeHTML(labelFor("no_data"))}</td><td></td><td></td><td></td><td></td></tr>`;
     } else {
       tableEl.innerHTML = tableRows.join("");
     }
@@ -2252,7 +2241,7 @@ window.addEventListener("load", () => {
         "AVG_PER_SESSION": html.escape(summary.get("avg_per_session", "")),
         "TOTAL_COST": html.escape(summary.get("total_cost", "")),
         "SOURCE_PATH": source_path,
-        "MODEL_TABLE": summary.get("model_table_html", "") or "          <tr><td class=\"muted\" data-i18n=\"no_data\">No data</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>",
+        "MODEL_TABLE": summary.get("model_table_html", "") or "          <tr><td class=\"muted\" data-i18n=\"no_data\">No data</td><td></td><td></td><td></td><td></td></tr>",
         "GENERATED_AT": html.escape(summary.get("generated_at", "")),
         "EMPTY_BANNER": empty_banner,
         "DATA_JSON": data_json,
@@ -2361,8 +2350,6 @@ def main() -> int:
             f"<td>{fmt_int(rec['total_tokens'])}</td>"
             f"<td>{fmt_int(rec['input_tokens'])}</td>"
             f"<td>{fmt_int(rec['output_tokens'])}</td>"
-            f"<td>{fmt_int(rec['cached_input_tokens'])}</td>"
-            f"<td>{fmt_int(rec['reasoning_output_tokens'])}</td>"
             f"<td>{fmt_money(model_costs.get(model))}</td>"
             "</tr>"
         )
