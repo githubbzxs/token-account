@@ -44,11 +44,12 @@ I18N = {
         "from": "起始",
         "to": "结束",
         "apply": "应用",
-        "last_1": "近 1 天",
-        "last_7": "近 7 天",
-        "last_30": "近 30 天",
-        "last_90": "近 90 天",
-        "all_time": "全部时间",
+        "last_1": "一天",
+        "last_2": "两天",
+        "last_7": "一周",
+        "last_30": "一月",
+        "last_90": "一季度",
+        "all_time": "全部",
         "export": "导出",
         "import": "导入",
         "import_done": "已合并 {count} 个文件",
@@ -111,11 +112,12 @@ I18N = {
         "from": "From",
         "to": "To",
         "apply": "Apply",
-        "last_1": "Last 1d",
-        "last_7": "Last 7d",
-        "last_30": "Last 30d",
-        "last_90": "Last 90d",
-        "all_time": "All time",
+        "last_1": "1 day",
+        "last_2": "2 days",
+        "last_7": "1 week",
+        "last_30": "1 month",
+        "last_90": "1 quarter",
+        "all_time": "All",
         "export": "Export",
         "import": "Import",
         "import_done": "Merged {count} file(s)",
@@ -1066,11 +1068,12 @@ body {
       <button type="button" id="apply-range" data-i18n="apply">Apply</button>
     </div>
     <div class="range-buttons">
-      <button type="button" data-range="1" data-i18n="last_1">Last 1d</button>
-      <button type="button" data-range="7" data-i18n="last_7">Last 7d</button>
-      <button type="button" data-range="30" data-i18n="last_30">Last 30d</button>
-      <button type="button" data-range="90" data-i18n="last_90">Last 90d</button>
-      <button type="button" data-range="all" data-i18n="all_time">All time</button>
+      <button type="button" data-range="1" data-i18n="last_1">一天</button>
+      <button type="button" data-range="2" data-i18n="last_2">两天</button>
+      <button type="button" data-range="7" data-i18n="last_7">一周</button>
+      <button type="button" data-range="30" data-i18n="last_30">一月</button>
+      <button type="button" data-range="90" data-i18n="last_90">一季度</button>
+      <button type="button" data-range="all" data-i18n="all_time">全部</button>
     </div>
     <div class="range-actions">
       <button type="button" id="export-data" data-i18n="export">Export</button>
