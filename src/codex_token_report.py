@@ -541,8 +541,8 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --accent-3: #34d399;
   --shadow: 0 22px 52px rgba(0, 0, 0, 0.62);
   --ring: rgba(34, 211, 238, 0.28);
-  --font-zh: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-  --font-en: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-zh: "LXGW WenKai", "霞鹜文楷", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
+  --font-en: "LXGW WenKai", "霞鹜文楷", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
   --app-font: var(--font-en);
   --swift-duration-fast: 900ms;
   --swift-duration-normal: 2000ms;
@@ -564,10 +564,7 @@ html[lang="en"] {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(1200px 620px at 12% 0%, rgba(34, 211, 238, 0.12), transparent 58%),
-    radial-gradient(1000px 580px at 92% 5%, rgba(251, 113, 133, 0.1), transparent 62%),
-    linear-gradient(165deg, #0a0a0a 0%, #101114 100%);
+  background: #000;
   color: var(--text);
   font-family: var(--app-font);
   line-height: 1.45;
