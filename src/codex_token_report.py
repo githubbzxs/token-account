@@ -1134,11 +1134,6 @@ body {
       <h1 data-i18n="title">Codex Token Usage</h1>
       <p data-i18n="subtitle">Local report from Codex CLI session logs</p>
     </div>
-    <div class="meta">
-      <div class="pill"><span data-i18n="range">Range</span>: <span id="range-text">__RANGE_TEXT__</span></div>
-      <div class="pill"><span data-i18n="sessions">Sessions</span>: <span id="sessions-count">__SESSIONS__</span></div>
-      <div class="pill"><span data-i18n="active_days">Active days</span>: <span id="active-days">__DAYS_ACTIVE__</span></div>
-    </div>
     <div class="lang-toggle" data-active-lang="zh">
       <span class="lang-toggle-indicator" aria-hidden="true"></span>
       <button type="button" data-lang="zh">中文</button>
