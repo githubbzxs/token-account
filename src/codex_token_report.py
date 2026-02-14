@@ -55,7 +55,7 @@ I18N = {
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
         "daily_chart": "每小时总 token",
-        "zoom_hint": "滚轮可缩放，按住 Ctrl + 滚轮可按光标定点放大，拖动可滑动查看",
+        "zoom_hint": "滚轮可缩放，按住 Ctrl + 滚轮可对准位置并居中放大，拖动可滑动查看",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
         "model_mix": "模型占比",
@@ -119,7 +119,7 @@ I18N = {
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
         "daily_chart": "Hourly total tokens",
-        "zoom_hint": "Wheel to zoom; hold Ctrl + wheel to zoom at pointer, drag to pan",
+        "zoom_hint": "Wheel to zoom; hold Ctrl + wheel to zoom at pointer and center it, drag to pan",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
         "model_mix": "Model share",
@@ -1092,7 +1092,7 @@ body {
     <div class="panel wide" style="--delay:0.25s">
       <h3 data-i18n="daily_chart">Hourly total tokens</h3>
       <div id="chart-daily" class="chart"></div>
-      <div class="chart-tip" data-i18n="zoom_hint">滚轮可缩放，按住 Ctrl + 滚轮可按光标定点放大，拖动可滑动查看</div>
+      <div class="chart-tip" data-i18n="zoom_hint">滚轮可缩放，按住 Ctrl + 滚轮可对准位置并居中放大，拖动可滑动查看</div>
     </div>
     <div class="panel wide" style="--delay:0.35s">
       <h3 data-i18n="model_table">Model breakdown</h3>
@@ -1424,12 +1424,12 @@ function lineChart(el, labels, values, color) {
         const rect = el.getBoundingClientRect();
         const ratioRaw = (event.clientX - rect.left) / Math.max(1, rect.width);
         const pointerRatio = Math.min(1, Math.max(0, ratioRaw));
-        const ratio = event.ctrlKey ? pointerRatio : 0.5;
-        const anchor = currentStart + currentWindow * ratio;
+        const anchorRatio = event.ctrlKey ? pointerRatio : 0.5;
+        const anchor = currentStart + currentWindow * anchorRatio;
         const zoomFactor = event.deltaY < 0 ? 0.85 : 1.15;
         const nextWindow = Math.min(100, Math.max(0.2, currentWindow * zoomFactor));
-        let nextStart = anchor - nextWindow * ratio;
-        let nextEnd = nextStart + nextWindow;
+        let nextStart = anchor - nextWindow / 2;
+        let nextEnd = anchor + nextWindow / 2;
         if (nextStart < 0) {
           nextStart = 0;
           nextEnd = nextWindow;
