@@ -56,7 +56,7 @@ I18N = {
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
         "daily_chart": "每小时总 token",
-        "zoom_hint": "支持滚轮缩放、拖动滑动（Shift+滚轮横移）",
+        "zoom_hint": "支持滚动滑动查看与缩放",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
         "model_mix": "模型占比",
@@ -121,7 +121,7 @@ I18N = {
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
         "daily_chart": "Hourly total tokens",
-        "zoom_hint": "Wheel to zoom, drag to pan (Shift+wheel to slide)",
+        "zoom_hint": "Scroll, drag, and zoom to inspect details",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
         "model_mix": "Model share",
@@ -1094,8 +1094,8 @@ body {
   <div class="panel-grid">
     <div class="panel wide" style="--delay:0.25s">
       <h3 data-i18n="daily_chart">Hourly total tokens</h3>
-      <div id="chart-daily" class="chart zoomable"></div>
-      <div class="chart-tip" data-i18n="zoom_hint">Wheel to zoom, drag to pan (Shift+wheel to slide)</div>
+      <div id="chart-daily" class="chart"></div>
+      <div class="chart-tip" data-i18n="zoom_hint">支持滚动滑动查看与缩放</div>
     </div>
     <div class="panel wide" style="--delay:0.35s">
       <h3 data-i18n="model_table">Model breakdown</h3>
@@ -1118,12 +1118,15 @@ __MODEL_TABLE__
 
   <div class="footer">Generated __GENERATED_AT__</div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
 <script>
 const DATA = __DATA_JSON__;
 const I18N = __I18N_JSON__;
 let currentLang = "zh";
 const CHART_AXIS_TEXT = "#94a3b8";
 const CHART_AXIS_LINE = "rgba(148,163,184,0.28)";
+let dailyChartInstance = null;
+let chartResizeBound = false;
 
 function prefersReducedMotion() {
   return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -1368,84 +1371,100 @@ function setupAutoSync() {
 
 function lineChart(el, labels, values, color) {
   if (!el) return;
-  const rawLabels = Array.isArray(labels) ? labels : [];
-  const rawValues = Array.isArray(values) ? values : [];
-  if (!rawValues.length) {
+  const chartLabels = Array.isArray(labels) ? labels : [];
+  const chartValues = Array.isArray(values) ? values.map(v => Number(v || 0)) : [];
+  if (!window.echarts) {
     el.innerHTML = "";
     return;
   }
-  const width = 860;
-  const height = 240;
-  const pad = { l: 32, r: 16, t: 16, b: 32 };
-
-  let max = 1;
-  for (let i = 0; i < rawValues.length; i++) {
-    const val = Number(rawValues[i] || 0);
-    if (val > max) max = val;
+  if (!dailyChartInstance || dailyChartInstance.isDisposed() || dailyChartInstance.getDom() !== el) {
+    if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
+      dailyChartInstance.dispose();
+    }
+    dailyChartInstance = window.echarts.init(el, null, { renderer: "canvas" });
   }
-
-  const MAX_POINTS = 2200;
-  let chartLabels = rawLabels;
-  let chartValues = rawValues;
-  if (rawValues.length > MAX_POINTS) {
-    const step = Math.ceil(rawValues.length / MAX_POINTS);
-    const sampledLabels = [];
-    const sampledValues = [];
-    for (let i = 0; i < rawValues.length; i += step) {
-      const end = Math.min(rawValues.length, i + step);
-      let peakValue = 0;
-      let peakIndex = i;
-      for (let j = i; j < end; j++) {
-        const current = Number(rawValues[j] || 0);
-        if (current >= peakValue) {
-          peakValue = current;
-          peakIndex = j;
-        }
+  if (!chartResizeBound) {
+    window.addEventListener("resize", () => {
+      if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
+        dailyChartInstance.resize();
       }
-      sampledLabels.push(rawLabels[peakIndex] || rawLabels[i] || "");
-      sampledValues.push(peakValue);
-    }
-    const lastLabel = rawLabels[rawLabels.length - 1] || "";
-    const lastValue = Number(rawValues[rawValues.length - 1] || 0);
-    if (sampledLabels[sampledLabels.length - 1] !== lastLabel) {
-      sampledLabels.push(lastLabel);
-      sampledValues.push(lastValue);
-    }
-    chartLabels = sampledLabels;
-    chartValues = sampledValues;
+    });
+    chartResizeBound = true;
   }
-
-  const xStep = chartValues.length > 1 ? (width - pad.l - pad.r) / (chartValues.length - 1) : 0;
-  const baseY = height - pad.b;
-
-  const points = chartValues.map((v, i) => {
-    const x = pad.l + i * xStep;
-    const y = pad.t + (height - pad.t - pad.b) * (1 - v / max);
-    return [x, y];
-  });
-
-  const line = points.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(2)} ${p[1].toFixed(2)}`).join(" ");
-  const area = `${line} L ${pad.l + (chartValues.length - 1) * xStep} ${baseY} L ${pad.l} ${baseY} Z`;
-
-  const uid = "grad" + Math.random().toString(36).slice(2);
-  const svg = `
-    <svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="${uid}" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="${color}" stop-opacity="0.35"></stop>
-          <stop offset="100%" stop-color="${color}" stop-opacity="0"></stop>
-        </linearGradient>
-      </defs>
-      <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
-      <path d="${area}" fill="url(#${uid})"></path>
-      <path d="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round"></path>
-      <line x1="${pad.l}" x2="${width - pad.r}" y1="${baseY}" y2="${baseY}" stroke="${CHART_AXIS_LINE}" />
-      <text x="${pad.l}" y="${height - 8}" fill="${CHART_AXIS_TEXT}" font-size="11">${chartLabels[0] || ""}</text>
-      <text x="${width - pad.r - 80}" y="${height - 8}" fill="${CHART_AXIS_TEXT}" font-size="11">${chartLabels[chartLabels.length - 1] || ""}</text>
-      <text x="${pad.l}" y="${pad.t + 12}" fill="${CHART_AXIS_TEXT}" font-size="11">${formatNumber(max)}</text>
-    </svg>
-  `;
-  el.innerHTML = svg;
+  if (!chartValues.length) {
+    dailyChartInstance.clear();
+    return;
+  }
+  const zoomStart = chartValues.length > 200 ? Math.max(0, 100 - (200 / chartValues.length) * 100) : 0;
+  dailyChartInstance.setOption(
+    {
+      backgroundColor: "transparent",
+      animation: false,
+      grid: { left: 48, right: 26, top: 16, bottom: 56 },
+      tooltip: {
+        trigger: "axis",
+        backgroundColor: "rgba(10,10,10,0.92)",
+        borderColor: "rgba(34,211,238,0.4)",
+        borderWidth: 1,
+        textStyle: { color: "#f8fafc" },
+        axisPointer: { type: "line" },
+      },
+      xAxis: {
+        type: "category",
+        boundaryGap: false,
+        data: chartLabels,
+        axisLabel: { color: CHART_AXIS_TEXT, hideOverlap: true },
+        axisLine: { lineStyle: { color: CHART_AXIS_LINE } },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: "value",
+        axisLabel: { color: CHART_AXIS_TEXT },
+        splitLine: { lineStyle: { color: "rgba(148,163,184,0.15)" } },
+      },
+      dataZoom: [
+        {
+          type: "inside",
+          xAxisIndex: 0,
+          zoomOnMouseWheel: true,
+          moveOnMouseMove: true,
+          moveOnMouseWheel: true,
+        },
+        {
+          type: "slider",
+          xAxisIndex: 0,
+          start: zoomStart,
+          end: 100,
+          height: 16,
+          bottom: 10,
+          borderColor: "rgba(148,163,184,0.3)",
+          fillerColor: "rgba(34,211,238,0.22)",
+          backgroundColor: "rgba(17,17,19,0.78)",
+          handleStyle: {
+            color: "#22D3EE",
+            borderColor: "rgba(15,23,42,0.95)",
+          },
+          moveHandleSize: 6,
+        },
+      ],
+      series: [
+        {
+          type: "line",
+          data: chartValues,
+          showSymbol: false,
+          smooth: false,
+          lineStyle: { color, width: 2.5 },
+          areaStyle: {
+            color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "rgba(34,211,238,0.35)" },
+              { offset: 1, color: "rgba(34,211,238,0.03)" },
+            ]),
+          },
+        },
+      ],
+    },
+    true
+  );
 }
 
 function barChart(el, labels, values, color) {
@@ -2044,169 +2063,7 @@ function setupRangeControls() {
 }
 
 function setupDailyChartZoom() {
-  const bindZoom = (chartEl) => {
-    if (!chartEl) return;
-    let panState = null;
-
-    const getLabels = () => (DATA.daily && DATA.daily.labels) || [];
-    const getWindowState = (labels) => {
-      const startIdx = labelIndex.has(currentRange.start) ? labelIndex.get(currentRange.start) : 0;
-      const endIdx = labelIndex.has(currentRange.end) ? labelIndex.get(currentRange.end) : labels.length - 1;
-      const visible = Math.max(1, endIdx - startIdx + 1);
-      return { startIdx, endIdx, visible };
-    };
-    const daysFromPixels = (rectWidth, pixels, visible) => {
-      const pxPerDay = rectWidth > 0 ? rectWidth / Math.max(1, visible - 1) : 12;
-      return Math.round(pixels / Math.max(pxPerDay, 1));
-    };
-    let queuedRange = null;
-    let previewTimer = null;
-    let fullTimer = null;
-    const scheduleRangeApply = (startISO, endISO) => {
-      queuedRange = { startISO, endISO };
-      if (previewTimer === null) {
-        previewTimer = window.setTimeout(() => {
-          previewTimer = null;
-          if (!queuedRange) return;
-          applyRangePreview(queuedRange.startISO, queuedRange.endISO);
-        }, 32);
-      }
-      if (fullTimer !== null) {
-        clearTimeout(fullTimer);
-      }
-      fullTimer = window.setTimeout(() => {
-        fullTimer = null;
-        if (!queuedRange) return;
-        const next = queuedRange;
-        queuedRange = null;
-        applyRange(next.startISO, next.endISO);
-      }, 220);
-    };
-    const flushScheduledRange = () => {
-      if (!queuedRange) return;
-      if (previewTimer !== null) {
-        clearTimeout(previewTimer);
-        previewTimer = null;
-      }
-      if (fullTimer !== null) {
-        clearTimeout(fullTimer);
-        fullTimer = null;
-      }
-      const next = queuedRange;
-      queuedRange = null;
-      applyRange(next.startISO, next.endISO);
-    };
-    const panByDays = (deltaDays, labels, baseWindow) => {
-      if (!deltaDays || !labels.length) return;
-      const activeWindow = baseWindow || getWindowState(labels);
-      if (activeWindow.visible >= labels.length) return;
-      const maxStart = Math.max(0, labels.length - activeWindow.visible);
-      let nextStart = activeWindow.startIdx + deltaDays;
-      if (nextStart < 0) nextStart = 0;
-      if (nextStart > maxStart) nextStart = maxStart;
-      const nextEnd = nextStart + activeWindow.visible - 1;
-      scheduleRangeApply(labels[nextStart], labels[nextEnd]);
-    };
-
-    chartEl.addEventListener("wheel", (event) => {
-      event.preventDefault();
-      const labels = getLabels();
-      if (!labels.length) return;
-      const windowState = getWindowState(labels);
-      const rect = chartEl.getBoundingClientRect();
-
-      if (event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-        const wheelDelta = event.shiftKey && Math.abs(event.deltaX) < Math.abs(event.deltaY)
-          ? event.deltaY
-          : event.deltaX;
-        const deltaDays = daysFromPixels(rect.width, wheelDelta, windowState.visible);
-        panByDays(deltaDays, labels, windowState);
-        return;
-      }
-
-      const nextVisible = event.deltaY > 0
-        ? Math.min(labels.length, Math.round(windowState.visible * 1.2))
-        : Math.max(1, Math.round(windowState.visible * 0.8));
-      if (nextVisible === windowState.visible) return;
-
-      const ratioRaw = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0.5;
-      const ratio = Math.min(1, Math.max(0, ratioRaw));
-      const anchor = Math.round(windowState.startIdx + (windowState.visible - 1) * ratio);
-
-      let nextStart = Math.round(anchor - (nextVisible - 1) * ratio);
-      let nextEnd = nextStart + nextVisible - 1;
-
-      if (nextStart < 0) {
-        nextStart = 0;
-        nextEnd = nextVisible - 1;
-      }
-      if (nextEnd >= labels.length) {
-        nextEnd = labels.length - 1;
-        nextStart = Math.max(0, nextEnd - nextVisible + 1);
-      }
-      scheduleRangeApply(labels[nextStart], labels[nextEnd]);
-    }, { passive: false });
-
-    const beginPan = (clientX) => {
-      const labels = getLabels();
-      if (!labels.length) return;
-      const windowState = getWindowState(labels);
-      panState = {
-        startX: clientX,
-        startIdx: windowState.startIdx,
-        visible: windowState.visible,
-      };
-      chartEl.classList.add("is-panning");
-    };
-
-    const movePan = (clientX) => {
-      if (!panState) return;
-      const labels = getLabels();
-      if (!labels.length) return;
-      const rect = chartEl.getBoundingClientRect();
-      const deltaDays = daysFromPixels(rect.width, panState.startX - clientX, panState.visible);
-      panByDays(deltaDays, labels, panState);
-    };
-
-    const endPan = () => {
-      if (!panState) return;
-      flushScheduledRange();
-      panState = null;
-      chartEl.classList.remove("is-panning");
-    };
-
-    chartEl.addEventListener("mousedown", (event) => {
-      if (event.button !== 0) return;
-      event.preventDefault();
-      beginPan(event.clientX);
-    });
-
-    window.addEventListener("mousemove", (event) => {
-      if (!panState) return;
-      event.preventDefault();
-      movePan(event.clientX);
-    });
-
-    window.addEventListener("mouseup", () => {
-      endPan();
-    });
-
-    chartEl.addEventListener("touchstart", (event) => {
-      if (!event.touches || event.touches.length !== 1) return;
-      beginPan(event.touches[0].clientX);
-    }, { passive: true });
-
-    chartEl.addEventListener("touchmove", (event) => {
-      if (!panState || !event.touches || event.touches.length !== 1) return;
-      event.preventDefault();
-      movePan(event.touches[0].clientX);
-    }, { passive: false });
-
-    chartEl.addEventListener("touchend", endPan);
-    chartEl.addEventListener("touchcancel", endPan);
-  };
-
-  bindZoom(document.getElementById("chart-daily"));
+  // 已由 ECharts dataZoom 提供滑动与缩放。
 }
 
 window.addEventListener("load", () => {
