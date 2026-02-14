@@ -581,9 +581,9 @@ body {
 
 .page {
   position: relative;
-  max-width: 1680px;
-  margin: 16px auto;
-  padding: 34px 24px 56px;
+  max-width: 1360px;
+  margin: 24px auto;
+  padding: 28px 20px 42px;
   border-radius: 24px;
   border: 1px solid rgba(226, 232, 240, 0.32);
   background: linear-gradient(170deg, rgba(8, 11, 16, 0.9), rgba(3, 5, 8, 0.94));
