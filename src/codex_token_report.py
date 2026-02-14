@@ -1152,6 +1152,19 @@ function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(num);
 }
 
+function formatChartNumber(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "0";
+  const absNum = Math.abs(num);
+  if (absNum >= 1_000_000_000) {
+    return `${(num / 1_000_000_000).toFixed(1).replace(/\\.0$/, "")}b`;
+  }
+  if (absNum >= 1_000_000) {
+    return `${(num / 1_000_000).toFixed(1).replace(/\\.0$/, "")}m`;
+  }
+  return new Intl.NumberFormat("en-US").format(num);
+}
+
 function applyI18n(lang, options) {
   const opts = options || {};
   const source = opts.source || "system";
@@ -1404,6 +1417,7 @@ function lineChart(el, labels, values, color) {
         borderWidth: 1,
         textStyle: { color: "#f8fafc" },
         axisPointer: { type: "line" },
+        valueFormatter: (value) => formatChartNumber(value),
       },
       xAxis: {
         type: "category",
@@ -1415,7 +1429,10 @@ function lineChart(el, labels, values, color) {
       },
       yAxis: {
         type: "value",
-        axisLabel: { color: CHART_AXIS_TEXT },
+        axisLabel: {
+          color: CHART_AXIS_TEXT,
+          formatter: (value) => formatChartNumber(value),
+        },
         splitLine: { lineStyle: { color: "rgba(148,163,184,0.15)" } },
       },
       dataZoom: [
