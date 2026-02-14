@@ -54,7 +54,7 @@ I18N = {
         "import_done": "已合并 {count} 个文件",
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
-        "daily_chart": "每分钟总 token",
+        "daily_chart": "每小时总 token",
         "zoom_hint": "支持滚轮缩放、拖动滑动（Shift+滚轮横移）",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
@@ -121,7 +121,7 @@ I18N = {
         "import_done": "Merged {count} file(s)",
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
-        "daily_chart": "Per-minute total tokens",
+        "daily_chart": "Hourly total tokens",
         "zoom_hint": "Wheel to zoom, drag to pan (Shift+wheel to slide)",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
@@ -580,9 +580,30 @@ body {
 }
 
 .page {
+  position: relative;
   max-width: 1680px;
-  margin: 0 auto;
+  margin: 16px auto;
   padding: 34px 24px 56px;
+  border-radius: 24px;
+  border: 1px solid rgba(226, 232, 240, 0.32);
+  background: linear-gradient(170deg, rgba(8, 11, 16, 0.9), rgba(3, 5, 8, 0.94));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 32px rgba(203, 213, 225, 0.22),
+    0 28px 60px rgba(0, 0, 0, 0.56);
+  overflow: hidden;
+}
+
+.page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  border: 1px solid rgba(241, 245, 249, 0.26);
+  box-shadow:
+    inset 0 0 24px rgba(148, 163, 184, 0.16),
+    0 0 22px rgba(226, 232, 240, 0.2);
 }
 
 .hero {
@@ -1171,7 +1192,7 @@ body {
 
   <div class="panel-grid">
     <div class="panel wide" style="--delay:0.25s">
-      <h3 data-i18n="daily_chart">Daily total tokens</h3>
+      <h3 data-i18n="daily_chart">Hourly total tokens</h3>
       <div id="chart-daily" class="chart zoomable"></div>
       <div class="chart-tip" data-i18n="zoom_hint">Wheel to zoom, drag to pan (Shift+wheel to slide)</div>
     </div>
@@ -1406,7 +1427,7 @@ function applyLatestData(nextData) {
   DATA.pricing = nextData.pricing || DATA.pricing;
   DATA.meta = nextData.meta || {};
   rebuildLabelIndex();
-  rebuildMinuteEventMap();
+  rebuildHourEventMap();
 
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
@@ -1578,27 +1599,27 @@ let currentRange = {
   end: (DATA.range && DATA.range.end) || "",
 };
 let hasInitialMetricsRender = false;
-const MINUTE_MS = 60_000;
+const HOUR_MS = 3_600_000;
 const MAX_CHART_POINTS = 1600;
-let minuteEventMap = new Map();
+let hourEventMap = new Map();
 
-function parseMinuteMs(ts) {
+function parseHourMs(ts) {
   if (!ts) return null;
   const iso = String(ts).replace(" ", "T");
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms)) return null;
-  return Math.floor(ms / MINUTE_MS) * MINUTE_MS;
+  return Math.floor(ms / HOUR_MS) * HOUR_MS;
 }
 
-function rebuildMinuteEventMap() {
+function rebuildHourEventMap() {
   const next = new Map();
   (DATA.events || []).forEach(ev => {
     if (!ev || !ev.ts) return;
-    const minuteMs = parseMinuteMs(ev.ts);
-    if (minuteMs == null) return;
-    next.set(minuteMs, (next.get(minuteMs) || 0) + Number(ev.value || 0));
+    const hourMs = parseHourMs(ev.ts);
+    if (hourMs == null) return;
+    next.set(hourMs, (next.get(hourMs) || 0) + Number(ev.value || 0));
   });
-  minuteEventMap = next;
+  hourEventMap = next;
 }
 
 function escapeHTML(value) {
@@ -1630,41 +1651,36 @@ function pad2(value) {
   return String(value).padStart(2, "0");
 }
 
-function formatMinuteLabel(dateObj) {
-  return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())} ${pad2(dateObj.getHours())}:${pad2(dateObj.getMinutes())}`;
+function formatHourLabel(dateObj) {
+  return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())} ${pad2(dateObj.getHours())}:00`;
 }
 
-function buildMinuteSeries(startISO, endISO) {
+function buildHourlySeries(startISO, endISO) {
   const labels = [];
   const totals = [];
   if (!startISO || !endISO) return { labels, totals };
   const startMs = new Date(`${startISO}T00:00:00`).getTime();
-  const endMs = new Date(`${endISO}T23:59:00`).getTime();
+  const endMs = new Date(`${endISO}T23:00:00`).getTime();
   if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || startMs > endMs) {
     return { labels, totals };
   }
-  const totalMinutes = Math.floor((endMs - startMs) / MINUTE_MS) + 1;
-  const bucketMinutes = Math.max(1, Math.ceil(totalMinutes / MAX_CHART_POINTS));
+  const totalHours = Math.floor((endMs - startMs) / HOUR_MS) + 1;
+  const bucketHours = Math.max(1, Math.ceil(totalHours / MAX_CHART_POINTS));
 
-  for (let bucketStart = startMs; bucketStart <= endMs; bucketStart += bucketMinutes * MINUTE_MS) {
-    const bucketEnd = Math.min(endMs, bucketStart + (bucketMinutes - 1) * MINUTE_MS);
-    let peakValue = 0;
-    let peakMinute = bucketEnd;
-    for (let minute = bucketStart; minute <= bucketEnd; minute += MINUTE_MS) {
-      const current = Number(minuteEventMap.get(minute) || 0);
-      if (current >= peakValue) {
-        peakValue = current;
-        peakMinute = minute;
-      }
+  for (let bucketStart = startMs; bucketStart <= endMs; bucketStart += bucketHours * HOUR_MS) {
+    const bucketEnd = Math.min(endMs, bucketStart + (bucketHours - 1) * HOUR_MS);
+    let bucketTotal = 0;
+    for (let hour = bucketStart; hour <= bucketEnd; hour += HOUR_MS) {
+      bucketTotal += Number(hourEventMap.get(hour) || 0);
     }
-    labels.push(formatMinuteLabel(new Date(peakMinute)));
-    totals.push(peakValue);
+    labels.push(formatHourLabel(new Date(bucketEnd)));
+    totals.push(bucketTotal);
   }
 
-  const endLabel = formatMinuteLabel(new Date(endMs));
+  const endLabel = formatHourLabel(new Date(endMs));
   if (labels[labels.length - 1] !== endLabel) {
     labels.push(endLabel);
-    totals.push(Number(minuteEventMap.get(endMs) || 0));
+    totals.push(Number(hourEventMap.get(endMs) || 0));
   }
   return { labels, totals };
 }
@@ -1912,7 +1928,7 @@ function mergeImportedData(datasets) {
   DATA.session_spans = merged.session_spans;
   DATA.range = merged.range;
   rebuildLabelIndex();
-  rebuildMinuteEventMap();
+  rebuildHourEventMap();
   syncRangeControls(DATA.range.start, DATA.range.end);
   applyRange(DATA.range.start, DATA.range.end);
   return true;
@@ -2013,16 +2029,16 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   const endIdx = labelIndex.has(endISO) ? labelIndex.get(endISO) : (DATA.daily.labels.length - 1);
 
   const dayLabels = DATA.daily.labels.slice(startIdx, endIdx + 1);
-  const minuteSeries = buildMinuteSeries(startISO, endISO);
-  const minuteLabels = minuteSeries.labels;
-  const minuteTotals = minuteSeries.totals;
+  const hourlySeries = buildHourlySeries(startISO, endISO);
+  const hourlyLabels = hourlySeries.labels;
+  const hourlyTotals = hourlySeries.totals;
 
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
   if (startInput) startInput.value = startISO;
   if (endInput) endInput.value = endISO;
   setDisplayText("range-text", `${startISO} to ${endISO}`, false);
-  lineChart(document.getElementById("chart-daily"), minuteLabels, minuteTotals, "#22D3EE");
+  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, "#22D3EE");
 
   if (previewOnly) {
     return;
@@ -2310,7 +2326,7 @@ window.addEventListener("load", () => {
   const langGuess = (navigator.language || "en").startsWith("zh") ? "zh" : "en";
   const fallback = stored || langGuess;
   applyI18n(fallback, { animate: false, source: "boot" });
-  rebuildMinuteEventMap();
+  rebuildHourEventMap();
   setupRangeControls();
   setupDailyChartZoom();
   setupImportExport();
