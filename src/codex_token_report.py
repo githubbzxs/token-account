@@ -1116,7 +1116,6 @@ __MODEL_TABLE__
     </div>
   </div>
 
-  <div class="footer">Generated __GENERATED_AT__</div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
 <script>
@@ -2099,7 +2098,6 @@ window.addEventListener("load", () => {
         "TOTAL_COST": html.escape(summary.get("total_cost", "")),
         "SOURCE_PATH": source_path,
         "MODEL_TABLE": summary.get("model_table_html", "") or "          <tr><td class=\"muted\" data-i18n=\"no_data\">No data</td><td></td><td></td><td></td><td></td></tr>",
-        "GENERATED_AT": html.escape(summary.get("generated_at", "")),
         "EMPTY_BANNER": empty_banner,
         "DATA_JSON": data_json,
         "I18N_JSON": i18n_json,
