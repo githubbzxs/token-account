@@ -24,7 +24,6 @@ FIELDS = [
 I18N = {
     "zh": {
         "title": "Codex Token 用量",
-        "subtitle": "基于本地 Codex CLI 日志的可视化报告",
         "range": "范围",
         "sessions": "会话数",
         "active_days": "活跃天数",
@@ -89,7 +88,6 @@ I18N = {
     },
     "en": {
         "title": "Codex Token Usage",
-        "subtitle": "Visual report from local Codex CLI logs",
         "range": "Range",
         "sessions": "Sessions",
         "active_days": "Active days",
@@ -1052,7 +1050,6 @@ body {
   <div class="hero">
     <div class="title">
       <h1 data-i18n="title">Codex Token Usage</h1>
-      <p data-i18n="subtitle">Local report from Codex CLI session logs</p>
     </div>
   </div>
   <div class="range-controls">
