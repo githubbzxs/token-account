@@ -528,6 +528,8 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Codex Token Report</title>
 <style>
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
+
 :root {
   --background: #0a0a0a;
   --surface: #111113;
@@ -541,8 +543,8 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --accent-3: #34d399;
   --shadow: 0 22px 52px rgba(0, 0, 0, 0.62);
   --ring: rgba(34, 211, 238, 0.28);
-  --font-zh: "LXGW WenKai", "霞鹜文楷", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
-  --font-en: "LXGW WenKai", "霞鹜文楷", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
+  --font-zh: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
+  --font-en: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
   --app-font: var(--font-en);
   --swift-duration-fast: 900ms;
   --swift-duration-normal: 2000ms;
@@ -564,7 +566,12 @@ html[lang="en"] {
 
 body {
   margin: 0;
-  background: #000;
+  background:
+    radial-gradient(1200px 700px at 12% 2%, rgba(59, 130, 246, 0.22), transparent 60%),
+    radial-gradient(980px 620px at 88% 8%, rgba(34, 211, 238, 0.14), transparent 64%),
+    radial-gradient(820px 500px at 52% 112%, rgba(148, 163, 184, 0.08), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 4px),
+    linear-gradient(170deg, #010101 0%, #050505 55%, #000 100%);
   color: var(--text);
   font-family: var(--app-font);
   line-height: 1.45;
