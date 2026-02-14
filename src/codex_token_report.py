@@ -23,7 +23,7 @@ FIELDS = [
 
 I18N = {
     "zh": {
-        "title": "Codex Token 用量",
+        "title": "Codex Token Usage",
         "range": "范围",
         "sessions": "会话数",
         "active_days": "活跃天数",
@@ -520,7 +520,7 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Codex Token Report</title>
+<title>Codex Token Usage</title>
 <style>
 @import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
 
