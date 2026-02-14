@@ -31,7 +31,7 @@ I18N = {
         "card_total": "总 token",
         "card_cached": "缓存与推理",
         "card_avg": "平均值",
-        "card_cost": "估算成本 (USD)",
+        "card_cost": "估算成本",
         "input": "输入",
         "output": "输出",
         "reasoning": "推理",
@@ -99,7 +99,7 @@ I18N = {
         "card_total": "Total tokens",
         "card_cached": "Cached and reasoning",
         "card_avg": "Averages",
-        "card_cost": "Estimated cost (USD)",
+        "card_cost": "Estimated cost",
         "input": "Input",
         "output": "Output",
         "reasoning": "Reasoning",
@@ -1092,7 +1092,7 @@ body {
       <div class="sub"><span data-i18n="input">Input</span> <span id="value-input">__INPUT_TOKENS__</span> | <span data-i18n="output">Output</span> <span id="value-output">__OUTPUT_TOKENS__</span></div>
     </div>
     <div class="card metric-card" style="--delay:0.1s">
-      <div class="label" data-i18n="card_cost">Estimated cost (USD)</div>
+      <div class="label" data-i18n="card_cost">Estimated cost</div>
       <div class="value" id="value-cost">__TOTAL_COST__</div>
     </div>
   </div>
