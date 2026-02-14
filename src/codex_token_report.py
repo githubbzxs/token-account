@@ -561,11 +561,11 @@ html[lang="en"] {
 body {
   margin: 0;
   background:
-    radial-gradient(1200px 700px at 12% 2%, rgba(59, 130, 246, 0.22), transparent 60%),
-    radial-gradient(980px 620px at 88% 8%, rgba(34, 211, 238, 0.14), transparent 64%),
-    radial-gradient(820px 500px at 52% 112%, rgba(148, 163, 184, 0.08), transparent 70%),
+    radial-gradient(1200px 700px at 12% 2%, rgba(120, 92, 58, 0.20), transparent 60%),
+    radial-gradient(980px 620px at 88% 8%, rgba(94, 79, 63, 0.16), transparent 64%),
+    radial-gradient(820px 500px at 52% 112%, rgba(168, 152, 132, 0.07), transparent 70%),
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 4px),
-    linear-gradient(170deg, #010101 0%, #050505 55%, #000 100%);
+    linear-gradient(170deg, #080706 0%, #0b0a09 55%, #050505 100%);
   color: var(--text);
   font-family: var(--app-font);
   line-height: 1.45;
@@ -579,11 +579,11 @@ body {
   margin: 24px auto;
   padding: 28px 20px 42px;
   border-radius: 24px;
-  border: 1px solid rgba(226, 232, 240, 0.32);
-  background: linear-gradient(170deg, rgba(8, 11, 16, 0.9), rgba(3, 5, 8, 0.94));
+  border: 1px solid rgba(226, 220, 210, 0.30);
+  background: linear-gradient(170deg, rgba(18, 15, 12, 0.92), rgba(10, 8, 7, 0.95));
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 0 32px rgba(203, 213, 225, 0.22),
+    0 0 32px rgba(214, 202, 186, 0.20),
     0 28px 60px rgba(0, 0, 0, 0.56);
   overflow: hidden;
 }
@@ -594,10 +594,10 @@ body {
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  border: 1px solid rgba(241, 245, 249, 0.26);
+  border: 1px solid rgba(240, 233, 223, 0.24);
   box-shadow:
-    inset 0 0 24px rgba(148, 163, 184, 0.16),
-    0 0 22px rgba(226, 232, 240, 0.2);
+    inset 0 0 24px rgba(186, 170, 150, 0.14),
+    0 0 22px rgba(230, 219, 205, 0.16);
 }
 
 .hero {
