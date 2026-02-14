@@ -55,7 +55,7 @@ I18N = {
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
         "daily_chart": "每小时总 token",
-        "zoom_hint": "按住 Ctrl + 滚轮可定点缩放，拖动/滚轮可滑动查看",
+        "zoom_hint": "滚轮可缩放，按住 Ctrl + 滚轮可按光标定点放大，拖动可滑动查看",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
         "model_mix": "模型占比",
@@ -119,7 +119,7 @@ I18N = {
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
         "daily_chart": "Hourly total tokens",
-        "zoom_hint": "Hold Ctrl + wheel to zoom at pointer; drag/wheel to pan",
+        "zoom_hint": "Wheel to zoom; hold Ctrl + wheel to zoom at pointer, drag to pan",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
         "model_mix": "Model share",
@@ -1123,6 +1123,7 @@ const CHART_AXIS_TEXT = "#94a3b8";
 const CHART_AXIS_LINE = "rgba(148,163,184,0.28)";
 let dailyChartInstance = null;
 let chartResizeBound = false;
+let chartCtrlZoomBound = false;
 
 function prefersReducedMotion() {
   return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -1163,6 +1164,14 @@ function formatChartNumber(value) {
     return `${(num / 1_000_000).toFixed(1).replace(/\\.0$/, "")}m`;
   }
   return new Intl.NumberFormat("en-US").format(num);
+}
+
+function clampPercent(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  if (num < 0) return 0;
+  if (num > 100) return 100;
+  return num;
 }
 
 function applyI18n(lang, options) {
@@ -1400,6 +1409,45 @@ function lineChart(el, labels, values, color) {
     });
     chartResizeBound = true;
   }
+  if (!chartCtrlZoomBound) {
+    el.addEventListener(
+      "wheel",
+      (event) => {
+        if (!event.ctrlKey || !dailyChartInstance || dailyChartInstance.isDisposed()) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const option = dailyChartInstance.getOption();
+        const dz = (option.dataZoom || [])[0] || {};
+        const currentStart = clampPercent(dz.start != null ? dz.start : 0);
+        const currentEnd = clampPercent(dz.end != null ? dz.end : 100);
+        const currentWindow = Math.max(0.2, currentEnd - currentStart);
+        const rect = el.getBoundingClientRect();
+        const ratioRaw = (event.clientX - rect.left) / Math.max(1, rect.width);
+        const ratio = Math.min(1, Math.max(0, ratioRaw));
+        const anchor = currentStart + currentWindow * ratio;
+        const zoomFactor = event.deltaY < 0 ? 0.85 : 1.15;
+        const nextWindow = Math.min(100, Math.max(0.2, currentWindow * zoomFactor));
+        let nextStart = anchor - nextWindow * ratio;
+        let nextEnd = nextStart + nextWindow;
+        if (nextStart < 0) {
+          nextStart = 0;
+          nextEnd = nextWindow;
+        }
+        if (nextEnd > 100) {
+          nextEnd = 100;
+          nextStart = 100 - nextWindow;
+        }
+        dailyChartInstance.dispatchAction({
+          type: "dataZoom",
+          dataZoomIndex: 0,
+          start: clampPercent(nextStart),
+          end: clampPercent(nextEnd),
+        });
+      },
+      { passive: false, capture: true }
+    );
+    chartCtrlZoomBound = true;
+  }
   if (!chartValues.length) {
     dailyChartInstance.clear();
     return;
@@ -1439,7 +1487,7 @@ function lineChart(el, labels, values, color) {
         {
           type: "inside",
           xAxisIndex: 0,
-          zoomOnMouseWheel: "ctrl",
+          zoomOnMouseWheel: true,
           moveOnMouseMove: true,
           moveOnMouseWheel: true,
         },
