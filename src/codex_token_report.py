@@ -55,7 +55,7 @@ I18N = {
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
         "daily_chart": "每小时总 token",
-        "zoom_hint": "滚轮可缩放，按住 Ctrl + 滚轮可对准位置并居中放大，拖动可滑动查看",
+        "zoom_hint": "滚轮可缩放，按住 Ctrl + 滚轮可对准位置并居中放大，连续操作会持续聚焦该区域",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
         "model_mix": "模型占比",
@@ -119,7 +119,7 @@ I18N = {
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
         "daily_chart": "Hourly total tokens",
-        "zoom_hint": "Wheel to zoom; hold Ctrl + wheel to zoom at pointer and center it, drag to pan",
+        "zoom_hint": "Wheel to zoom; hold Ctrl + wheel to center on pointer and keep focus during continuous zoom",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
         "model_mix": "Model share",
@@ -1092,7 +1092,7 @@ body {
     <div class="panel wide" style="--delay:0.25s">
       <h3 data-i18n="daily_chart">Hourly total tokens</h3>
       <div id="chart-daily" class="chart"></div>
-      <div class="chart-tip" data-i18n="zoom_hint">滚轮可缩放，按住 Ctrl + 滚轮可对准位置并居中放大，拖动可滑动查看</div>
+      <div class="chart-tip" data-i18n="zoom_hint">滚轮可缩放，按住 Ctrl + 滚轮可对准位置并居中放大，连续操作会持续聚焦该区域</div>
     </div>
     <div class="panel wide" style="--delay:0.35s">
       <h3 data-i18n="model_table">Model breakdown</h3>
@@ -1121,9 +1121,15 @@ const I18N = __I18N_JSON__;
 let currentLang = "zh";
 const CHART_AXIS_TEXT = "#94a3b8";
 const CHART_AXIS_LINE = "rgba(148,163,184,0.28)";
+const ZOOM_IN_FACTOR = 0.72;
+const ZOOM_OUT_FACTOR = 1.25;
+const MIN_WINDOW_PERCENT = 0.05;
+const CTRL_FOCUS_LOCK_MS = 200;
 let dailyChartInstance = null;
 let chartResizeBound = false;
 let chartCtrlZoomBound = false;
+let chartCtrlFocusRatio = null;
+let chartCtrlFocusTimer = null;
 
 function prefersReducedMotion() {
   return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -1172,6 +1178,25 @@ function clampPercent(value) {
   if (num < 0) return 0;
   if (num > 100) return 100;
   return num;
+}
+
+function clearCtrlFocusLock() {
+  if (chartCtrlFocusTimer != null) {
+    window.clearTimeout(chartCtrlFocusTimer);
+    chartCtrlFocusTimer = null;
+  }
+  chartCtrlFocusRatio = null;
+}
+
+function refreshCtrlFocusLock(ratio) {
+  chartCtrlFocusRatio = Math.min(1, Math.max(0, ratio));
+  if (chartCtrlFocusTimer != null) {
+    window.clearTimeout(chartCtrlFocusTimer);
+  }
+  chartCtrlFocusTimer = window.setTimeout(() => {
+    chartCtrlFocusTimer = null;
+    chartCtrlFocusRatio = null;
+  }, CTRL_FOCUS_LOCK_MS);
 }
 
 function applyI18n(lang, options) {
@@ -1420,14 +1445,24 @@ function lineChart(el, labels, values, color) {
         const dz = (option.dataZoom || [])[0] || {};
         const currentStart = clampPercent(dz.start != null ? dz.start : 0);
         const currentEnd = clampPercent(dz.end != null ? dz.end : 100);
-        const currentWindow = Math.max(0.2, currentEnd - currentStart);
+        const currentWindow = Math.max(MIN_WINDOW_PERCENT, currentEnd - currentStart);
         const rect = el.getBoundingClientRect();
         const ratioRaw = (event.clientX - rect.left) / Math.max(1, rect.width);
         const pointerRatio = Math.min(1, Math.max(0, ratioRaw));
-        const anchorRatio = event.ctrlKey ? pointerRatio : 0.5;
+        let anchorRatio = 0.5;
+        if (event.ctrlKey) {
+          if (chartCtrlFocusRatio == null) {
+            refreshCtrlFocusLock(pointerRatio);
+          } else {
+            refreshCtrlFocusLock(chartCtrlFocusRatio);
+          }
+          anchorRatio = chartCtrlFocusRatio == null ? pointerRatio : chartCtrlFocusRatio;
+        } else {
+          clearCtrlFocusLock();
+        }
         const anchor = currentStart + currentWindow * anchorRatio;
-        const zoomFactor = event.deltaY < 0 ? 0.85 : 1.15;
-        const nextWindow = Math.min(100, Math.max(0.2, currentWindow * zoomFactor));
+        const zoomFactor = event.deltaY < 0 ? ZOOM_IN_FACTOR : ZOOM_OUT_FACTOR;
+        const nextWindow = Math.min(100, Math.max(MIN_WINDOW_PERCENT, currentWindow * zoomFactor));
         let nextStart = anchor - nextWindow / 2;
         let nextEnd = anchor + nextWindow / 2;
         if (nextStart < 0) {
@@ -1453,7 +1488,7 @@ function lineChart(el, labels, values, color) {
     dailyChartInstance.clear();
     return;
   }
-  const windowSize = chartValues.length > 200 ? Math.max(0.2, (200 / chartValues.length) * 100) : 100;
+  const windowSize = chartValues.length > 200 ? Math.max(MIN_WINDOW_PERCENT, (200 / chartValues.length) * 100) : 100;
   const zoomStart = Math.max(0, (100 - windowSize) / 2);
   const zoomEnd = Math.min(100, zoomStart + windowSize);
   dailyChartInstance.setOption(
