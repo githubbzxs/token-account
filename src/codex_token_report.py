@@ -615,80 +615,6 @@ body {
   margin-bottom: 12px;
 }
 
-.lang-toggle {
-  --indicator-x: 0%;
-  position: relative;
-  display: inline-grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: center;
-  min-width: 136px;
-  padding: 3px;
-  gap: 0;
-  border: 1px solid var(--stroke);
-  border-radius: 999px;
-  background: rgba(17, 17, 19, 0.86);
-  overflow: hidden;
-  isolation: isolate;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-.lang-toggle[data-active-lang="en"] {
-  --indicator-x: 100%;
-}
-
-.lang-toggle-indicator {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: calc(50% - 3px);
-  height: calc(100% - 6px);
-  border-radius: 999px;
-  background: linear-gradient(140deg, rgba(74, 222, 255, 0.44), rgba(34, 211, 238, 0.22));
-  box-shadow: 0 8px 16px rgba(34, 211, 238, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transform: translateX(var(--indicator-x));
-  transition:
-    transform var(--swift-duration-normal) var(--swift-ease-spring),
-    background-color var(--swift-duration-normal) var(--swift-ease-standard),
-    box-shadow var(--swift-duration-normal) var(--swift-ease-standard);
-  z-index: 0;
-  pointer-events: none;
-}
-
-.lang-toggle.lang-toggle-snap .lang-toggle-indicator {
-  transition: none;
-}
-
-.lang-toggle button {
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  position: relative;
-  z-index: 1;
-  transition:
-    color var(--swift-duration-fast) var(--swift-ease-standard),
-    transform var(--swift-duration-fast) var(--swift-ease-standard);
-}
-
-.lang-toggle button.active {
-  color: #ecfeff;
-  transform: translateY(-0.5px);
-}
-
-.lang-toggle button:active {
-  transform: scale(0.975);
-}
-
-.lang-toggle button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--ring);
-}
-
 .title h1 {
   margin: 0 0 8px;
   font-size: clamp(30px, 5vw, 42px);
@@ -1116,8 +1042,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lang-toggle-indicator,
-  .lang-toggle button,
   .metric-value-out,
   .metric-value-anim,
   .i18n-switch-anim {
@@ -1133,11 +1057,6 @@ body {
     <div class="title">
       <h1 data-i18n="title">Codex Token Usage</h1>
       <p data-i18n="subtitle">Local report from Codex CLI session logs</p>
-    </div>
-    <div class="lang-toggle" data-active-lang="zh">
-      <span class="lang-toggle-indicator" aria-hidden="true"></span>
-      <button type="button" data-lang="zh">中文</button>
-      <button type="button" data-lang="en">EN</button>
     </div>
   </div>
   <div class="range-controls">
@@ -1233,16 +1152,8 @@ function triggerSwapAnimation(el, className) {
   el.classList.add(className);
 }
 
-function updateLangToggleState(lang, animate) {
-  const toggle = document.querySelector(".lang-toggle");
-  const shouldAnimate = Boolean(animate && !prefersReducedMotion());
-  if (toggle) {
-    toggle.classList.toggle("lang-toggle-snap", !shouldAnimate);
-    toggle.dataset.activeLang = lang;
-  }
-  document.querySelectorAll(".lang-toggle button").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.lang === lang);
-  });
+function updateLangToggleState() {
+  // 语言切换控件已移除，保留函数以兼容调用。
 }
 
 function formatNumber(value) {
@@ -2317,10 +2228,7 @@ function setupDailyChartZoom() {
 }
 
 window.addEventListener("load", () => {
-  const stored = localStorage.getItem("codex_report_lang");
-  const langGuess = (navigator.language || "en").startsWith("zh") ? "zh" : "en";
-  const fallback = stored || langGuess;
-  applyI18n(fallback, { animate: false, source: "boot" });
+  applyI18n("zh", { animate: false, source: "boot" });
   rebuildHourEventMap();
   setupRangeControls();
   setupDailyChartZoom();
@@ -2332,15 +2240,6 @@ window.addEventListener("load", () => {
     (startInput && startInput.value) || (DATA.range && DATA.range.start) || "",
     (endInput && endInput.value) || (DATA.range && DATA.range.end) || ""
   );
-  document.querySelectorAll(".lang-toggle button").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const lang = btn.dataset.lang;
-      if (!lang || lang === currentLang) return;
-      localStorage.setItem("codex_report_lang", lang);
-      applyI18n(lang, { animate: true, source: "user" });
-      applyRange(currentRange.start, currentRange.end);
-    });
-  });
 });
 </script>
 </body>
