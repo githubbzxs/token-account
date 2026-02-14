@@ -1448,7 +1448,7 @@ function lineChart(el, labels, values, color) {
           type: "line",
           data: chartValues,
           showSymbol: false,
-          smooth: false,
+          smooth: true,
           lineStyle: { color, width: 2.5 },
           areaStyle: {
             color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
