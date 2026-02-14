@@ -1092,7 +1092,7 @@ body {
     <div class="panel wide" style="--delay:0.25s">
       <h3 data-i18n="daily_chart">Hourly total tokens</h3>
       <div id="chart-daily" class="chart"></div>
-      <div class="chart-tip" data-i18n="zoom_hint">支持滚动滑动查看与缩放</div>
+      <div class="chart-tip" data-i18n="zoom_hint">滚轮可缩放，按住 Ctrl + 滚轮可按光标定点放大，拖动可滑动查看</div>
     </div>
     <div class="panel wide" style="--delay:0.35s">
       <h3 data-i18n="model_table">Model breakdown</h3>
@@ -1413,7 +1413,7 @@ function lineChart(el, labels, values, color) {
     el.addEventListener(
       "wheel",
       (event) => {
-        if (!event.ctrlKey || !dailyChartInstance || dailyChartInstance.isDisposed()) return;
+        if (!dailyChartInstance || dailyChartInstance.isDisposed()) return;
         event.preventDefault();
         event.stopPropagation();
         const option = dailyChartInstance.getOption();
@@ -1423,7 +1423,8 @@ function lineChart(el, labels, values, color) {
         const currentWindow = Math.max(0.2, currentEnd - currentStart);
         const rect = el.getBoundingClientRect();
         const ratioRaw = (event.clientX - rect.left) / Math.max(1, rect.width);
-        const ratio = Math.min(1, Math.max(0, ratioRaw));
+        const pointerRatio = Math.min(1, Math.max(0, ratioRaw));
+        const ratio = event.ctrlKey ? pointerRatio : 0.5;
         const anchor = currentStart + currentWindow * ratio;
         const zoomFactor = event.deltaY < 0 ? 0.85 : 1.15;
         const nextWindow = Math.min(100, Math.max(0.2, currentWindow * zoomFactor));
@@ -1452,7 +1453,9 @@ function lineChart(el, labels, values, color) {
     dailyChartInstance.clear();
     return;
   }
-  const zoomStart = chartValues.length > 200 ? Math.max(0, 100 - (200 / chartValues.length) * 100) : 0;
+  const windowSize = chartValues.length > 200 ? Math.max(0.2, (200 / chartValues.length) * 100) : 100;
+  const zoomStart = Math.max(0, (100 - windowSize) / 2);
+  const zoomEnd = Math.min(100, zoomStart + windowSize);
   dailyChartInstance.setOption(
     {
       backgroundColor: "transparent",
@@ -1487,15 +1490,15 @@ function lineChart(el, labels, values, color) {
         {
           type: "inside",
           xAxisIndex: 0,
-          zoomOnMouseWheel: true,
+          zoomOnMouseWheel: false,
           moveOnMouseMove: true,
-          moveOnMouseWheel: true,
+          moveOnMouseWheel: false,
         },
         {
           type: "slider",
           xAxisIndex: 0,
           start: zoomStart,
-          end: 100,
+          end: zoomEnd,
           height: 16,
           bottom: 10,
           borderColor: "rgba(148,163,184,0.3)",
