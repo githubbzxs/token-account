@@ -575,9 +575,9 @@ body {
 
 .page {
   position: relative;
-  max-width: 1360px;
+  max-width: 1280px;
   margin: 24px auto;
-  padding: 28px 20px 42px;
+  padding: 24px 18px 38px;
   border-radius: 24px;
   border: 1px solid rgba(226, 220, 210, 0.30);
   background: linear-gradient(170deg, rgba(18, 15, 12, 0.92), rgba(10, 8, 7, 0.95));
@@ -1499,7 +1499,7 @@ function lineChart(el, labels, values, color) {
       tooltip: {
         trigger: "axis",
         backgroundColor: "rgba(10,10,10,0.92)",
-        borderColor: "rgba(34,211,238,0.4)",
+        borderColor: "rgba(184,156,122,0.45)",
         borderWidth: 1,
         textStyle: { color: "#f8fafc" },
         axisPointer: { type: "line" },
@@ -1537,10 +1537,10 @@ function lineChart(el, labels, values, color) {
           height: 16,
           bottom: 10,
           borderColor: "rgba(148,163,184,0.3)",
-          fillerColor: "rgba(34,211,238,0.22)",
+          fillerColor: "rgba(184,156,122,0.28)",
           backgroundColor: "rgba(17,17,19,0.78)",
           handleStyle: {
-            color: "#22D3EE",
+            color: "#B89C7A",
             borderColor: "rgba(15,23,42,0.95)",
           },
           moveHandleSize: 6,
@@ -1555,8 +1555,8 @@ function lineChart(el, labels, values, color) {
           lineStyle: { color, width: 2.5 },
           areaStyle: {
             color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(34,211,238,0.35)" },
-              { offset: 1, color: "rgba(34,211,238,0.03)" },
+              { offset: 0, color: "rgba(184,156,122,0.38)" },
+              { offset: 1, color: "rgba(184,156,122,0.05)" },
             ]),
           },
         },
@@ -2046,7 +2046,7 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   if (startInput) startInput.value = startISO;
   if (endInput) endInput.value = endISO;
   setDisplayText("range-text", `${startISO} to ${endISO}`, false);
-  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, "#22D3EE");
+  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, "#B89C7A");
 
   if (previewOnly) {
     return;
