@@ -738,7 +738,7 @@ body {
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin: 24px 0 24px;
   align-items: stretch;
@@ -1092,16 +1092,6 @@ body {
       <div class="sub"><span data-i18n="input">Input</span> <span id="value-input">__INPUT_TOKENS__</span> | <span data-i18n="output">Output</span> <span id="value-output">__OUTPUT_TOKENS__</span></div>
     </div>
     <div class="card metric-card" style="--delay:0.1s">
-      <div class="label" data-i18n="card_cached">Cached and reasoning</div>
-      <div class="value" id="value-cached">__CACHED_TOKENS__</div>
-      <div class="sub"><span data-i18n="reasoning">Reasoning</span> <span id="value-reasoning">__REASONING_TOKENS__</span> | <span data-i18n="cache_rate">Cache rate</span> <span id="value-cache-rate">__CACHE_RATE__</span></div>
-    </div>
-    <div class="card metric-card" style="--delay:0.15s">
-      <div class="label" data-i18n="card_avg">Averages</div>
-      <div class="value" id="value-avg-day">__AVG_PER_DAY__</div>
-      <div class="sub"><span data-i18n="per_day">Per day</span> | <span data-i18n="per_session">Per session</span> <span id="value-avg-session">__AVG_PER_SESSION__</span></div>
-    </div>
-    <div class="card metric-card" style="--delay:0.2s">
       <div class="label" data-i18n="card_cost">Estimated cost (USD)</div>
       <div class="value" id="value-cost">__TOTAL_COST__</div>
     </div>
