@@ -951,8 +951,21 @@ body {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.36);
   opacity: 0;
   transform: translateX(0);
-  transition: width 0.24s ease, transform 0.24s ease, opacity 0.18s ease;
+  will-change: transform, width, opacity;
+  transition:
+    transform 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.38s cubic-bezier(0.2, 0.9, 0.2, 1),
+    opacity 0.2s ease;
   z-index: 0;
+}
+
+.range-segmented-slider::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02));
+  pointer-events: none;
 }
 
 .range-segmented button {
@@ -968,6 +981,7 @@ body {
   letter-spacing: 0.2px;
   cursor: pointer;
   white-space: nowrap;
+  transition: color 0.22s ease;
 }
 
 .range-segmented button:hover {
@@ -1008,8 +1022,21 @@ body {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.36);
   opacity: 0;
   transform: translateX(0);
-  transition: width 0.24s ease, transform 0.24s ease, opacity 0.18s ease;
+  will-change: transform, width, opacity;
+  transition:
+    transform 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.38s cubic-bezier(0.2, 0.9, 0.2, 1),
+    opacity 0.2s ease;
   z-index: 0;
+}
+
+.theme-switch-slider::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02));
+  pointer-events: none;
 }
 
 .theme-switch button {
@@ -1025,6 +1052,7 @@ body {
   letter-spacing: 0.2px;
   cursor: pointer;
   white-space: nowrap;
+  transition: color 0.22s ease;
 }
 
 .theme-switch button:hover {
@@ -1589,8 +1617,8 @@ function updateThemeSwitchSlider() {
   const activeRect = activeBtn.getBoundingClientRect();
   const offsetX = Math.max(0, activeRect.left - switchRect.left);
   slider.style.opacity = "1";
-  slider.style.width = `${Math.round(activeRect.width)}px`;
-  slider.style.transform = `translateX(${Math.round(offsetX)}px)`;
+  slider.style.width = `${activeRect.width.toFixed(2)}px`;
+  slider.style.transform = `translate3d(${offsetX.toFixed(2)}px, 0, 0)`;
 }
 
 function updateThemeSwitchState(theme) {
@@ -1662,8 +1690,8 @@ function updateQuickRangeSlider() {
   const activeRect = activeBtn.getBoundingClientRect();
   const offsetX = Math.max(0, activeRect.left - segmentedRect.left);
   slider.style.opacity = "1";
-  slider.style.width = `${Math.round(activeRect.width)}px`;
-  slider.style.transform = `translateX(${Math.round(offsetX)}px)`;
+  slider.style.width = `${activeRect.width.toFixed(2)}px`;
+  slider.style.transform = `translate3d(${offsetX.toFixed(2)}px, 0, 0)`;
 }
 
 function updateQuickRangeState(startISO, endISO) {
