@@ -43,12 +43,12 @@ I18N = {
         "from": "起始",
         "to": "结束",
         "apply": "应用",
-        "last_1": "一天",
-        "last_2": "两天",
-        "last_7": "一周",
-        "last_30": "一月",
-        "last_90": "一季度",
-        "all_time": "全部",
+        "last_1": "1D",
+        "last_2": "2D",
+        "last_7": "1W",
+        "last_30": "1M",
+        "last_90": "3M",
+        "all_time": "ALL",
         "export": "导出",
         "import": "导入",
         "import_done": "已合并 {count} 个文件",
@@ -108,12 +108,12 @@ I18N = {
         "from": "From",
         "to": "To",
         "apply": "Apply",
-        "last_1": "1 day",
-        "last_2": "2 days",
-        "last_7": "1 week",
-        "last_30": "1 month",
-        "last_90": "1 quarter",
-        "all_time": "All",
+        "last_1": "1D",
+        "last_2": "2D",
+        "last_7": "1W",
+        "last_30": "1M",
+        "last_90": "3M",
+        "all_time": "ALL",
         "export": "Export",
         "import": "Import",
         "import_done": "Merged {count} file(s)",
@@ -779,13 +779,14 @@ html.theme-ready .chart {
 }
 
 .range-controls {
+  --range-selector-width: 260px;
   margin: 18px 0 10px;
   padding: 14px 16px;
   border: 1px solid var(--stroke);
   background: linear-gradient(140deg, rgba(26, 27, 32, 0.9), rgba(17, 17, 19, 0.88));
   border-radius: 16px;
   display: grid;
-  grid-template-columns: 260px minmax(420px, 1fr) auto;
+  grid-template-columns: var(--range-selector-width) var(--range-selector-width) auto;
   align-items: center;
   column-gap: 12px;
   row-gap: 12px;
@@ -796,7 +797,7 @@ html.theme-ready .chart {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 260px;
+  width: var(--range-selector-width);
   min-width: 0;
 }
 
@@ -998,8 +999,9 @@ html.theme-ready .chart {
 
 .range-buttons {
   display: flex;
-  flex: 1 1 520px;
+  flex: 0 0 var(--range-selector-width);
   justify-content: center;
+  width: var(--range-selector-width);
   min-width: 0;
 }
 
@@ -1015,7 +1017,7 @@ html.theme-ready .chart {
   background: rgba(44, 46, 56, 0.92);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   width: 100%;
-  max-width: 620px;
+  max-width: none;
   overflow: hidden;
 }
 
@@ -1360,10 +1362,11 @@ html.theme-ready .chart {
 
 @media (max-width: 1180px) and (min-width: 901px) {
   .range-controls {
-    grid-template-columns: 236px minmax(320px, 1fr) auto;
+    --range-selector-width: 236px;
+    grid-template-columns: var(--range-selector-width) var(--range-selector-width) auto;
   }
   .range-fields {
-    width: 236px;
+    width: var(--range-selector-width);
   }
 }
 
@@ -1458,12 +1461,12 @@ html.theme-ready .chart {
     </div>
     <div class="range-buttons range-segmented" id="quick-range-segmented">
       <span class="range-segmented-slider" id="quick-range-slider" aria-hidden="true"></span>
-      <button type="button" data-range="1" data-i18n="last_1">1 day</button>
-      <button type="button" data-range="2" data-i18n="last_2">2 days</button>
-      <button type="button" data-range="7" data-i18n="last_7">1 week</button>
-      <button type="button" data-range="30" data-i18n="last_30">1 month</button>
-      <button type="button" data-range="90" data-i18n="last_90">1 quarter</button>
-      <button type="button" data-range="all" data-i18n="all_time">All</button>
+      <button type="button" data-range="1" data-i18n="last_1">1D</button>
+      <button type="button" data-range="2" data-i18n="last_2">2D</button>
+      <button type="button" data-range="7" data-i18n="last_7">1W</button>
+      <button type="button" data-range="30" data-i18n="last_30">1M</button>
+      <button type="button" data-range="90" data-i18n="last_90">3M</button>
+      <button type="button" data-range="all" data-i18n="all_time">ALL</button>
     </div>
     <div class="range-actions">
       <button type="button" id="export-data" class="range-action-btn" data-i18n="export">Export</button>

@@ -39,6 +39,10 @@
   - Why：用户反馈胶囊切换缺少动画、数值与 X 轴信息过密、页面底部存在明显分界线。
   - Impact：`src/codex_token_report.py` 的 `prefers-reduced-motion` 覆盖策略、数值格式函数、X 轴标签格式化和 `body` 背景渐变。
   - Verify：切换快捷范围时滑块有过渡；图表与卡片均显示 `K/M/B`；短区间显示 `HH:mm`、长区间显示 `MM-DD`；底部无明显断层。
+- **[2026-02-15] 快捷范围改为缩写并统一控件宽度**：时间切换胶囊改为 `1D/2D/1W/1M/3M/ALL`，并与左侧日期选择器保持同宽。
+  - Why：用户希望范围切换更紧凑，且左右控件视觉对齐。
+  - Impact：`src/codex_token_report.py` 的 i18n 快捷范围文案、范围控件 CSS 栅格与宽度变量、模板默认按钮文本。
+  - Verify：生成 `report-test/index.html` 后，快捷按钮显示缩写，`range-date-trigger` 与 `quick-range-segmented` 宽度一致。
 
 # Commands
 - `python -m py_compile src/codex_token_report.py`
