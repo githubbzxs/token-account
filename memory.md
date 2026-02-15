@@ -35,26 +35,14 @@
   - Why：用户要求去除底部缩放条，并简化缩放为“指哪放哪”。
   - Impact：`src/codex_token_report.py` 的 `lineChart` 事件处理与 `dataZoom` 配置。
   - Verify：图表下方不再出现缩放条；滚轮缩放围绕当前鼠标位置居中。
-- **[2026-02-15] Apple 风格 UI 重构**：按用户给定设计方向重做报告页视觉（深灰玻璃、Bento 卡片、大圆角、Inter + Geist Mono）。
-  - Why：用户要求“按照 Gemini 思路修改 UI”，并提升原生 App 观感。
-  - Impact：`src/codex_token_report.py` 模板 CSS 色板/字体/卡片样式与范围控件结构。
-  - Verify：页面出现深灰玻璃质感卡片、分段控件高亮滑块风格、数字主视觉改为等宽字体。
-- **[2026-02-15] 日期筛选改为单胶囊范围选择**：由双输入框改为单日期胶囊按钮 + 双月范围日历面板。
-  - Why：用户明确要求“不要把起始和结束分开两个框”。
-  - Impact：`src/codex_token_report.py` 的范围输入 DOM、日历状态机与范围应用流程。
-  - Verify：点击日期胶囊弹出双月日历，先选开始后选结束，选完自动应用并更新区间文本。
-- **[2026-02-15] 图表提示文案下线**：移除页面中 “Scroll to zoom around the pointer; the hovered position stays centered” 显示文案。
-  - Why：用户要求去掉该字样。
-  - Impact：`src/codex_token_report.py` 图表面板模板与 i18n 的 `zoom_hint` 展示语义。
-  - Verify：生成的 `index.html` 页面中不再渲染该提示文本。
 
 # Commands
 - `python -m py_compile src/codex_token_report.py`
 - `python src/codex_token_report.py --sessions-root dummy_sessions --out report-test`
 
 # Status / Next
-- 当前：页面已完成 Apple 风格重构；区间筛选为单胶囊 + 双月范围日历；图表为股票风格 scrubbing 与首尾轴标签。
-- 下一步：若需继续贴近 iOS，可补充 segmented 滑块动画与图表浮窗内容的业务字段扩展。
+- 当前：时间分析已移除；日期筛选已切为自定义英文日历；图表缩放已改为鼠标锚点缩放且无底部滑块。
+- 下一步：如需继续微调日历交互（例如周起始日、快捷月份跳转），在现有自定义日历上迭代。
 
 # Known Issues
 - `dummy_sessions/test.jsonl` 是本地未跟踪测试数据文件，默认不纳入提交。

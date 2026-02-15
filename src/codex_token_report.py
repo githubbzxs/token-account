@@ -43,19 +43,19 @@ I18N = {
         "from": "起始",
         "to": "结束",
         "apply": "应用",
-        "last_1": "1D",
-        "last_2": "2D",
-        "last_7": "7D",
-        "last_30": "30D",
-        "last_90": "90D",
-        "all_time": "ALL",
+        "last_1": "一天",
+        "last_2": "两天",
+        "last_7": "一周",
+        "last_30": "一月",
+        "last_90": "一季度",
+        "all_time": "全部",
         "export": "导出",
         "import": "导入",
         "import_done": "已合并 {count} 个文件",
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
         "daily_chart": "每小时总 token",
-        "zoom_hint": "",
+        "zoom_hint": "滚轮可按鼠标位置缩放，指针所在位置会保持在视图中心",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
         "model_mix": "模型占比",
@@ -109,19 +109,19 @@ I18N = {
         "from": "From",
         "to": "To",
         "apply": "Apply",
-        "last_1": "1D",
-        "last_2": "2D",
-        "last_7": "7D",
-        "last_30": "30D",
-        "last_90": "90D",
-        "all_time": "ALL",
+        "last_1": "1 day",
+        "last_2": "2 days",
+        "last_7": "1 week",
+        "last_30": "1 month",
+        "last_90": "1 quarter",
+        "all_time": "All",
         "export": "Export",
         "import": "Import",
         "import_done": "Merged {count} file(s)",
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
         "daily_chart": "Hourly total tokens",
-        "zoom_hint": "",
+        "zoom_hint": "Scroll to zoom around the pointer; the hovered position stays centered",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
         "model_mix": "Model share",
@@ -531,24 +531,23 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Codex Token Usage</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
 
 :root {
-  --background: #1c1c1e;
-  --surface: rgba(44, 44, 46, 0.82);
-  --surface-soft: rgba(44, 44, 46, 0.72);
-  --surface-strong: rgba(58, 58, 60, 0.9);
-  --text: #ffffff;
-  --muted: #8e8e93;
-  --stroke: rgba(255, 255, 255, 0.08);
-  --accent: #0a84ff;
-  --accent-2: #5e5ce6;
-  --accent-3: #30d158;
-  --shadow: 0 22px 52px rgba(0, 0, 0, 0.48);
-  --ring: rgba(10, 132, 255, 0.28);
-  --font-zh: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
-  --font-en: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "Geist Mono", "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --background: #0a0a0a;
+  --surface: #111113;
+  --surface-soft: #141418;
+  --surface-strong: #1a1b20;
+  --text: #f8fafc;
+  --muted: #a1a1aa;
+  --stroke: rgba(148, 163, 184, 0.16);
+  --accent: #22d3ee;
+  --accent-2: #fb7185;
+  --accent-3: #34d399;
+  --shadow: 0 22px 52px rgba(0, 0, 0, 0.62);
+  --ring: rgba(34, 211, 238, 0.28);
+  --font-zh: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
+  --font-en: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
   --app-font: var(--font-en);
   --swift-duration-fast: 900ms;
   --swift-duration-normal: 2000ms;
@@ -571,9 +570,11 @@ html[lang="en"] {
 body {
   margin: 0;
   background:
-    radial-gradient(1100px 620px at 14% 2%, rgba(10, 132, 255, 0.18), transparent 62%),
-    radial-gradient(860px 520px at 88% 0%, rgba(94, 92, 230, 0.14), transparent 64%),
-    linear-gradient(180deg, #1c1c1e 0%, #151518 100%);
+    radial-gradient(1200px 700px at 12% 2%, rgba(120, 92, 58, 0.20), transparent 60%),
+    radial-gradient(980px 620px at 88% 8%, rgba(94, 79, 63, 0.16), transparent 64%),
+    radial-gradient(820px 500px at 52% 112%, rgba(168, 152, 132, 0.07), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 4px),
+    linear-gradient(170deg, #080706 0%, #0b0a09 55%, #050505 100%);
   color: var(--text);
   font-family: var(--app-font);
   line-height: 1.45;
@@ -586,11 +587,13 @@ body {
   max-width: 1280px;
   margin: 24px auto;
   padding: 24px 18px 38px;
-  border-radius: 26px;
-  border: 1px solid var(--stroke);
-  background: rgba(28, 28, 30, 0.72);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 30px 64px rgba(0, 0, 0, 0.5);
+  border-radius: 24px;
+  border: 1px solid rgba(226, 220, 210, 0.30);
+  background: linear-gradient(170deg, rgba(18, 15, 12, 0.92), rgba(10, 8, 7, 0.95));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 32px rgba(214, 202, 186, 0.20),
+    0 28px 60px rgba(0, 0, 0, 0.56);
   overflow: hidden;
 }
 
@@ -600,7 +603,10 @@ body {
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(240, 233, 223, 0.24);
+  box-shadow:
+    inset 0 0 24px rgba(186, 170, 150, 0.14),
+    0 0 22px rgba(230, 219, 205, 0.16);
 }
 
 .hero {
@@ -615,7 +621,7 @@ body {
 .title h1 {
   margin: 0 0 8px;
   font-size: clamp(30px, 5vw, 42px);
-  letter-spacing: -0.02em;
+  letter-spacing: 0.5px;
   font-family: var(--app-font);
   font-weight: 700;
   text-wrap: balance;
@@ -658,115 +664,101 @@ body {
 
 .range-controls {
   margin: 18px 0 10px;
-  padding: 16px;
+  padding: 14px 16px;
   border: 1px solid var(--stroke);
-  background: var(--surface-soft);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
+  background: linear-gradient(140deg, rgba(26, 27, 32, 0.9), rgba(17, 17, 19, 0.88));
+  border-radius: 16px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
   box-shadow: var(--shadow);
 }
 
-.range-main {
+.range-fields {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  min-width: 0;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
 }
 
-.range-pill {
+.range-fields input {
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.date-field {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.date-input {
+  width: 138px;
   border: 1px solid var(--stroke);
-  border-radius: 999px;
-  background: rgba(58, 58, 60, 0.65);
-  color: var(--text);
-  padding: 8px 14px;
-  min-height: 40px;
-  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f3f4f6;
+  border-radius: 12px;
+  padding: 8px 12px;
   font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.1px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  outline: none;
 }
 
-.range-pill:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(72, 72, 74, 0.72);
-}
-
-.range-pill-icon {
-  font-size: 14px;
-  opacity: 0.95;
+.date-input:focus-visible {
+  border-color: rgba(34, 211, 238, 0.52);
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.16);
 }
 
 .calendar-popover {
   position: fixed;
   z-index: 999;
-  width: min(700px, calc(100vw - 20px));
+  width: min(320px, calc(100vw - 20px));
   border: 1px solid var(--stroke);
-  border-radius: 24px;
-  background: rgba(44, 44, 46, 0.94);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 30px 58px rgba(0, 0, 0, 0.45);
-  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(150deg, rgba(26, 27, 32, 0.98), rgba(16, 17, 21, 0.96));
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.45);
+  padding: 12px;
 }
 
 .calendar-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   gap: 8px;
 }
 
 .calendar-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
-  color: var(--text);
-  letter-spacing: 0.01em;
+  color: #f3f4f6;
+  letter-spacing: 0.2px;
 }
 
 .calendar-nav-btn {
   width: 32px;
   height: 32px;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--stroke);
-  background: rgba(72, 72, 74, 0.78);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e4e7;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
 }
 
 .calendar-nav-btn:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(88, 88, 92, 0.85);
-}
-
-.calendar-months {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.calendar-month {
-  border: 1px solid var(--stroke);
-  border-radius: 16px;
-  background: rgba(28, 28, 30, 0.68);
-  padding: 10px;
-}
-
-.calendar-month-title {
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 6px;
-  text-align: center;
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.15);
 }
 
 .calendar-weekdays {
@@ -780,7 +772,7 @@ body {
   text-align: center;
   font-size: 11px;
   font-weight: 600;
-  color: var(--muted);
+  color: #94a3b8;
   padding: 4px 0;
 }
 
@@ -793,38 +785,31 @@ body {
 .calendar-day-btn {
   border: 1px solid transparent;
   background: transparent;
-  color: var(--text);
+  color: #e4e4e7;
   border-radius: 9px;
   min-height: 34px;
   font-size: 13px;
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
 
 .calendar-day-btn:hover:not(:disabled) {
-  border-color: rgba(10, 132, 255, 0.55);
-  background: rgba(10, 132, 255, 0.16);
+  border-color: rgba(34, 211, 238, 0.4);
+  background: rgba(34, 211, 238, 0.14);
 }
 
 .calendar-day-btn.is-outside {
-  color: rgba(142, 142, 147, 0.66);
+  color: #64748b;
 }
 
 .calendar-day-btn.is-today {
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: rgba(184, 156, 122, 0.7);
 }
 
-.calendar-day-btn.is-in-range {
-  background: rgba(10, 132, 255, 0.16);
-  border-color: rgba(10, 132, 255, 0.26);
-}
-
-.calendar-day-btn.is-range-start,
-.calendar-day-btn.is-range-end {
-  background: rgba(10, 132, 255, 0.96);
-  border-color: rgba(10, 132, 255, 1);
-  color: #f8fcff;
+.calendar-day-btn.is-selected {
+  border-color: rgba(34, 211, 238, 0.86);
+  background: rgba(34, 211, 238, 0.28);
+  color: #ecfeff;
 }
 
 .calendar-day-btn:disabled {
@@ -842,24 +827,24 @@ body {
 
 .calendar-actions button {
   border: 1px solid var(--stroke);
-  background: rgba(72, 72, 74, 0.72);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e4e7;
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 6px 12px;
   font-size: 12px;
   cursor: pointer;
 }
 
 .calendar-actions button:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(88, 88, 92, 0.85);
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.15);
 }
 
 .range-controls button,
 .file-button {
   border: 1px solid var(--stroke);
-  background: rgba(58, 58, 60, 0.75);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e4e7;
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
@@ -869,42 +854,14 @@ body {
 
 .range-controls button:hover,
 .file-button:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(88, 88, 92, 0.88);
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.15);
 }
 
 .range-buttons {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 999px;
-  padding: 4px;
-  background: rgba(44, 44, 46, 0.95);
-  border: 1px solid var(--stroke);
-}
-
-.range-buttons button {
-  min-width: 56px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  padding: 7px 12px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  border-radius: 999px;
-  font-weight: 600;
-}
-
-.range-buttons button:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.range-buttons button.is-active {
-  background: #ffffff;
-  color: #1c1c1e;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .range-actions {
@@ -936,11 +893,10 @@ body {
 }
 
 .card {
-  background: var(--surface);
+  background: linear-gradient(145deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
   border: 1px solid var(--stroke);
-  border-radius: 24px;
-  padding: 16px 18px;
-  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 14px 16px;
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
@@ -965,19 +921,17 @@ body {
 }
 
 .card .label {
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 1px;
   color: var(--muted);
 }
 
 .card .value {
   margin-top: 10px;
-  font-size: 32px;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: -0.01em;
-  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
 }
@@ -1017,11 +971,10 @@ body {
 }
 
 .panel {
-  background: var(--surface);
+  background: linear-gradient(150deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
   border: 1px solid var(--stroke);
-  border-radius: 24px;
+  border-radius: 20px;
   padding: 18px;
-  backdrop-filter: blur(20px);
   box-shadow: var(--shadow);
   animation: rise 0.9s ease both;
   animation-delay: var(--delay, 0s);
@@ -1041,14 +994,24 @@ body {
 .chart {
   width: 100%;
   height: 240px;
-  border: 1px solid var(--stroke);
-  border-radius: 20px;
-  background: rgba(28, 28, 30, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 14px;
+  background: rgba(17, 17, 19, 0.82);
   overflow: hidden;
 }
 
 .chart.small {
   height: 200px;
+}
+
+.chart.zoomable {
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.chart.zoomable.is-panning {
+  cursor: grabbing;
 }
 
 .chart-tip {
@@ -1169,22 +1132,6 @@ body {
   .range-controls {
     gap: 10px;
   }
-  .range-main {
-    width: 100%;
-  }
-  .range-pill {
-    flex: 1 1 auto;
-    min-width: 0;
-    justify-content: flex-start;
-  }
-  .calendar-months {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .range-buttons {
-    width: 100%;
-    justify-content: space-between;
-    overflow-x: auto;
-  }
 }
 
 @media (max-width: 1280px) {
@@ -1262,21 +1209,17 @@ body {
     </div>
   </div>
   <div class="range-controls">
-    <div class="range-main">
-      <input type="hidden" id="range-start">
-      <input type="hidden" id="range-end">
-      <button type="button" id="range-display" class="range-pill" aria-label="Select date range">
-        <span class="range-pill-icon" aria-hidden="true">📅</span>
-        <span id="range-display-text">2026/01/01 - 2026/01/31</span>
-      </button>
+    <div class="range-fields">
+      <label class="date-field"><span data-i18n="from">From</span> <input type="text" id="range-start" class="date-input" readonly></label>
+      <label class="date-field"><span data-i18n="to">To</span> <input type="text" id="range-end" class="date-input" readonly></label>
       <button type="button" id="apply-range" data-i18n="apply">Apply</button>
     </div>
-    <div class="range-buttons" id="range-segments">
-      <button type="button" data-range="1" data-i18n="last_1">1D</button>
-      <button type="button" data-range="2" data-i18n="last_2">2D</button>
-      <button type="button" data-range="7" data-i18n="last_7">7D</button>
-      <button type="button" data-range="30" data-i18n="last_30">30D</button>
-      <button type="button" data-range="90" data-i18n="last_90">90D</button>
+    <div class="range-buttons">
+      <button type="button" data-range="1" data-i18n="last_1">1 day</button>
+      <button type="button" data-range="2" data-i18n="last_2">2 days</button>
+      <button type="button" data-range="7" data-i18n="last_7">1 week</button>
+      <button type="button" data-range="30" data-i18n="last_30">1 month</button>
+      <button type="button" data-range="90" data-i18n="last_90">1 quarter</button>
       <button type="button" data-range="all" data-i18n="all_time">All</button>
     </div>
     <div class="range-actions">
@@ -1290,21 +1233,11 @@ body {
   <div id="calendar-popover" class="calendar-popover hidden" aria-hidden="true">
     <div class="calendar-head">
       <button type="button" id="calendar-prev" class="calendar-nav-btn" aria-label="Previous month">&lsaquo;</button>
-      <div class="calendar-title" id="calendar-title">January 2000 - February 2000</div>
+      <div class="calendar-title" id="calendar-title">January 2000</div>
       <button type="button" id="calendar-next" class="calendar-nav-btn" aria-label="Next month">&rsaquo;</button>
     </div>
-    <div class="calendar-months">
-      <div class="calendar-month">
-        <div class="calendar-month-title" id="calendar-month-title-0">January 2000</div>
-        <div class="calendar-weekdays" id="calendar-weekdays-0"></div>
-        <div class="calendar-days" id="calendar-days-0"></div>
-      </div>
-      <div class="calendar-month">
-        <div class="calendar-month-title" id="calendar-month-title-1">February 2000</div>
-        <div class="calendar-weekdays" id="calendar-weekdays-1"></div>
-        <div class="calendar-days" id="calendar-days-1"></div>
-      </div>
-    </div>
+    <div class="calendar-weekdays" id="calendar-weekdays"></div>
+    <div class="calendar-days" id="calendar-days"></div>
     <div class="calendar-actions">
       <button type="button" id="calendar-clear" data-i18n="calendar_clear">Clear</button>
       <button type="button" id="calendar-today" data-i18n="calendar_today">Today</button>
@@ -1328,6 +1261,7 @@ body {
     <div class="panel wide" style="--delay:0.25s">
       <h3 data-i18n="daily_chart">Hourly total tokens</h3>
       <div id="chart-daily" class="chart"></div>
+      <div class="chart-tip" data-i18n="zoom_hint">Scroll to zoom around the pointer; the hovered position stays centered</div>
     </div>
   </div>
 
@@ -1337,9 +1271,8 @@ body {
 const DATA = __DATA_JSON__;
 const I18N = __I18N_JSON__;
 let currentLang = "en";
-const CHART_AXIS_TEXT = "#8e8e93";
-const CHART_AXIS_LINE = "rgba(255,255,255,0.08)";
-const CHART_TOKEN_COLOR = "#0A84FF";
+const CHART_AXIS_TEXT = "#94a3b8";
+const CHART_AXIS_LINE = "rgba(148,163,184,0.28)";
 const ZOOM_IN_FACTOR = 0.72;
 const ZOOM_OUT_FACTOR = 1.25;
 const MIN_WINDOW_PERCENT = 0.05;
@@ -1354,13 +1287,11 @@ let chartResizeBound = false;
 let chartWheelZoomBound = false;
 const calendarState = {
   open: false,
+  targetInputId: "",
   minISO: "",
   maxISO: "",
   viewYear: 0,
   viewMonth: 0,
-  draftStart: "",
-  draftEnd: "",
-  selectingEnd: false,
 };
 
 function prefersReducedMotion() {
@@ -1423,25 +1354,6 @@ function toDisplayISO(value) {
   return iso ? iso.replace(/-/g, "/") : "";
 }
 
-function toMonthDayISO(value) {
-  const iso = normalizeISO(value);
-  if (!iso) return "";
-  return `${iso.slice(5, 7)}/${iso.slice(8, 10)}`;
-}
-
-function formatRangeDisplay(startISO, endISO) {
-  const start = normalizeISO(startISO);
-  const end = normalizeISO(endISO);
-  if (!start && !end) return "Select range";
-  if (start && end) {
-    if (start.slice(0, 4) === end.slice(0, 4)) {
-      return `${toDisplayISO(start)} - ${toMonthDayISO(end)}`;
-    }
-    return `${toDisplayISO(start)} - ${toDisplayISO(end)}`;
-  }
-  return toDisplayISO(start || end);
-}
-
 function getRangeInputValue(input) {
   if (!input) return "";
   return normalizeISO(input.dataset.iso || input.value || "");
@@ -1455,28 +1367,28 @@ function setRangeInputValue(input, value) {
   input.setAttribute("aria-label", iso || "");
 }
 
-function setRangeDisplayText(startISO, endISO) {
-  const textEl = document.getElementById("range-display-text");
-  if (!textEl) return;
-  textEl.textContent = formatRangeDisplay(startISO, endISO);
+function getCalendarTargetInput() {
+  if (!calendarState.targetInputId) return null;
+  return document.getElementById(calendarState.targetInputId);
 }
 
 function closeCalendarPopover() {
   const popover = document.getElementById("calendar-popover");
   if (!popover) return;
   calendarState.open = false;
+  calendarState.targetInputId = "";
   popover.classList.add("hidden");
   popover.setAttribute("aria-hidden", "true");
 }
 
 function positionCalendarPopover() {
   const popover = document.getElementById("calendar-popover");
-  const anchor = document.getElementById("range-display");
-  if (!popover || !anchor || !calendarState.open) return;
-  const rect = anchor.getBoundingClientRect();
+  const input = getCalendarTargetInput();
+  if (!popover || !input || !calendarState.open) return;
+  const rect = input.getBoundingClientRect();
   const gap = 8;
   const margin = 10;
-  const popW = popover.offsetWidth || 700;
+  const popW = popover.offsetWidth || 320;
   const popH = popover.offsetHeight || 320;
   let left = rect.left;
   let top = rect.bottom + gap;
@@ -1490,47 +1402,32 @@ function positionCalendarPopover() {
   popover.style.top = `${Math.round(top)}px`;
 }
 
-function addMonthsUTC(year, month, offset) {
-  const base = new Date(Date.UTC(year, month, 1));
-  base.setUTCMonth(base.getUTCMonth() + offset);
-  return { year: base.getUTCFullYear(), month: base.getUTCMonth() };
-}
-
-function renderMonthDays(offset) {
-  const monthData = addMonthsUTC(calendarState.viewYear, calendarState.viewMonth, offset);
-  const year = monthData.year;
-  const month = monthData.month;
-  const titleEl = document.getElementById(`calendar-month-title-${offset}`);
-  const weekdaysEl = document.getElementById(`calendar-weekdays-${offset}`);
-  const daysEl = document.getElementById(`calendar-days-${offset}`);
-  if (!titleEl || !weekdaysEl || !daysEl) return;
-  titleEl.textContent = `${MONTH_LABELS[month]} ${year}`;
-  weekdaysEl.innerHTML = WEEKDAY_LABELS.map(label => `<span>${label}</span>`).join("");
-
-  const rangeStart = calendarState.draftStart || "";
-  const rangeEnd = calendarState.draftEnd || "";
+function renderCalendarDays() {
+  const titleEl = document.getElementById("calendar-title");
+  const daysEl = document.getElementById("calendar-days");
+  if (!titleEl || !daysEl) return;
+  const year = calendarState.viewYear;
+  const month = calendarState.viewMonth;
+  const targetInput = getCalendarTargetInput();
+  const selectedISO = getRangeInputValue(targetInput);
   const todayISO = toLocalISODate(new Date());
-
+  const monthName = MONTH_LABELS[month] || "";
+  titleEl.textContent = `${monthName} ${year}`;
   const monthStart = new Date(Date.UTC(year, month, 1));
   const startOffset = monthStart.getUTCDay();
   const gridStart = new Date(Date.UTC(year, month, 1 - startOffset));
   let htmlDays = "";
-
   for (let i = 0; i < 42; i++) {
     const d = new Date(gridStart.getTime() + i * DAY_MS);
     const iso = formatISODate(d);
     const isOutside = d.getUTCMonth() !== month;
-    const isRangeStart = rangeStart && iso === rangeStart;
-    const isRangeEnd = rangeEnd && iso === rangeEnd;
-    const isInRange = rangeStart && rangeEnd && iso >= rangeStart && iso <= rangeEnd;
+    const isSelected = iso === selectedISO;
     const isToday = iso === todayISO;
     const isDisabled = (calendarState.minISO && iso < calendarState.minISO) || (calendarState.maxISO && iso > calendarState.maxISO);
     const classes = [
       "calendar-day-btn",
       isOutside ? "is-outside" : "",
-      isInRange ? "is-in-range" : "",
-      isRangeStart ? "is-range-start" : "",
-      isRangeEnd ? "is-range-end" : "",
+      isSelected ? "is-selected" : "",
       isToday ? "is-today" : "",
     ].filter(Boolean).join(" ");
     const disabledAttr = isDisabled ? " disabled" : "";
@@ -1540,50 +1437,37 @@ function renderMonthDays(offset) {
   daysEl.innerHTML = htmlDays;
 }
 
-function renderCalendarDays() {
-  const titleEl = document.getElementById("calendar-title");
-  if (titleEl) {
-    const left = addMonthsUTC(calendarState.viewYear, calendarState.viewMonth, 0);
-    const right = addMonthsUTC(calendarState.viewYear, calendarState.viewMonth, 1);
-    titleEl.textContent = `${MONTH_LABELS[left.month]} ${left.year} - ${MONTH_LABELS[right.month]} ${right.year}`;
-  }
-  renderMonthDays(0);
-  renderMonthDays(1);
-}
-
 function shiftCalendarMonth(step) {
-  const next = addMonthsUTC(calendarState.viewYear, calendarState.viewMonth, step);
-  calendarState.viewYear = next.year;
-  calendarState.viewMonth = next.month;
+  let month = calendarState.viewMonth + step;
+  let year = calendarState.viewYear;
+  if (month < 0) {
+    month = 11;
+    year -= 1;
+  } else if (month > 11) {
+    month = 0;
+    year += 1;
+  }
+  calendarState.viewYear = year;
+  calendarState.viewMonth = month;
   renderCalendarDays();
 }
 
-function openCalendarPopover() {
+function openCalendarForInput(input) {
   const popover = document.getElementById("calendar-popover");
-  const startInput = document.getElementById("range-start");
-  const endInput = document.getElementById("range-end");
-  if (!popover || !startInput || !endInput) return;
-
+  if (!input || !popover) return;
   const minISO = normalizeISO((DATA.range && DATA.range.start) || "");
   const maxISO = normalizeISO((DATA.range && DATA.range.end) || "");
-  const selectedStart = getRangeInputValue(startInput) || minISO || toLocalISODate(new Date());
-  const selectedEnd = getRangeInputValue(endInput) || maxISO || selectedStart;
-  let selectedDate = parseISODate(selectedStart);
-  if (!Number.isFinite(selectedDate.getTime())) selectedDate = parseISODate(toLocalISODate(new Date()));
-
+  const selectedISO = getRangeInputValue(input) || minISO || maxISO || toLocalISODate(new Date());
+  let selectedDate = parseISODate(selectedISO);
+  if (!Number.isFinite(selectedDate.getTime())) {
+    selectedDate = parseISODate(toLocalISODate(new Date()));
+  }
   calendarState.open = true;
+  calendarState.targetInputId = input.id;
   calendarState.minISO = minISO;
   calendarState.maxISO = maxISO;
   calendarState.viewYear = selectedDate.getUTCFullYear();
   calendarState.viewMonth = selectedDate.getUTCMonth();
-  calendarState.draftStart = clampISO(selectedStart, minISO, maxISO);
-  calendarState.draftEnd = clampISO(selectedEnd, minISO, maxISO);
-  if (calendarState.draftStart > calendarState.draftEnd) {
-    const tmp = calendarState.draftStart;
-    calendarState.draftStart = calendarState.draftEnd;
-    calendarState.draftEnd = tmp;
-  }
-  calendarState.selectingEnd = false;
   renderCalendarDays();
   popover.classList.remove("hidden");
   popover.setAttribute("aria-hidden", "false");
@@ -1803,12 +1687,6 @@ function setupAutoSync() {
   });
 }
 
-function compactAxisLabel(raw) {
-  const match = String(raw || "").match(/^(\\d{4})-(\\d{2})-(\\d{2})/);
-  if (!match) return String(raw || "");
-  return `${match[2]}/${match[3]}`;
-}
-
 function lineChart(el, labels, values, color) {
   if (!el) return;
   const chartLabels = Array.isArray(labels) ? labels : [];
@@ -1880,53 +1758,32 @@ function lineChart(el, labels, values, color) {
   dailyChartInstance.setOption(
     {
       backgroundColor: "transparent",
-      animation: true,
-      grid: { left: 52, right: 16, top: 16, bottom: 34 },
+      animation: false,
+      grid: { left: 48, right: 26, top: 16, bottom: 56 },
       tooltip: {
         trigger: "axis",
-        confine: true,
-        triggerOn: "mousemove|click",
-        backgroundColor: "rgba(28,28,30,0.94)",
-        borderColor: "rgba(255,255,255,0.12)",
+        backgroundColor: "rgba(10,10,10,0.92)",
+        borderColor: "rgba(184,156,122,0.45)",
         borderWidth: 1,
-        textStyle: { color: "#ffffff" },
-        axisPointer: {
-          type: "line",
-          lineStyle: { color: "rgba(255,255,255,0.36)", width: 1 },
-        },
-        formatter: (params) => {
-          const first = Array.isArray(params) ? params[0] : params;
-          if (!first) return "";
-          const value = formatChartNumber(first.value);
-          return `${first.axisValueLabel}<br/>Token: ${value}`;
-        },
+        textStyle: { color: "#f8fafc" },
+        axisPointer: { type: "line" },
+        valueFormatter: (value) => formatChartNumber(value),
       },
       xAxis: {
         type: "category",
         boundaryGap: false,
         data: chartLabels,
-        axisLabel: {
-          color: CHART_AXIS_TEXT,
-          hideOverlap: false,
-          formatter: (value, index) => {
-            if (!chartLabels.length) return "";
-            if (index === 0 || index === chartLabels.length - 1) return compactAxisLabel(value);
-            return "";
-          },
-        },
-        splitLine: { show: false },
-        axisLine: { show: false },
+        axisLabel: { color: CHART_AXIS_TEXT, hideOverlap: true },
+        axisLine: { lineStyle: { color: CHART_AXIS_LINE } },
         axisTick: { show: false },
       },
       yAxis: {
         type: "value",
-        splitNumber: 4,
         axisLabel: {
           color: CHART_AXIS_TEXT,
           formatter: (value) => formatChartNumber(value),
         },
-        axisLine: { show: false },
-        splitLine: { lineStyle: { color: "rgba(255,255,255,0.10)" } },
+        splitLine: { lineStyle: { color: "rgba(148,163,184,0.15)" } },
       },
       dataZoom: [
         {
@@ -1935,7 +1792,7 @@ function lineChart(el, labels, values, color) {
           start: zoomStart,
           end: zoomEnd,
           zoomOnMouseWheel: false,
-          moveOnMouseMove: false,
+          moveOnMouseMove: true,
           moveOnMouseWheel: false,
         },
       ],
@@ -1944,13 +1801,12 @@ function lineChart(el, labels, values, color) {
           type: "line",
           data: chartValues,
           showSymbol: false,
-          smooth: 0.38,
-          sampling: "lttb",
-          lineStyle: { color, width: 2.2 },
+          smooth: true,
+          lineStyle: { color, width: 2.5 },
           areaStyle: {
             color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(10,132,255,0.32)" },
-              { offset: 1, color: "rgba(10,132,255,0.02)" },
+              { offset: 0, color: "rgba(184,156,122,0.38)" },
+              { offset: 1, color: "rgba(184,156,122,0.05)" },
             ]),
           },
         },
@@ -2440,10 +2296,8 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   const endInput = document.getElementById("range-end");
   if (startInput) setRangeInputValue(startInput, startISO);
   if (endInput) setRangeInputValue(endInput, endISO);
-  setRangeDisplayText(startISO, endISO);
-  setActiveRangeSegment(detectRangeSegment(startISO, endISO, minISO, maxISO));
   setDisplayText("range-text", `${startISO} to ${endISO}`, false);
-  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, CHART_TOKEN_COLOR);
+  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, "#B89C7A");
 
   if (previewOnly) {
     return;
@@ -2507,88 +2361,33 @@ function syncRangeControls(minISO, maxISO) {
   endInput.max = maxISO;
   setRangeInputValue(startInput, minISO);
   setRangeInputValue(endInput, maxISO);
-  setRangeDisplayText(minISO, maxISO);
-}
-
-function setActiveRangeSegment(value) {
-  document.querySelectorAll("#range-segments [data-range]").forEach(btn => {
-    btn.classList.toggle("is-active", btn.dataset.range === value);
-  });
-}
-
-function detectRangeSegment(startISO, endISO, minISO, maxISO) {
-  if (!startISO || !endISO || !minISO || !maxISO) return "";
-  if (startISO === minISO && endISO === maxISO) return "all";
-  const presets = [1, 2, 7, 30, 90];
-  for (const days of presets) {
-    let expectedStart = addDaysISO(maxISO, -(days - 1));
-    if (expectedStart < minISO) expectedStart = minISO;
-    if (startISO === expectedStart && endISO === maxISO) return String(days);
-  }
-  return "";
-}
-
-function commitDraftRange(closeAfter) {
-  const startInput = document.getElementById("range-start");
-  const endInput = document.getElementById("range-end");
-  if (!startInput || !endInput) return;
-  let startISO = normalizeISO(calendarState.draftStart || "");
-  let endISO = normalizeISO(calendarState.draftEnd || startISO);
-  if (!startISO) return;
-  startISO = clampISO(startISO, calendarState.minISO, calendarState.maxISO);
-  endISO = clampISO(endISO, calendarState.minISO, calendarState.maxISO);
-  if (startISO > endISO) {
-    const tmp = startISO;
-    startISO = endISO;
-    endISO = tmp;
-  }
-  setRangeInputValue(startInput, startISO);
-  setRangeInputValue(endInput, endISO);
-  setRangeDisplayText(startISO, endISO);
-  applyRange(startISO, endISO);
-  if (closeAfter) closeCalendarPopover();
 }
 
 function setupRangeControls() {
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
-  const rangeDisplay = document.getElementById("range-display");
   const applyBtn = document.getElementById("apply-range");
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
-  if (!startInput || !endInput || !rangeDisplay || !applyBtn || !minISO || !maxISO) return;
-
+  if (!startInput || !endInput || !applyBtn || !minISO || !maxISO) return;
   syncRangeControls(minISO, maxISO);
-
-  rangeDisplay.addEventListener("click", () => {
-    openCalendarPopover();
-  });
-  rangeDisplay.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
-      event.preventDefault();
-      openCalendarPopover();
-    }
-    if (event.key === "Escape") closeCalendarPopover();
-  });
 
   applyBtn.addEventListener("click", () => {
     applyRange(getRangeInputValue(startInput), getRangeInputValue(endInput));
   });
 
-  document.querySelectorAll("#range-segments [data-range]").forEach(btn => {
+  document.querySelectorAll("[data-range]").forEach(btn => {
     btn.addEventListener("click", () => {
       const value = btn.dataset.range;
       if (value === "all") {
-        setActiveRangeSegment("all");
         applyRange(minISO, maxISO);
         return;
       }
-      const days = parseInt(value || "", 10);
+      const days = parseInt(value, 10);
       if (!days) return;
       const end = maxISO;
       let start = addDaysISO(end, -(days - 1));
       if (start < minISO) start = minISO;
-      setActiveRangeSegment(String(days));
       applyRange(start, end);
     });
   });
@@ -2596,16 +2395,34 @@ function setupRangeControls() {
 
 function setupCustomDatePicker() {
   const popover = document.getElementById("calendar-popover");
-  const rangeDisplay = document.getElementById("range-display");
-  const days0 = document.getElementById("calendar-days-0");
-  const days1 = document.getElementById("calendar-days-1");
+  const weekdays = document.getElementById("calendar-weekdays");
+  const days = document.getElementById("calendar-days");
   const prevBtn = document.getElementById("calendar-prev");
   const nextBtn = document.getElementById("calendar-next");
   const clearBtn = document.getElementById("calendar-clear");
   const todayBtn = document.getElementById("calendar-today");
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
-  if (!popover || !rangeDisplay || !days0 || !days1 || !prevBtn || !nextBtn || !clearBtn || !todayBtn || !startInput || !endInput) return;
+  if (!popover || !weekdays || !days || !prevBtn || !nextBtn || !clearBtn || !todayBtn || !startInput || !endInput) return;
+
+  weekdays.innerHTML = WEEKDAY_LABELS.map(label => `<span>${label}</span>`).join("");
+
+  const bindOpen = (input) => {
+    const open = () => openCalendarForInput(input);
+    input.addEventListener("click", open);
+    input.addEventListener("focus", open);
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+        event.preventDefault();
+        open();
+      }
+      if (event.key === "Escape") {
+        closeCalendarPopover();
+      }
+    });
+  };
+  bindOpen(startInput);
+  bindOpen(endInput);
 
   prevBtn.addEventListener("click", () => {
     shiftCalendarMonth(-1);
@@ -2616,56 +2433,43 @@ function setupCustomDatePicker() {
     positionCalendarPopover();
   });
 
-  const selectDay = (event) => {
+  days.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
     if (!target.classList.contains("calendar-day-btn")) return;
     if (target.hasAttribute("disabled")) return;
     const iso = normalizeISO(target.dataset.iso || "");
-    if (!iso) return;
-    if (!calendarState.selectingEnd) {
-      calendarState.draftStart = iso;
-      calendarState.draftEnd = "";
-      calendarState.selectingEnd = true;
-      renderCalendarDays();
-      return;
-    }
-    if (iso < calendarState.draftStart) {
-      calendarState.draftEnd = calendarState.draftStart;
-      calendarState.draftStart = iso;
-    } else {
-      calendarState.draftEnd = iso;
-    }
-    calendarState.selectingEnd = false;
-    commitDraftRange(true);
-  };
-
-  days0.addEventListener("click", selectDay);
-  days1.addEventListener("click", selectDay);
+    const input = getCalendarTargetInput();
+    if (!iso || !input) return;
+    setRangeInputValue(input, iso);
+    closeCalendarPopover();
+  });
 
   clearBtn.addEventListener("click", () => {
-    calendarState.draftStart = calendarState.minISO;
-    calendarState.draftEnd = calendarState.maxISO;
-    calendarState.selectingEnd = false;
-    commitDraftRange(true);
+    const input = getCalendarTargetInput();
+    if (!input) return;
+    const fallback = input.id === "range-end" ? calendarState.maxISO : calendarState.minISO;
+    setRangeInputValue(input, fallback);
+    closeCalendarPopover();
   });
 
   todayBtn.addEventListener("click", () => {
+    const input = getCalendarTargetInput();
+    if (!input) return;
     const todayISO = clampISO(toLocalISODate(new Date()), calendarState.minISO, calendarState.maxISO);
-    calendarState.draftStart = todayISO;
-    calendarState.draftEnd = todayISO;
-    calendarState.selectingEnd = false;
-    commitDraftRange(true);
+    setRangeInputValue(input, todayISO);
+    closeCalendarPopover();
   });
 
   document.addEventListener("mousedown", (event) => {
     if (!calendarState.open) return;
+    const input = getCalendarTargetInput();
     const target = event.target;
-    if (!(target instanceof Node)) {
+    if (!input || !(target instanceof Node)) {
       closeCalendarPopover();
       return;
     }
-    if (popover.contains(target) || rangeDisplay.contains(target)) return;
+    if (popover.contains(target) || input.contains(target)) return;
     closeCalendarPopover();
   });
 
