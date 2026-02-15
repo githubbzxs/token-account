@@ -763,7 +763,6 @@ html.theme-ready .page::before,
 html.theme-ready .range-controls,
 html.theme-ready .range-date-trigger,
 html.theme-ready .range-segmented,
-html.theme-ready .range-segmented-slider,
 html.theme-ready .range-action-btn,
 html.theme-ready .file-button,
 html.theme-ready .theme-dot-toggle,
@@ -780,17 +779,17 @@ html.theme-ready .chart {
 
 .range-controls {
   --range-selector-width: 260px;
-  --range-selector-height: 46px;
-  margin: 18px 0 10px;
-  padding: 14px 16px;
+  --range-selector-height: 40px;
+  margin: 16px 0 8px;
+  padding: 10px 14px;
   border: 1px solid var(--stroke);
   background: linear-gradient(140deg, rgba(26, 27, 32, 0.9), rgba(17, 17, 19, 0.88));
-  border-radius: 16px;
+  border-radius: 14px;
   display: grid;
   grid-template-columns: var(--range-selector-width) var(--range-selector-width) auto;
   align-items: center;
-  column-gap: 12px;
-  row-gap: 12px;
+  column-gap: 10px;
+  row-gap: 10px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -811,17 +810,17 @@ html.theme-ready .chart {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   border: 1px solid var(--stroke);
   background: linear-gradient(140deg, rgba(36, 38, 46, 0.94), rgba(24, 26, 33, 0.94));
   color: #eef2ff;
   border-radius: 999px;
-  padding: 8px 14px;
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 0.2px;
   cursor: pointer;
   width: 100%;
   height: var(--range-selector-height);
-  padding: 0 14px;
+  padding: 0 12px;
   min-width: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
@@ -1016,7 +1015,8 @@ html.theme-ready .chart {
   align-items: center;
   flex-wrap: nowrap;
   gap: 1px;
-  padding: 3px;
+  box-sizing: border-box;
+  padding: 2px;
   border-radius: 999px;
   border: 1px solid var(--stroke);
   background: rgba(44, 46, 56, 0.92);
@@ -1029,20 +1029,20 @@ html.theme-ready .chart {
 
 .range-segmented-slider {
   position: absolute;
-  top: 3px;
-  bottom: 3px;
-  left: 3px;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
   width: 0;
   border-radius: 999px;
   background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.36);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.34);
   opacity: 0;
   transform: translateX(0);
   will-change: transform, width, opacity;
   transition:
-    transform 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-    width 0.38s cubic-bezier(0.2, 0.9, 0.2, 1),
-    opacity 0.2s ease;
+    transform 0.66s cubic-bezier(0.18, 0.88, 0.26, 1),
+    width 0.54s cubic-bezier(0.2, 0.92, 0.24, 1),
+    opacity 0.24s ease;
   z-index: 0;
 }
 
@@ -1060,7 +1060,7 @@ html.theme-ready .chart {
   z-index: 1;
   flex: 1 1 0;
   min-width: 0;
-  min-height: calc(var(--range-selector-height) - 8px);
+  min-height: calc(var(--range-selector-height) - 6px);
   border: none;
   background: transparent;
   color: #b6bac6;
@@ -1431,6 +1431,9 @@ html.theme-ready .chart {
   .metric-value-anim,
   .i18n-switch-anim {
     animation: none !important;
+    transition: none !important;
+  }
+  .range-segmented-slider {
     transition: none !important;
   }
   html.theme-ready body,

@@ -47,6 +47,10 @@
   - Why：用户反馈“等宽”需求实际为上下视觉一致，且滑块动效不明显。
   - Impact：`src/codex_token_report.py` 的范围控件高度样式、`setQuickRangeActive` 与 `setupRangeControls` 点击流程。
   - Verify：`report-test/index.html` 中两侧控件共享 `--range-selector-height`，点击快捷范围时滑块先移动再更新数据。
+- **[2026-02-15] 范围控件中度收紧并修复滑块过渡覆盖**：范围控件高度降为 `40px`，外框间距同步收紧；移除 `theme-ready` 对滑块过渡的覆盖并改为更慢更丝滑的缓动。
+  - Why：用户反馈控件“太粗”且快捷范围胶囊“没有动效”。
+  - Impact：`src/codex_token_report.py` 样式模板中的范围控件尺寸参数与 `.range-segmented-slider` 过渡策略。
+  - Verify：本地生成 `report-test/index.html` 后包含 `--range-selector-height: 40px` 与 `transform 0.66s`；大陆测试 VPS 的 `report/index.html` 同步更新并可检索到相同参数。
 
 # Commands
 - `python -m py_compile src/codex_token_report.py`
@@ -54,7 +58,7 @@
 
 # Status / Next
 - 当前：时间分析已移除；日期筛选已切为自定义英文日历；图表缩放已改为鼠标锚点缩放且无底部滑块。
-- 下一步：如需继续微调日历交互（例如周起始日、快捷月份跳转），在现有自定义日历上迭代。
+- 下一步：如需继续微调日历交互（例如周起始日、快捷月份跳转），在现有自定义日历上迭代；如需进一步紧凑可继续将范围控件高度降到 `38px` 档位并复测小屏可读性。
 
 # Known Issues
 - `dummy_sessions/test.jsonl` 是本地未跟踪测试数据文件，默认不纳入提交。
