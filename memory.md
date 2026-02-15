@@ -8,6 +8,9 @@
 - **[2026-02-15] 数据分析增强方向**：从单点指标升级为对比型分析，覆盖效率、峰值集中度、活跃覆盖率、近 7 天趋势和波动性。
   - Why：原分析维度不足，缺少结构化深度判断。
   - Impact：`src/codex_token_report.py` 分析面板与 `applyRangeInternal` 计算逻辑。
+- **[2026-02-15] 移除分析模块**：按用户最新要求，前端报告彻底去掉“数据分析”模块及其计算逻辑。
+  - Why：用户明确要求不保留任何分析模块。
+  - Impact：`src/codex_token_report.py` 模板、样式、i18n 与 `applyRangeInternal`。
 
 # Commands
 - `python -m py_compile src/codex_token_report.py`

@@ -61,15 +61,6 @@ I18N = {
         "model_mix": "模型占比",
         "top_days": "高峰日期",
         "top_spikes": "尖峰时刻",
-        "analysis_panel": "数据分析",
-        "analysis_input_output_ratio": "有效产出率（输出/净输入）",
-        "analysis_cache_saving": "缓存节省金额",
-        "analysis_peak_hour": "高峰小时",
-        "analysis_peak_concentration": "峰值集中度（Top3 小时）",
-        "analysis_work_hours_ratio": "工作时段占比（09-18）",
-        "analysis_activity_coverage": "活跃覆盖率",
-        "analysis_trend_7d": "近期趋势（近7天 vs 前7天）",
-        "analysis_volatility_index": "波动指数（P95/P50）",
         "model_table": "模型明细",
         "table_model": "模型",
         "table_tokens": "总 token",
@@ -134,15 +125,6 @@ I18N = {
         "model_mix": "Model share",
         "top_days": "Top days",
         "top_spikes": "Top spikes",
-        "analysis_panel": "Data analysis",
-        "analysis_input_output_ratio": "Effective output ratio (output/net input)",
-        "analysis_cache_saving": "Cache savings",
-        "analysis_peak_hour": "Peak hour",
-        "analysis_peak_concentration": "Peak concentration (Top 3 hours)",
-        "analysis_work_hours_ratio": "Work hours ratio (09-18)",
-        "analysis_activity_coverage": "Active coverage",
-        "analysis_trend_7d": "Recent trend (last 7d vs previous 7d)",
-        "analysis_volatility_index": "Volatility index (P95/P50)",
         "model_table": "Model breakdown",
         "table_model": "Model",
         "table_tokens": "Total tokens",
@@ -953,33 +935,6 @@ body {
   font-weight: 600;
 }
 
-.analysis-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-}
-
-.analysis-item {
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
-  padding: 12px;
-}
-
-.analysis-label {
-  font-size: 12px;
-  color: var(--muted);
-  letter-spacing: 0.3px;
-}
-
-.analysis-value {
-  margin-top: 10px;
-  font-size: 22px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-}
-
 .muted {
   color: var(--muted);
 }
@@ -1138,43 +1093,6 @@ body {
       <h3 data-i18n="daily_chart">Hourly total tokens</h3>
       <div id="chart-daily" class="chart"></div>
       <div class="chart-tip" data-i18n="zoom_hint">滚轮可缩放，按住 Ctrl + 滚轮可对准位置并居中放大，连续操作会持续聚焦该区域</div>
-    </div>
-    <div class="panel wide" style="--delay:0.35s">
-      <h3 data-i18n="analysis_panel">数据分析</h3>
-      <div class="analysis-grid">
-        <div class="analysis-item">
-          <div class="analysis-label" data-i18n="analysis_input_output_ratio">输入输出比</div>
-          <div class="analysis-value" id="analysis-input-output-ratio">n/a</div>
-        </div>
-        <div class="analysis-item">
-          <div class="analysis-label" data-i18n="analysis_cache_saving">缓存节省金额</div>
-          <div class="analysis-value" id="analysis-cache-saving">n/a</div>
-        </div>
-        <div class="analysis-item">
-          <div class="analysis-label" data-i18n="analysis_peak_hour">高峰小时</div>
-          <div class="analysis-value" id="analysis-peak-hour">无数据</div>
-        </div>
-        <div class="analysis-item">
-          <div class="analysis-label" data-i18n="analysis_peak_concentration">峰值集中度（Top3 小时）</div>
-          <div class="analysis-value" id="analysis-peak-concentration">n/a</div>
-        </div>
-        <div class="analysis-item">
-          <div class="analysis-label" data-i18n="analysis_work_hours_ratio">工作时段占比（09-18）</div>
-          <div class="analysis-value" id="analysis-work-hours-ratio">n/a</div>
-        </div>
-        <div class="analysis-item">
-          <div class="analysis-label" data-i18n="analysis_activity_coverage">活跃覆盖率</div>
-          <div class="analysis-value" id="analysis-activity-coverage">n/a</div>
-        </div>
-        <div class="analysis-item">
-          <div class="analysis-label" data-i18n="analysis_trend_7d">近期趋势（近7天 vs 前7天）</div>
-          <div class="analysis-value" id="analysis-trend-7d">n/a</div>
-        </div>
-        <div class="analysis-item">
-          <div class="analysis-label" data-i18n="analysis_volatility_index">波动指数（P95/P50）</div>
-          <div class="analysis-value" id="analysis-volatility-index">n/a</div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -1830,55 +1748,6 @@ function aggregateModels(dayLabels) {
   return out;
 }
 
-function buildHourlyTotalsByHour(dayLabels) {
-  const out = new Array(24).fill(0);
-  const dailyHourly = DATA.hourly_daily || {};
-  dayLabels.forEach(day => {
-    const hours = dailyHourly[day];
-    if (!Array.isArray(hours)) return;
-    for (let hour = 0; hour < 24; hour++) {
-      out[hour] += Number(hours[hour] || 0);
-    }
-  });
-  return out;
-}
-
-function quantile(values, p) {
-  if (!Array.isArray(values) || values.length === 0) return null;
-  const sorted = values
-    .map(v => Number(v))
-    .filter(v => Number.isFinite(v))
-    .sort((a, b) => a - b);
-  if (!sorted.length) return null;
-  if (sorted.length === 1) return sorted[0];
-  const pos = (sorted.length - 1) * p;
-  const base = Math.floor(pos);
-  const frac = pos - base;
-  const next = sorted[Math.min(base + 1, sorted.length - 1)];
-  return sorted[base] + (next - sorted[base]) * frac;
-}
-
-function computeWindowTrend(values, startIdx, endIdx, windowDays) {
-  if (!Array.isArray(values)) return null;
-  const totalDays = endIdx - startIdx + 1;
-  if (totalDays < 2) return null;
-  const span = Math.max(1, Math.min(windowDays || 7, Math.floor(totalDays / 2)));
-  const recentStart = endIdx - span + 1;
-  const prevEnd = recentStart - 1;
-  const prevStart = prevEnd - span + 1;
-  if (prevStart < startIdx) return null;
-  const recent = sumSlice(values, recentStart, endIdx);
-  const previous = sumSlice(values, prevStart, prevEnd);
-  if (previous <= 0) {
-    return { recent, previous, changePct: null };
-  }
-  return {
-    recent,
-    previous,
-    changePct: ((recent - previous) / previous) * 100,
-  };
-}
-
 function resolvePricing(model) {
   const pricing = (DATA.pricing && DATA.pricing.prices) || {};
   const aliases = (DATA.pricing && DATA.pricing.aliases) || {};
@@ -2173,7 +2042,6 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   const cachedTokens = sumSlice(DATA.daily.cached, startIdx, endIdx);
 
   const activeDays = countActiveDays(DATA.daily.total, startIdx, endIdx);
-  const rangeDays = Math.max(1, endIdx - startIdx + 1);
   const sessions = sessionsInRange(startISO, endISO);
   const avgPerDay = activeDays ? Math.round(totalTokens / activeDays) : 0;
   const avgPerSession = sessions ? Math.round(totalTokens / sessions) : 0;
@@ -2201,8 +2069,6 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
 
   let totalCost = 0;
   let anyPriced = false;
-  let cacheSaving = 0;
-  let hasCacheSavingEstimate = false;
   modelItems.forEach(item => {
     const pricing = resolvePricing(item.model);
     const cost = costUSD(item.rec, pricing);
@@ -2210,63 +2076,7 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
       totalCost += cost;
       anyPriced = true;
     }
-    if (pricing) {
-      const inputPrice = Number(pricing.input || 0);
-      const cachedPrice = pricing.cached_input != null ? Number(pricing.cached_input) : inputPrice;
-      if (Number.isFinite(inputPrice) && Number.isFinite(cachedPrice)) {
-        const cachedInputTokens = Number(item.rec.cached_input_tokens || 0);
-        cacheSaving += (cachedInputTokens / 1_000_000) * Math.max(0, inputPrice - cachedPrice);
-        hasCacheSavingEstimate = true;
-      }
-    }
   });
-
-  const hourlyTotalsByHour = buildHourlyTotalsByHour(dayLabels);
-  const activeHourlyValues = [];
-  let peakHour = -1;
-  let peakHourValue = 0;
-  let workHourTokens = 0;
-  for (let hour = 0; hour < hourlyTotalsByHour.length; hour++) {
-    const value = Number(hourlyTotalsByHour[hour] || 0);
-    if (value > 0) activeHourlyValues.push(value);
-    if (value > peakHourValue) {
-      peakHourValue = value;
-      peakHour = hour;
-    }
-    if (hour >= 9 && hour <= 18) {
-      workHourTokens += value;
-    }
-  }
-  const top3HourTokens = hourlyTotalsByHour
-    .slice()
-    .sort((a, b) => b - a)
-    .slice(0, 3)
-    .reduce((sum, value) => sum + Number(value || 0), 0);
-  const netInputTokens = Math.max(0, inputTokens - cachedTokens);
-  const inputOutputRatio = netInputTokens > 0 ? `${(outputTokens / netInputTokens).toFixed(2)}x` : "n/a";
-  const cacheSavingText = hasCacheSavingEstimate ? formatMoneyUSD(cacheSaving) : "n/a";
-  const peakHourText = peakHour >= 0 ? `${pad2(peakHour)}:00` : labelFor("no_data");
-  const peakConcentration = totalTokens > 0 ? `${((top3HourTokens / totalTokens) * 100).toFixed(1)}%` : "n/a";
-  const workHoursRatio = totalTokens > 0 ? `${((workHourTokens / totalTokens) * 100).toFixed(1)}%` : "n/a";
-  const activityCoverage = `${((activeDays / rangeDays) * 100).toFixed(1)}%`;
-  const trend7d = computeWindowTrend(DATA.daily.total, startIdx, endIdx, 7);
-  let trend7dText = "n/a";
-  if (trend7d && trend7d.changePct != null && Number.isFinite(trend7d.changePct)) {
-    const sign = trend7d.changePct > 0 ? "+" : "";
-    trend7dText = `${sign}${trend7d.changePct.toFixed(1)}%`;
-  }
-  const p50 = quantile(activeHourlyValues, 0.5);
-  const p95 = quantile(activeHourlyValues, 0.95);
-  const volatilityIndex = p50 && p50 > 0 && p95 != null ? (p95 / p50).toFixed(2) : "n/a";
-
-  setDisplayText("analysis-input-output-ratio", inputOutputRatio, animateMetrics);
-  setDisplayText("analysis-cache-saving", cacheSavingText, animateMetrics);
-  setDisplayText("analysis-peak-hour", peakHourText, animateMetrics);
-  setDisplayText("analysis-peak-concentration", peakConcentration, animateMetrics);
-  setDisplayText("analysis-work-hours-ratio", workHoursRatio, animateMetrics);
-  setDisplayText("analysis-activity-coverage", activityCoverage, animateMetrics);
-  setDisplayText("analysis-trend-7d", trend7dText, animateMetrics);
-  setDisplayText("analysis-volatility-index", volatilityIndex, animateMetrics);
 
   const shareCost = anyPriced ? formatMoneyUSD(totalCost) : "n/a";
   setDisplayText("value-cost", shareCost, animateMetrics);
