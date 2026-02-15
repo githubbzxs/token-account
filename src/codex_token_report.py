@@ -3095,10 +3095,16 @@ def _is_local_port_open(port: int) -> bool:
         return sock.connect_ex(("127.0.0.1", port)) == 0
 
 
-def start_local_http_server(out_dir: Path, port: int = 8765) -> str | None:
+def _find_free_local_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+def start_local_http_server(out_dir: Path, port: int | None = None) -> str | None:
+    if port is None:
+        port = _find_free_local_port()
     url = f"http://127.0.0.1:{port}/index.html"
-    if _is_local_port_open(port):
-        return url
 
     cmd = [
         sys.executable,
