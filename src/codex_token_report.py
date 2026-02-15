@@ -7,6 +7,7 @@ import html
 import json
 import os
 import re
+import shutil
 import sys
 from collections import defaultdict
 from decimal import Decimal
@@ -3053,6 +3054,38 @@ window.addEventListener("load", () => {
         template = template.replace(f"__{key}__", value)
     return template
 
+
+def sync_frontend_dist(frontend_dist: Path, out_dir: Path) -> Path:
+    if not frontend_dist.exists() or not frontend_dist.is_dir():
+        raise FileNotFoundError(
+            f"frontend dist not found: {frontend_dist}. "
+            "请先在 web 目录执行 npm install && npm run build。"
+        )
+
+    index_path = frontend_dist / "index.html"
+    if not index_path.exists():
+        raise FileNotFoundError(
+            f"frontend entry not found: {index_path}. "
+            "请确认前端构建产物包含 index.html。"
+        )
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for item in frontend_dist.iterdir():
+        target = out_dir / item.name
+        if target.exists():
+            if target.is_dir():
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+
+        if item.is_dir():
+            shutil.copytree(item, target)
+        else:
+            shutil.copy2(item, target)
+
+    return out_dir / "index.html"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Generate a local Codex token usage report from session logs."
@@ -3063,6 +3096,11 @@ def main() -> int:
     parser.add_argument("--until", help="End date YYYY-MM-DD.")
     parser.add_argument("--days", type=int, help="Limit to last N days when no dates set.")
     parser.add_argument("--out", default="report", help="Output directory for report.")
+    parser.add_argument(
+        "--frontend-dist",
+        default="web/dist",
+        help="Path to frontend dist directory (default: web/dist).",
+    )
     parser.add_argument("--pricing-file", help="Path to pricing json.")
     parser.add_argument("--json", action="store_true", help="Deprecated: data.json is always written.")
     parser.add_argument("--open", action="store_true", help="Open report in default browser.")
@@ -3096,7 +3134,6 @@ def main() -> int:
         usage = collect_usage(session_root, since, until)
 
     active_days = usage["active_days"]
-    empty = not active_days
     range_start = since or (min(active_days) if active_days else date.today())
     range_end = until or (max(active_days) if active_days else date.today())
     range_days = (range_end - range_start).days + 1
@@ -3209,11 +3246,13 @@ def main() -> int:
         "source_path": str(session_root),
     }
 
-    html_text = render_html(data, summary, empty)
     out_dir = Path(args.out)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    index_path = out_dir / "index.html"
-    index_path.write_text(html_text, encoding="utf-8")
+    frontend_dist = Path(args.frontend_dist)
+    try:
+        index_path = sync_frontend_dist(frontend_dist, out_dir)
+    except (FileNotFoundError, OSError) as exc:
+        print(f"Could not prepare frontend assets: {exc}", file=sys.stderr)
+        return 2
 
     data_path = out_dir / "data.json"
     data_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
