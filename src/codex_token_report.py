@@ -675,46 +675,30 @@ body {
 }
 
 .theme-dot-toggle {
-  width: 22px;
-  height: 22px;
+  width: 14px;
+  height: 14px;
   border-radius: 999px;
-  border: 1px solid var(--stroke);
-  background: rgba(30, 33, 44, 0.88);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1.5px solid rgba(var(--accent-rgb), 0.88);
+  background: transparent;
+  box-shadow: none;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
 .theme-dot-toggle:hover {
-  transform: translateY(-1px);
-  border-color: rgba(var(--accent-cyan-rgb), 0.55);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 6px 16px rgba(0, 0, 0, 0.45);
+  transform: scale(1.03);
+  border-color: rgba(var(--accent-cyan-rgb), 0.78);
+  box-shadow: 0 0 0 1px rgba(var(--accent-cyan-rgb), 0.18);
 }
 
 .theme-dot-toggle:focus-visible {
   outline: none;
-  border-color: rgba(var(--accent-rgb), 0.62);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 0 0 2px rgba(var(--accent-rgb), 0.2);
-}
-
-.theme-dot-core {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
-  box-shadow:
-    0 0 8px rgba(var(--accent-rgb), 0.55),
-    0 0 10px rgba(var(--accent-cyan-rgb), 0.42);
+  border-color: rgba(var(--accent-rgb), 0.95);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
 }
 
 .title h1 {
@@ -1419,7 +1403,6 @@ body {
     </div>
     <div class="hero-tools">
       <button type="button" id="theme-dot-toggle" class="theme-dot-toggle" aria-label="Switch color theme">
-        <span class="theme-dot-core" aria-hidden="true"></span>
       </button>
     </div>
   </div>
