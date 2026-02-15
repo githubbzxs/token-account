@@ -780,6 +780,7 @@ html.theme-ready .chart {
 
 .range-controls {
   --range-selector-width: 260px;
+  --range-selector-height: 46px;
   margin: 18px 0 10px;
   padding: 14px 16px;
   border: 1px solid var(--stroke);
@@ -798,6 +799,7 @@ html.theme-ready .chart {
   align-items: center;
   justify-content: center;
   width: var(--range-selector-width);
+  min-height: var(--range-selector-height);
   min-width: 0;
 }
 
@@ -818,6 +820,8 @@ html.theme-ready .chart {
   letter-spacing: 0.2px;
   cursor: pointer;
   width: 100%;
+  height: var(--range-selector-height);
+  padding: 0 14px;
   min-width: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
@@ -1002,6 +1006,7 @@ html.theme-ready .chart {
   flex: 0 0 var(--range-selector-width);
   justify-content: center;
   width: var(--range-selector-width);
+  min-height: var(--range-selector-height);
   min-width: 0;
 }
 
@@ -1011,20 +1016,21 @@ html.theme-ready .chart {
   align-items: center;
   flex-wrap: nowrap;
   gap: 1px;
-  padding: 2px 3px;
+  padding: 3px;
   border-radius: 999px;
   border: 1px solid var(--stroke);
   background: rgba(44, 46, 56, 0.92);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   width: 100%;
+  height: var(--range-selector-height);
   max-width: none;
   overflow: hidden;
 }
 
 .range-segmented-slider {
   position: absolute;
-  top: 2px;
-  bottom: 2px;
+  top: 3px;
+  bottom: 3px;
   left: 3px;
   width: 0;
   border-radius: 999px;
@@ -1054,10 +1060,14 @@ html.theme-ready .chart {
   z-index: 1;
   flex: 1 1 0;
   min-width: 0;
+  min-height: calc(var(--range-selector-height) - 8px);
   border: none;
   background: transparent;
   color: #b6bac6;
-  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
@@ -1724,16 +1734,20 @@ function updateQuickRangeSlider() {
   slider.style.transform = `translate3d(${offsetX.toFixed(2)}px, 0, 0)`;
 }
 
-function updateQuickRangeState(startISO, endISO) {
+function setQuickRangeActive(preset) {
   const segmented = document.getElementById("quick-range-segmented");
   if (!segmented) return;
-  const minISO = (DATA.range && DATA.range.start) || "";
-  const maxISO = (DATA.range && DATA.range.end) || "";
-  const preset = quickRangePresetFor(startISO, endISO, minISO, maxISO);
   segmented.querySelectorAll("button[data-range]").forEach((btn) => {
     btn.classList.toggle("is-active", Boolean(preset) && btn.dataset.range === preset);
   });
   updateQuickRangeSlider();
+}
+
+function updateQuickRangeState(startISO, endISO) {
+  const minISO = (DATA.range && DATA.range.start) || "";
+  const maxISO = (DATA.range && DATA.range.end) || "";
+  const preset = quickRangePresetFor(startISO, endISO, minISO, maxISO);
+  setQuickRangeActive(preset);
 }
 
 function closeCalendarPopover() {
@@ -2839,8 +2853,17 @@ function setupRangeControls() {
   document.querySelectorAll("[data-range]").forEach(btn => {
     btn.addEventListener("click", () => {
       const value = btn.dataset.range;
+      if (!value) return;
+      setQuickRangeActive(value);
+      const runApply = (startISO, endISO) => {
+        if (window.requestAnimationFrame) {
+          window.requestAnimationFrame(() => applyRange(startISO, endISO));
+        } else {
+          applyRange(startISO, endISO);
+        }
+      };
       if (value === "all") {
-        applyRange(minISO, maxISO);
+        runApply(minISO, maxISO);
         return;
       }
       const days = parseInt(value, 10);
@@ -2848,7 +2871,7 @@ function setupRangeControls() {
       const end = maxISO;
       let start = addDaysISO(end, -(days - 1));
       if (start < minISO) start = minISO;
-      applyRange(start, end);
+      runApply(start, end);
     });
   });
 }

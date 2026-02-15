@@ -43,6 +43,10 @@
   - Why：用户希望范围切换更紧凑，且左右控件视觉对齐。
   - Impact：`src/codex_token_report.py` 的 i18n 快捷范围文案、范围控件 CSS 栅格与宽度变量、模板默认按钮文本。
   - Verify：生成 `report-test/index.html` 后，快捷按钮显示缩写，`range-date-trigger` 与 `quick-range-segmented` 宽度一致。
+- **[2026-02-15] 范围控件高度与动效修正**：左右控件改为同高度（上下齐平），快捷范围点击先触发滑块视觉切换再执行筛选，恢复动效体感。
+  - Why：用户反馈“等宽”需求实际为上下视觉一致，且滑块动效不明显。
+  - Impact：`src/codex_token_report.py` 的范围控件高度样式、`setQuickRangeActive` 与 `setupRangeControls` 点击流程。
+  - Verify：`report-test/index.html` 中两侧控件共享 `--range-selector-height`，点击快捷范围时滑块先移动再更新数据。
 
 # Commands
 - `python -m py_compile src/codex_token_report.py`
