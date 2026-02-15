@@ -35,6 +35,10 @@
   - Why：用户要求去除底部缩放条，并简化缩放为“指哪放哪”。
   - Impact：`src/codex_token_report.py` 的 `lineChart` 事件处理与 `dataZoom` 配置。
   - Verify：图表下方不再出现缩放条；滚轮缩放围绕当前鼠标位置居中。
+- **[2026-02-15] 报表可读性修复**：恢复胶囊切换动效，指标统一 `K/M/B` 大写缩写，X 轴改为智能简化显示，并平滑底部背景过渡。
+  - Why：用户反馈胶囊切换缺少动画、数值与 X 轴信息过密、页面底部存在明显分界线。
+  - Impact：`src/codex_token_report.py` 的 `prefers-reduced-motion` 覆盖策略、数值格式函数、X 轴标签格式化和 `body` 背景渐变。
+  - Verify：切换快捷范围时滑块有过渡；图表与卡片均显示 `K/M/B`；短区间显示 `HH:mm`、长区间显示 `MM-DD`；底部无明显断层。
 
 # Commands
 - `python -m py_compile src/codex_token_report.py`

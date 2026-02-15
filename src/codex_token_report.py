@@ -499,6 +499,8 @@ def fmt_int(value: int) -> str:
         return f"{n / 1_000_000_000:.1f}".rstrip("0").rstrip(".") + "B"
     if abs_n >= 1_000_000:
         return f"{n / 1_000_000:.1f}".rstrip("0").rstrip(".") + "M"
+    if abs_n >= 1_000:
+        return f"{n / 1_000:.1f}".rstrip("0").rstrip(".") + "K"
     return f"{n:,}"
 
 
@@ -620,11 +622,12 @@ html[data-theme="bronze"] {
 
 body {
   margin: 0;
+  min-height: 100vh;
+  padding: 0 0 28px;
   background:
-    radial-gradient(1200px 700px at 12% 2%, var(--bg-glow-a), transparent 60%),
-    radial-gradient(980px 620px at 88% 8%, var(--bg-glow-b), transparent 64%),
-    radial-gradient(820px 500px at 52% 112%, var(--bg-glow-c), transparent 70%),
-    linear-gradient(170deg, var(--bg-base-start) 0%, var(--bg-base-mid) 55%, var(--bg-base-end) 100%);
+    radial-gradient(1200px 720px at 12% 2%, var(--bg-glow-a), transparent 62%),
+    radial-gradient(980px 640px at 88% 8%, var(--bg-glow-b), transparent 66%),
+    linear-gradient(178deg, var(--bg-base-start) 0%, var(--bg-base-mid) 52%, var(--bg-base-end) 100%);
   color: var(--text);
   font-family: var(--app-font);
   line-height: 1.45;
@@ -635,15 +638,14 @@ body {
 .page {
   position: relative;
   max-width: 1280px;
-  margin: 24px auto;
+  margin: 24px auto 0;
   padding: 24px 18px 38px;
   border-radius: 24px;
-  border: 1px solid var(--page-border);
+  border: none;
   background: linear-gradient(170deg, var(--page-bg-start), var(--page-bg-end));
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 0 32px var(--page-glow),
-    0 28px 60px rgba(0, 0, 0, 0.56);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 24px rgba(0, 0, 0, 0.30);
   overflow: hidden;
 }
 
@@ -653,10 +655,20 @@ body {
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  border: 1px solid var(--page-outline);
+  border: none;
   box-shadow:
-    inset 0 0 24px var(--page-inner-glow),
-    0 0 22px var(--page-outer-glow);
+    inset 0 0 18px var(--page-inner-glow);
+}
+
+.page::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(8, 10, 18, 0), rgba(5, 6, 10, 0.92));
 }
 
 .hero {
@@ -1414,7 +1426,6 @@ html.theme-ready .chart {
   html.theme-ready .range-controls,
   html.theme-ready .range-date-trigger,
   html.theme-ready .range-segmented,
-  html.theme-ready .range-segmented-slider,
   html.theme-ready .range-action-btn,
   html.theme-ready .file-button,
   html.theme-ready .theme-dot-toggle,
@@ -1545,6 +1556,10 @@ function updateLangToggleState() {
 }
 
 function formatNumber(value) {
+  return formatCompactNumber(value);
+}
+
+function formatCompactNumber(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "0";
   const absNum = Math.abs(num);
@@ -1554,20 +1569,14 @@ function formatNumber(value) {
   if (absNum >= 1_000_000) {
     return `${(num / 1_000_000).toFixed(1).replace(/\\.0$/, "")}M`;
   }
+  if (absNum >= 1_000) {
+    return `${(num / 1_000).toFixed(1).replace(/\\.0$/, "")}K`;
+  }
   return new Intl.NumberFormat("en-US").format(num);
 }
 
 function formatChartNumber(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "0";
-  const absNum = Math.abs(num);
-  if (absNum >= 1_000_000_000) {
-    return `${(num / 1_000_000_000).toFixed(1).replace(/\\.0$/, "")}b`;
-  }
-  if (absNum >= 1_000_000) {
-    return `${(num / 1_000_000).toFixed(1).replace(/\\.0$/, "")}m`;
-  }
-  return new Intl.NumberFormat("en-US").format(num);
+  return formatCompactNumber(value);
 }
 
 function clampPercent(value) {
@@ -2080,6 +2089,7 @@ function lineChart(el, labels, values) {
   if (!el) return;
   const chartLabels = Array.isArray(labels) ? labels : [];
   const chartValues = Array.isArray(values) ? values.map(v => Number(v || 0)) : [];
+  const xAxisLabelMode = pickXAxisLabelMode(chartLabels);
   if (!window.echarts) {
     el.innerHTML = "";
     return;
@@ -2167,7 +2177,11 @@ function lineChart(el, labels, values) {
       type: "category",
       boundaryGap: false,
       data: chartLabels,
-      axisLabel: { color: CHART_AXIS_TEXT, hideOverlap: true },
+      axisLabel: {
+        color: CHART_AXIS_TEXT,
+        hideOverlap: true,
+        formatter: (value) => formatXAxisLabel(value, xAxisLabelMode),
+      },
       axisLine: { lineStyle: { color: CHART_AXIS_LINE } },
       axisTick: { show: false },
     },
@@ -2316,6 +2330,42 @@ function pad2(value) {
 
 function formatHourLabel(dateObj) {
   return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())} ${pad2(dateObj.getHours())}:00`;
+}
+
+function parseHourLabel(label) {
+  const raw = String(label || "").trim();
+  const m = raw.match(/^(\\d{4})-(\\d{2})-(\\d{2})\\s+(\\d{2}):(\\d{2})$/);
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  const hour = Number(m[4]);
+  const minute = Number(m[5]);
+  const dt = new Date(year, month - 1, day, hour, minute, 0, 0);
+  if (Number.isNaN(dt.getTime())) return null;
+  return dt;
+}
+
+function pickXAxisLabelMode(labels) {
+  if (!Array.isArray(labels) || labels.length < 2) {
+    return "hour";
+  }
+  const first = parseHourLabel(labels[0]);
+  const last = parseHourLabel(labels[labels.length - 1]);
+  if (!first || !last) {
+    return "hour";
+  }
+  const spanHours = Math.abs(last.getTime() - first.getTime()) / HOUR_MS;
+  return spanHours <= 24 ? "hour" : "day";
+}
+
+function formatXAxisLabel(label, mode) {
+  const dt = parseHourLabel(label);
+  if (!dt) return label;
+  if (mode === "day") {
+    return `${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+  }
+  return `${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`;
 }
 
 function buildHourlySeries(startISO, endISO) {
