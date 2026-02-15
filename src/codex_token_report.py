@@ -539,11 +539,12 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --text: #f8fafc;
   --muted: #a1a1aa;
   --stroke: rgba(148, 163, 184, 0.16);
-  --accent: #22d3ee;
-  --accent-2: #fb7185;
-  --accent-3: #34d399;
+  --accent: #B026FF;
+  --accent-cyan: #00F0FF;
+  --accent-rgb: 176, 38, 255;
+  --accent-cyan-rgb: 0, 240, 255;
   --shadow: 0 22px 52px rgba(0, 0, 0, 0.62);
-  --ring: rgba(34, 211, 238, 0.28);
+  --ring: rgba(176, 38, 255, 0.28);
   --font-zh: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
   --font-en: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
   --app-font: var(--font-en);
@@ -568,11 +569,11 @@ html[lang="en"] {
 body {
   margin: 0;
   background:
-    radial-gradient(1200px 700px at 12% 2%, rgba(120, 92, 58, 0.20), transparent 60%),
-    radial-gradient(980px 620px at 88% 8%, rgba(94, 79, 63, 0.16), transparent 64%),
-    radial-gradient(820px 500px at 52% 112%, rgba(168, 152, 132, 0.07), transparent 70%),
+    radial-gradient(1200px 700px at 12% 2%, rgba(176, 38, 255, 0.20), transparent 60%),
+    radial-gradient(980px 620px at 88% 8%, rgba(0, 240, 255, 0.16), transparent 64%),
+    radial-gradient(820px 500px at 52% 112%, rgba(176, 38, 255, 0.08), transparent 70%),
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 4px),
-    linear-gradient(170deg, #080706 0%, #0b0a09 55%, #050505 100%);
+    linear-gradient(170deg, #06070d 0%, #090d16 55%, #05060a 100%);
   color: var(--text);
   font-family: var(--app-font);
   line-height: 1.45;
@@ -586,11 +587,11 @@ body {
   margin: 24px auto;
   padding: 24px 18px 38px;
   border-radius: 24px;
-  border: 1px solid rgba(226, 220, 210, 0.30);
-  background: linear-gradient(170deg, rgba(18, 15, 12, 0.92), rgba(10, 8, 7, 0.95));
+  border: 1px solid rgba(150, 156, 190, 0.24);
+  background: linear-gradient(170deg, rgba(14, 14, 24, 0.94), rgba(8, 10, 18, 0.96));
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 0 32px rgba(214, 202, 186, 0.20),
+    0 0 32px rgba(176, 38, 255, 0.18),
     0 28px 60px rgba(0, 0, 0, 0.56);
   overflow: hidden;
 }
@@ -601,10 +602,10 @@ body {
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  border: 1px solid rgba(240, 233, 223, 0.24);
+  border: 1px solid rgba(188, 198, 255, 0.18);
   box-shadow:
-    inset 0 0 24px rgba(186, 170, 150, 0.14),
-    0 0 22px rgba(230, 219, 205, 0.16);
+    inset 0 0 24px rgba(176, 38, 255, 0.08),
+    0 0 22px rgba(0, 240, 255, 0.10);
 }
 
 .hero {
@@ -702,14 +703,14 @@ body {
 }
 
 .range-date-trigger:hover {
-  border-color: rgba(34, 211, 238, 0.5);
+  border-color: rgba(var(--accent-cyan-rgb), 0.5);
   background: linear-gradient(140deg, rgba(42, 45, 56, 0.96), rgba(27, 29, 37, 0.96));
 }
 
 .range-date-trigger:focus-visible {
   outline: none;
-  border-color: rgba(34, 211, 238, 0.52);
-  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.16);
+  border-color: rgba(var(--accent-rgb), 0.58);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
 }
 
 .range-date-icon {
@@ -762,8 +763,8 @@ body {
 }
 
 .calendar-nav-btn:hover {
-  border-color: rgba(34, 211, 238, 0.5);
-  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(var(--accent-cyan-rgb), 0.5);
+  background: rgba(var(--accent-cyan-rgb), 0.15);
 }
 
 .calendar-weekdays {
@@ -799,8 +800,8 @@ body {
 }
 
 .calendar-day-btn:hover:not(:disabled) {
-  border-color: rgba(34, 211, 238, 0.4);
-  background: rgba(34, 211, 238, 0.14);
+  border-color: rgba(var(--accent-cyan-rgb), 0.4);
+  background: rgba(var(--accent-cyan-rgb), 0.14);
 }
 
 .calendar-day-btn.is-outside {
@@ -808,24 +809,24 @@ body {
 }
 
 .calendar-day-btn.is-today {
-  border-color: rgba(184, 156, 122, 0.7);
+  border-color: rgba(var(--accent-rgb), 0.72);
 }
 
 .calendar-day-btn.is-selected {
-  border-color: rgba(34, 211, 238, 0.86);
-  background: rgba(34, 211, 238, 0.28);
+  border-color: rgba(var(--accent-rgb), 0.86);
+  background: rgba(var(--accent-rgb), 0.28);
   color: #ecfeff;
 }
 
 .calendar-day-btn.is-in-range {
-  border-color: rgba(34, 211, 238, 0.25);
-  background: rgba(34, 211, 238, 0.14);
+  border-color: rgba(var(--accent-cyan-rgb), 0.25);
+  background: rgba(var(--accent-cyan-rgb), 0.14);
 }
 
 .calendar-day-btn.is-range-start,
 .calendar-day-btn.is-range-end {
-  border-color: rgba(34, 211, 238, 0.88);
-  background: rgba(34, 211, 238, 0.3);
+  border-color: rgba(var(--accent-rgb), 0.88);
+  background: rgba(var(--accent-rgb), 0.3);
   color: #ecfeff;
 }
 
@@ -853,8 +854,8 @@ body {
 }
 
 .calendar-actions button:hover {
-  border-color: rgba(34, 211, 238, 0.5);
-  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(var(--accent-cyan-rgb), 0.5);
+  background: rgba(var(--accent-cyan-rgb), 0.15);
 }
 
 .range-action-btn,
@@ -871,8 +872,8 @@ body {
 
 .range-action-btn:hover,
 .file-button:hover {
-  border-color: rgba(34, 211, 238, 0.5);
-  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(var(--accent-cyan-rgb), 0.5);
+  background: rgba(var(--accent-cyan-rgb), 0.15);
 }
 
 .range-buttons {
@@ -900,7 +901,7 @@ body {
   left: 4px;
   width: 0;
   border-radius: 999px;
-  background: linear-gradient(120deg, rgba(236, 72, 153, 0.88), rgba(34, 211, 238, 0.88));
+  background: linear-gradient(120deg, rgba(176, 38, 255, 0.9), rgba(0, 240, 255, 0.9));
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.36);
   opacity: 0;
   transform: translateX(0);
