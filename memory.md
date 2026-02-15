@@ -25,8 +25,8 @@
 - `python src/codex_token_report.py --sessions-root dummy_sessions --out report-test`
 
 # Status / Next
-- 当前：需求已切换为恢复时间分析模块，文档与记忆已同步。
-- 下一步：等待实现代理完成代码并在测试 VPS 部署回归。
+- 当前：时间相关分析模块已恢复并上线，已在测试 VPS 完成部署回归。
+- 下一步：根据实际使用反馈继续微调时间口径（会话 gap、切换频率算法）。
 
 # Known Issues
 - `dummy_sessions/test.jsonl` 是本地未跟踪测试数据文件，默认不纳入提交。
