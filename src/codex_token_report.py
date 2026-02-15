@@ -86,16 +86,17 @@ I18N = {
         "share_downloaded": "图片已下载",
         "share_copied_image": "图片已复制，可直接粘贴发送",
         "time_panel": "时间相关分析",
-        "time_gap_note": "估算口径：输入 240 tok/min，输出 120 tok/min",
+        "time_gap_note": "时间分布按小时聚合；时长估算口径：输入 240 tok/min，输出 120 tok/min",
         "time_you_share": "估算输入时长",
         "time_ai_share": "估算输出时长",
-        "time_total_duration": "估算编程时长",
-        "time_avg_daily_duration": "日均编程时长",
-        "time_median_session": "会话中位时长",
-        "time_longest_session": "最长连续会话",
-        "time_switch_frequency": "人机切换频率",
-        "time_night_ratio": "夜间编程占比（00:00-06:00）",
-        "time_session_count": "会话窗口数",
+        "time_input_peak_hour": "输入高峰时段",
+        "time_output_peak_hour": "输出高峰时段",
+        "time_input_work_ratio": "输入工作时段占比（09:00-18:59）",
+        "time_output_work_ratio": "输出工作时段占比（09:00-18:59）",
+        "time_input_night_ratio": "输入夜间占比（00:00-05:59）",
+        "time_output_night_ratio": "输出夜间占比（00:00-05:59）",
+        "time_distribution_top3_ratio": "分布集中度（Top3小时）",
+        "time_active_hour_coverage": "活跃小时覆盖率",
     },
     "en": {
         "title": "Codex Token Usage",
@@ -161,16 +162,17 @@ I18N = {
         "share_downloaded": "Image downloaded",
         "share_copied_image": "Image copied, paste to share",
         "time_panel": "Time Analysis",
-        "time_gap_note": "Estimation basis: input 240 tok/min, output 120 tok/min",
+        "time_gap_note": "Hourly distribution; duration estimate basis: input 240 tok/min, output 120 tok/min",
         "time_you_share": "Estimated input duration",
         "time_ai_share": "Estimated output duration",
-        "time_total_duration": "Estimated coding duration",
-        "time_avg_daily_duration": "Average coding time per day",
-        "time_median_session": "Median session duration",
-        "time_longest_session": "Longest continuous session",
-        "time_switch_frequency": "Human-AI switch frequency",
-        "time_night_ratio": "Night coding share (00:00-06:00)",
-        "time_session_count": "Session windows",
+        "time_input_peak_hour": "Input peak hour",
+        "time_output_peak_hour": "Output peak hour",
+        "time_input_work_ratio": "Input work-hours share (09:00-18:59)",
+        "time_output_work_ratio": "Output work-hours share (09:00-18:59)",
+        "time_input_night_ratio": "Input night share (00:00-05:59)",
+        "time_output_night_ratio": "Output night share (00:00-05:59)",
+        "time_distribution_top3_ratio": "Distribution concentration (Top 3 hours)",
+        "time_active_hour_coverage": "Active-hour coverage",
     },
 }
 
@@ -1165,32 +1167,36 @@ body {
           <div class="time-metric-value" id="time-ai-share">n/a</div>
         </div>
         <div class="time-metric">
-          <div class="time-metric-label" data-i18n="time_total_duration">估算编程时长</div>
-          <div class="time-metric-value" id="time-total-duration">n/a</div>
+          <div class="time-metric-label" data-i18n="time_input_peak_hour">输入高峰时段</div>
+          <div class="time-metric-value" id="time-input-peak-hour">n/a</div>
         </div>
         <div class="time-metric">
-          <div class="time-metric-label" data-i18n="time_avg_daily_duration">日均编程时长</div>
-          <div class="time-metric-value" id="time-avg-daily-duration">n/a</div>
+          <div class="time-metric-label" data-i18n="time_output_peak_hour">输出高峰时段</div>
+          <div class="time-metric-value" id="time-output-peak-hour">n/a</div>
         </div>
         <div class="time-metric">
-          <div class="time-metric-label" data-i18n="time_median_session">会话中位时长</div>
-          <div class="time-metric-value" id="time-median-session">n/a</div>
+          <div class="time-metric-label" data-i18n="time_input_work_ratio">输入工作时段占比（09:00-18:59）</div>
+          <div class="time-metric-value" id="time-input-work-ratio">n/a</div>
         </div>
         <div class="time-metric">
-          <div class="time-metric-label" data-i18n="time_longest_session">最长连续会话</div>
-          <div class="time-metric-value" id="time-longest-session">n/a</div>
+          <div class="time-metric-label" data-i18n="time_output_work_ratio">输出工作时段占比（09:00-18:59）</div>
+          <div class="time-metric-value" id="time-output-work-ratio">n/a</div>
         </div>
         <div class="time-metric">
-          <div class="time-metric-label" data-i18n="time_switch_frequency">人机切换频率</div>
-          <div class="time-metric-value" id="time-switch-frequency">n/a</div>
+          <div class="time-metric-label" data-i18n="time_input_night_ratio">输入夜间占比（00:00-05:59）</div>
+          <div class="time-metric-value" id="time-input-night-ratio">n/a</div>
         </div>
         <div class="time-metric">
-          <div class="time-metric-label" data-i18n="time_night_ratio">夜间编程占比（00:00-06:00）</div>
-          <div class="time-metric-value" id="time-night-ratio">n/a</div>
+          <div class="time-metric-label" data-i18n="time_output_night_ratio">输出夜间占比（00:00-05:59）</div>
+          <div class="time-metric-value" id="time-output-night-ratio">n/a</div>
         </div>
         <div class="time-metric">
-          <div class="time-metric-label" data-i18n="time_session_count">会话窗口数</div>
-          <div class="time-metric-value" id="time-session-count">n/a</div>
+          <div class="time-metric-label" data-i18n="time_distribution_top3_ratio">分布集中度（Top3小时）</div>
+          <div class="time-metric-value" id="time-distribution-top3-ratio">n/a</div>
+        </div>
+        <div class="time-metric">
+          <div class="time-metric-label" data-i18n="time_active_hour_coverage">活跃小时覆盖率</div>
+          <div class="time-metric-value" id="time-active-hour-coverage">n/a</div>
         </div>
       </div>
     </div>
@@ -1692,8 +1698,6 @@ let currentRange = {
 let hasInitialMetricsRender = false;
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
-const SESSION_GAP_MINUTES = 15;
-const SESSION_GAP_MS = SESSION_GAP_MINUTES * 60_000;
 const INPUT_EST_TOKENS_PER_MINUTE = 240;
 const OUTPUT_EST_TOKENS_PER_MINUTE = 120;
 const MAX_CHART_POINTS = 1600;
@@ -1831,25 +1835,6 @@ function parseEventMs(ts) {
   return ms;
 }
 
-function overlapMs(startA, endA, startB, endB) {
-  const left = Math.max(startA, startB);
-  const right = Math.min(endA, endB);
-  return Math.max(0, right - left);
-}
-
-function nightOverlapMs(startMs, endMs) {
-  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return 0;
-  let total = 0;
-  const base = new Date(startMs);
-  base.setHours(0, 0, 0, 0);
-  for (let dayStart = base.getTime(); dayStart < endMs; dayStart += DAY_MS) {
-    const nightStart = dayStart;
-    const nightEnd = dayStart + 6 * HOUR_MS;
-    total += overlapMs(startMs, endMs, nightStart, nightEnd);
-  }
-  return total;
-}
-
 function formatDurationMinutes(value) {
   const minutes = Number(value);
   if (!Number.isFinite(minutes) || minutes < 0) return "n/a";
@@ -1872,11 +1857,11 @@ function formatPercentOrNA(value) {
   return `${(num * 100).toFixed(1)}%`;
 }
 
-function formatSwitchFrequency(value) {
-  const num = Number(value);
-  if (!Number.isFinite(num) || num < 0) return "n/a";
-  if (currentLang === "zh") return `${num.toFixed(2)} 次/小时`;
-  return `${num.toFixed(2)} /h`;
+function formatHourBucket(hour) {
+  const h = Number(hour);
+  if (!Number.isFinite(h) || h < 0 || h > 23) return "n/a";
+  const next = (h + 1) % 24;
+  return `${pad2(h)}:00-${pad2(next)}:00`;
 }
 
 function collectRangeEvents(startISO, endISO) {
@@ -1913,28 +1898,8 @@ function collectRangeEvents(startISO, endISO) {
     });
   });
   events.sort((a, b) => a.ms - b.ms);
-  const rangeDays = Math.max(1, Math.round((endExclusiveMs - startMs) / DAY_MS));
+  const rangeDays = Math.max(1, Math.ceil((endExclusiveMs - startMs) / DAY_MS));
   return { startMs, endExclusiveMs, rangeDays, events };
-}
-
-function splitSessionsByGap(events) {
-  const sessions = [];
-  let current = [];
-  events.forEach(ev => {
-    if (!current.length) {
-      current = [ev];
-      return;
-    }
-    const prev = current[current.length - 1];
-    if (ev.ms - prev.ms > SESSION_GAP_MS) {
-      sessions.push(current);
-      current = [ev];
-      return;
-    }
-    current.push(ev);
-  });
-  if (current.length) sessions.push(current);
-  return sessions;
 }
 
 function renderTimeAnalysis(startISO, endISO, animate) {
@@ -1942,101 +1907,97 @@ function renderTimeAnalysis(startISO, endISO, animate) {
   const result = {
     estimatedInputMinutes: null,
     estimatedOutputMinutes: null,
-    totalMinutes: null,
-    avgDailyMinutes: null,
-    medianSessionMinutes: null,
-    longestSessionMinutes: null,
-    switchPerHour: null,
-    nightRatio: null,
-    sessionCount: 0,
+    inputPeakHour: null,
+    outputPeakHour: null,
+    inputWorkRatio: null,
+    outputWorkRatio: null,
+    inputNightRatio: null,
+    outputNightRatio: null,
+    top3Ratio: null,
+    activeHourCoverage: null,
   };
 
   if (scoped.events.length) {
-    const sessions = splitSessionsByGap(scoped.events);
-    const sessionDurations = [];
-    let totalMs = 0;
-    let nightMs = 0;
+    const inputByHour = new Array(24).fill(0);
+    const outputByHour = new Array(24).fill(0);
+    const totalByHour = new Array(24).fill(0);
     let inputTokensTotal = 0;
     let outputTokensTotal = 0;
-    let switches = 0;
-    let splitUnknown = false;
+    let hasBreakdownData = false;
 
-    sessions.forEach(session => {
-      if (!session.length) return;
-      const sessionStart = Math.max(scoped.startMs, session[0].ms);
-      const sessionEnd = Math.min(scoped.endExclusiveMs, session[session.length - 1].ms + SESSION_GAP_MS);
-      if (sessionEnd <= sessionStart) return;
-      sessionDurations.push(sessionEnd - sessionStart);
+    scoped.events.forEach(ev => {
+      const total = Number(ev.total || 0);
+      if (total <= 0) return;
+      const hour = new Date(ev.ms).getHours();
+      totalByHour[hour] += total;
 
-      let prevDominant = null;
-      for (let i = 0; i < session.length; i++) {
-        const ev = session[i];
-        const nextEv = session[i + 1];
-        const rawStart = ev.ms;
-        const rawEnd = nextEv ? Math.min(nextEv.ms, ev.ms + SESSION_GAP_MS) : (ev.ms + SESSION_GAP_MS);
-        const segStart = Math.max(scoped.startMs, rawStart);
-        const segEnd = Math.min(scoped.endExclusiveMs, rawEnd);
-        if (segEnd <= segStart) continue;
-        const segMs = segEnd - segStart;
-        totalMs += segMs;
-        nightMs += nightOverlapMs(segStart, segEnd);
-
-        if (!ev.hasBreakdown) {
-          splitUnknown = true;
-          prevDominant = null;
-          continue;
-        }
-
-        const userTokens = ev.input + ev.cached;
-        const aiTokens = ev.output + ev.reasoning;
-        const tokenTotal = userTokens + aiTokens;
-        if (!(tokenTotal > 0)) {
-          splitUnknown = true;
-          prevDominant = null;
-          continue;
-        }
-        inputTokensTotal += userTokens;
-        outputTokensTotal += aiTokens;
-        const aiRatio = aiTokens / tokenTotal;
-        const dominant = aiRatio >= 0.5 ? "ai" : "user";
-        if (prevDominant && prevDominant !== dominant) switches += 1;
-        prevDominant = dominant;
-      }
+      if (!ev.hasBreakdown) return;
+      hasBreakdownData = true;
+      const inputTokens = Number(ev.input || 0) + Number(ev.cached || 0);
+      const outputTokens = Number(ev.output || 0) + Number(ev.reasoning || 0);
+      inputByHour[hour] += inputTokens;
+      outputByHour[hour] += outputTokens;
+      inputTokensTotal += inputTokens;
+      outputTokensTotal += outputTokens;
     });
 
-    result.sessionCount = sessionDurations.length;
-    if (sessionDurations.length && totalMs > 0) {
-      const sorted = sessionDurations.slice().sort((a, b) => a - b);
-      const mid = Math.floor(sorted.length / 2);
-      const medianMs = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-      result.totalMinutes = totalMs / 60_000;
-      result.avgDailyMinutes = result.totalMinutes / scoped.rangeDays;
-      result.medianSessionMinutes = medianMs / 60_000;
-      result.longestSessionMinutes = sorted[sorted.length - 1] / 60_000;
-      result.nightRatio = nightMs / totalMs;
-      if (totalMs > 0) {
-        result.switchPerHour = switches / (totalMs / HOUR_MS);
+    const totalAllTokens = totalByHour.reduce((sum, value) => sum + value, 0);
+    if (totalAllTokens > 0) {
+      const activeHours = totalByHour.filter(value => value > 0).length;
+      result.activeHourCoverage = activeHours / 24;
+      const top3Total = totalByHour
+        .slice()
+        .sort((a, b) => b - a)
+        .slice(0, 3)
+        .reduce((sum, value) => sum + value, 0);
+      result.top3Ratio = top3Total / totalAllTokens;
+    }
+
+    if (hasBreakdownData) {
+      if (inputTokensTotal > 0) {
+        result.estimatedInputMinutes = inputTokensTotal / INPUT_EST_TOKENS_PER_MINUTE;
       }
-      if (!splitUnknown) {
-        if (inputTokensTotal > 0) {
-          result.estimatedInputMinutes = inputTokensTotal / INPUT_EST_TOKENS_PER_MINUTE;
-        }
-        if (outputTokensTotal > 0) {
-          result.estimatedOutputMinutes = outputTokensTotal / OUTPUT_EST_TOKENS_PER_MINUTE;
-        }
+      if (outputTokensTotal > 0) {
+        result.estimatedOutputMinutes = outputTokensTotal / OUTPUT_EST_TOKENS_PER_MINUTE;
+      }
+
+      const inputPeakValue = Math.max(...inputByHour);
+      const outputPeakValue = Math.max(...outputByHour);
+      if (inputPeakValue > 0) {
+        result.inputPeakHour = inputByHour.indexOf(inputPeakValue);
+      }
+      if (outputPeakValue > 0) {
+        result.outputPeakHour = outputByHour.indexOf(outputPeakValue);
+      }
+
+      const workHours = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+      const nightHours = [0, 1, 2, 3, 4, 5];
+      const sumByHours = (arr, hours) => hours.reduce((sum, hour) => sum + Number(arr[hour] || 0), 0);
+      const inputWork = sumByHours(inputByHour, workHours);
+      const outputWork = sumByHours(outputByHour, workHours);
+      const inputNight = sumByHours(inputByHour, nightHours);
+      const outputNight = sumByHours(outputByHour, nightHours);
+      if (inputTokensTotal > 0) {
+        result.inputWorkRatio = inputWork / inputTokensTotal;
+        result.inputNightRatio = inputNight / inputTokensTotal;
+      }
+      if (outputTokensTotal > 0) {
+        result.outputWorkRatio = outputWork / outputTokensTotal;
+        result.outputNightRatio = outputNight / outputTokensTotal;
       }
     }
   }
 
   setDisplayText("time-you-share", formatDurationMinutes(result.estimatedInputMinutes), animate);
   setDisplayText("time-ai-share", formatDurationMinutes(result.estimatedOutputMinutes), animate);
-  setDisplayText("time-total-duration", formatDurationMinutes(result.totalMinutes), animate);
-  setDisplayText("time-avg-daily-duration", formatDurationMinutes(result.avgDailyMinutes), animate);
-  setDisplayText("time-median-session", formatDurationMinutes(result.medianSessionMinutes), animate);
-  setDisplayText("time-longest-session", formatDurationMinutes(result.longestSessionMinutes), animate);
-  setDisplayText("time-switch-frequency", formatSwitchFrequency(result.switchPerHour), animate);
-  setDisplayText("time-night-ratio", formatPercentOrNA(result.nightRatio), animate);
-  setDisplayText("time-session-count", formatNumber(result.sessionCount), animate);
+  setDisplayText("time-input-peak-hour", result.inputPeakHour == null ? "n/a" : formatHourBucket(result.inputPeakHour), animate);
+  setDisplayText("time-output-peak-hour", result.outputPeakHour == null ? "n/a" : formatHourBucket(result.outputPeakHour), animate);
+  setDisplayText("time-input-work-ratio", formatPercentOrNA(result.inputWorkRatio), animate);
+  setDisplayText("time-output-work-ratio", formatPercentOrNA(result.outputWorkRatio), animate);
+  setDisplayText("time-input-night-ratio", formatPercentOrNA(result.inputNightRatio), animate);
+  setDisplayText("time-output-night-ratio", formatPercentOrNA(result.outputNightRatio), animate);
+  setDisplayText("time-distribution-top3-ratio", formatPercentOrNA(result.top3Ratio), animate);
+  setDisplayText("time-active-hour-coverage", formatPercentOrNA(result.activeHourCoverage), animate);
 }
 
 function normalizeModelName(model) {
