@@ -2143,77 +2143,83 @@ function lineChart(el, labels, values) {
     dailyChartInstance.clear();
     return;
   }
+  const animateChartUpdate = hasInitialMetricsRender && !prefersReducedMotion();
   const windowSize = chartValues.length > 200 ? Math.max(MIN_WINDOW_PERCENT, (200 / chartValues.length) * 100) : 100;
   const zoomStart = Math.max(0, (100 - windowSize) / 2);
   const zoomEnd = Math.min(100, zoomStart + windowSize);
   const palette = getThemePalette();
-  dailyChartInstance.setOption(
-    {
-      backgroundColor: "transparent",
-      animation: false,
-      grid: { left: 48, right: 26, top: 16, bottom: 56 },
-      tooltip: {
-        trigger: "axis",
-        backgroundColor: "rgba(10,10,10,0.92)",
-        borderColor: palette.tooltipBorder,
-        borderWidth: 1,
-        textStyle: { color: "#f8fafc" },
-        axisPointer: { type: "line", lineStyle: { color: palette.axisPointer, width: 1 } },
-        valueFormatter: (value) => formatChartNumber(value),
-      },
-      xAxis: {
-        type: "category",
-        boundaryGap: false,
-        data: chartLabels,
-        axisLabel: { color: CHART_AXIS_TEXT, hideOverlap: true },
-        axisLine: { lineStyle: { color: CHART_AXIS_LINE } },
-        axisTick: { show: false },
-      },
-      yAxis: {
-        type: "value",
-        axisLabel: {
-          color: CHART_AXIS_TEXT,
-          formatter: (value) => formatChartNumber(value),
-        },
-        splitLine: { lineStyle: { color: "rgba(148,163,184,0.10)" } },
-      },
-      dataZoom: [
-        {
-          type: "inside",
-          xAxisIndex: 0,
-          start: zoomStart,
-          end: zoomEnd,
-          zoomOnMouseWheel: false,
-          moveOnMouseMove: true,
-          moveOnMouseWheel: false,
-        },
-      ],
-      series: [
-        {
-          type: "line",
-          data: chartValues,
-          showSymbol: false,
-          smooth: 0.42,
-          lineStyle: {
-            width: 2.8,
-            color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
-              { offset: 0, color: palette.lineStart },
-              { offset: 1, color: palette.lineEnd },
-            ]),
-          },
-          areaStyle: {
-            color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: palette.areaStart },
-              { offset: 0.45, color: palette.areaMid },
-              { offset: 1, color: palette.areaEnd },
-            ]),
-          },
-          emphasis: { focus: "series" },
-        },
-      ],
+  const chartOption = {
+    backgroundColor: "transparent",
+    animation: animateChartUpdate,
+    animationDuration: animateChartUpdate ? 260 : 0,
+    animationDurationUpdate: animateChartUpdate ? 320 : 0,
+    animationEasing: "cubicOut",
+    animationEasingUpdate: "cubicOut",
+    grid: { left: 48, right: 26, top: 16, bottom: 56 },
+    tooltip: {
+      trigger: "axis",
+      backgroundColor: "rgba(10,10,10,0.92)",
+      borderColor: palette.tooltipBorder,
+      borderWidth: 1,
+      textStyle: { color: "#f8fafc" },
+      axisPointer: { type: "line", lineStyle: { color: palette.axisPointer, width: 1 } },
+      valueFormatter: (value) => formatChartNumber(value),
     },
-    true
-  );
+    xAxis: {
+      type: "category",
+      boundaryGap: false,
+      data: chartLabels,
+      axisLabel: { color: CHART_AXIS_TEXT, hideOverlap: true },
+      axisLine: { lineStyle: { color: CHART_AXIS_LINE } },
+      axisTick: { show: false },
+    },
+    yAxis: {
+      type: "value",
+      axisLabel: {
+        color: CHART_AXIS_TEXT,
+        formatter: (value) => formatChartNumber(value),
+      },
+      splitLine: { lineStyle: { color: "rgba(148,163,184,0.10)" } },
+    },
+    dataZoom: [
+      {
+        type: "inside",
+        xAxisIndex: 0,
+        start: zoomStart,
+        end: zoomEnd,
+        zoomOnMouseWheel: false,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false,
+      },
+    ],
+    series: [
+      {
+        type: "line",
+        data: chartValues,
+        showSymbol: false,
+        smooth: 0.42,
+        lineStyle: {
+          width: 2.8,
+          color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
+            { offset: 0, color: palette.lineStart },
+            { offset: 1, color: palette.lineEnd },
+          ]),
+        },
+        areaStyle: {
+          color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: palette.areaStart },
+            { offset: 0.45, color: palette.areaMid },
+            { offset: 1, color: palette.areaEnd },
+          ]),
+        },
+        emphasis: { focus: "series" },
+      },
+    ],
+  };
+  dailyChartInstance.setOption(chartOption, {
+    notMerge: false,
+    lazyUpdate: true,
+  });
 }
 
 function barChart(el, labels, values, color) {
