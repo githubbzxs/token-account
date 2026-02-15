@@ -1137,14 +1137,14 @@ html.theme-ready .chart {
 }
 
 .metric-value-out {
-  animation: metricFadeOut var(--metric-out-duration, 90ms) var(--swift-ease-standard);
-  will-change: opacity, transform;
+  animation: metricFadeOut var(--metric-out-duration, 120ms) var(--swift-ease-standard);
+  will-change: opacity, transform, filter;
   animation-fill-mode: both;
 }
 
 .metric-value-anim {
-  animation: metricFade var(--swift-duration-normal) var(--swift-ease-standard);
-  will-change: opacity, transform;
+  animation: metricFade var(--metric-in-duration, 260ms) var(--swift-ease-standard);
+  will-change: opacity, transform, filter;
   transform-origin: center bottom;
   animation-fill-mode: both;
 }
@@ -1366,14 +1366,9 @@ html.theme-ready .chart {
 
 @keyframes metricFade {
   0% {
-    opacity: 0.35;
-    transform: translateY(2px);
-    filter: blur(1.3px);
-  }
-  70% {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
+    opacity: 0.86;
+    transform: translateY(0.5px);
+    filter: blur(0.6px);
   }
   100% {
     opacity: 1;
@@ -1389,9 +1384,9 @@ html.theme-ready .chart {
     filter: blur(0);
   }
   100% {
-    opacity: 0.9;
+    opacity: 0.86;
     transform: translateY(-0.4px);
-    filter: blur(0.35px);
+    filter: blur(0.6px);
   }
 }
 
@@ -1939,6 +1934,7 @@ function clearMetricSwapState(el) {
   }
   el.classList.remove("metric-value-out", "metric-value-anim");
   el.style.removeProperty("--metric-out-duration");
+  el.style.removeProperty("--metric-in-duration");
 }
 
 function animateMetricValue(el, text) {
@@ -1956,9 +1952,10 @@ function animateMetricValue(el, text) {
     return;
   }
 
-  const inMs = Math.max(220, readRootDurationMs("--swift-duration-normal", 320));
-  const outMs = Math.max(60, Math.min(90, Math.round(inMs * 0.08)));
+  const inMs = 260;
+  const outMs = 120;
   el.style.setProperty("--metric-out-duration", `${outMs}ms`);
+  el.style.setProperty("--metric-in-duration", `${inMs}ms`);
   el.classList.add("metric-value-out");
 
   const outTimer = window.setTimeout(() => {
@@ -1973,6 +1970,7 @@ function animateMetricValue(el, text) {
     const enterTimer = window.setTimeout(() => {
       el.classList.remove("metric-value-anim");
       el.style.removeProperty("--metric-out-duration");
+      el.style.removeProperty("--metric-in-duration");
       metricSwapTimers.delete(el);
     }, inMs);
 
