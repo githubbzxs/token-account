@@ -543,6 +543,28 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --accent-cyan: #00F0FF;
   --accent-rgb: 176, 38, 255;
   --accent-cyan-rgb: 0, 240, 255;
+  --bg-glow-a: rgba(176, 38, 255, 0.20);
+  --bg-glow-b: rgba(0, 240, 255, 0.16);
+  --bg-glow-c: rgba(176, 38, 255, 0.08);
+  --bg-base-start: #06070d;
+  --bg-base-mid: #090d16;
+  --bg-base-end: #05060a;
+  --page-border: rgba(150, 156, 190, 0.24);
+  --page-bg-start: rgba(14, 14, 24, 0.94);
+  --page-bg-end: rgba(8, 10, 18, 0.96);
+  --page-glow: rgba(176, 38, 255, 0.18);
+  --page-outline: rgba(188, 198, 255, 0.18);
+  --page-inner-glow: rgba(176, 38, 255, 0.08);
+  --page-outer-glow: rgba(0, 240, 255, 0.10);
+  --segment-start: #B026FF;
+  --segment-end: #00F0FF;
+  --chart-line-start: #B026FF;
+  --chart-line-end: #00F0FF;
+  --chart-area-start: rgba(176, 38, 255, 0.55);
+  --chart-area-mid: rgba(0, 240, 255, 0.22);
+  --chart-area-end: rgba(0, 240, 255, 0);
+  --tooltip-border: rgba(176, 38, 255, 0.45);
+  --axis-pointer: rgba(0, 240, 255, 0.7);
   --shadow: 0 22px 52px rgba(0, 0, 0, 0.62);
   --ring: rgba(176, 38, 255, 0.28);
   --font-zh: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
@@ -566,13 +588,43 @@ html[lang="en"] {
   --app-font: var(--font-en);
 }
 
+html[data-theme="bronze"] {
+  --accent: #B89C7A;
+  --accent-cyan: #E3C89A;
+  --accent-rgb: 184, 156, 122;
+  --accent-cyan-rgb: 227, 200, 154;
+  --bg-glow-a: rgba(120, 92, 58, 0.20);
+  --bg-glow-b: rgba(94, 79, 63, 0.16);
+  --bg-glow-c: rgba(168, 152, 132, 0.07);
+  --bg-base-start: #080706;
+  --bg-base-mid: #0b0a09;
+  --bg-base-end: #050505;
+  --page-border: rgba(226, 220, 210, 0.30);
+  --page-bg-start: rgba(18, 15, 12, 0.92);
+  --page-bg-end: rgba(10, 8, 7, 0.95);
+  --page-glow: rgba(214, 202, 186, 0.20);
+  --page-outline: rgba(240, 233, 223, 0.24);
+  --page-inner-glow: rgba(186, 170, 150, 0.14);
+  --page-outer-glow: rgba(230, 219, 205, 0.16);
+  --segment-start: #A27C4A;
+  --segment-end: #D7B98A;
+  --chart-line-start: #B89C7A;
+  --chart-line-end: #E3C89A;
+  --chart-area-start: rgba(184, 156, 122, 0.40);
+  --chart-area-mid: rgba(227, 200, 154, 0.18);
+  --chart-area-end: rgba(227, 200, 154, 0);
+  --tooltip-border: rgba(184, 156, 122, 0.45);
+  --axis-pointer: rgba(227, 200, 154, 0.72);
+  --ring: rgba(184, 156, 122, 0.26);
+}
+
 body {
   margin: 0;
   background:
-    radial-gradient(1200px 700px at 12% 2%, rgba(176, 38, 255, 0.20), transparent 60%),
-    radial-gradient(980px 620px at 88% 8%, rgba(0, 240, 255, 0.16), transparent 64%),
-    radial-gradient(820px 500px at 52% 112%, rgba(176, 38, 255, 0.08), transparent 70%),
-    linear-gradient(170deg, #06070d 0%, #090d16 55%, #05060a 100%);
+    radial-gradient(1200px 700px at 12% 2%, var(--bg-glow-a), transparent 60%),
+    radial-gradient(980px 620px at 88% 8%, var(--bg-glow-b), transparent 64%),
+    radial-gradient(820px 500px at 52% 112%, var(--bg-glow-c), transparent 70%),
+    linear-gradient(170deg, var(--bg-base-start) 0%, var(--bg-base-mid) 55%, var(--bg-base-end) 100%);
   color: var(--text);
   font-family: var(--app-font);
   line-height: 1.45;
@@ -586,11 +638,11 @@ body {
   margin: 24px auto;
   padding: 24px 18px 38px;
   border-radius: 24px;
-  border: 1px solid rgba(150, 156, 190, 0.24);
-  background: linear-gradient(170deg, rgba(14, 14, 24, 0.94), rgba(8, 10, 18, 0.96));
+  border: 1px solid var(--page-border);
+  background: linear-gradient(170deg, var(--page-bg-start), var(--page-bg-end));
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 0 32px rgba(176, 38, 255, 0.18),
+    0 0 32px var(--page-glow),
     0 28px 60px rgba(0, 0, 0, 0.56);
   overflow: hidden;
 }
@@ -601,10 +653,10 @@ body {
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  border: 1px solid rgba(188, 198, 255, 0.18);
+  border: 1px solid var(--page-outline);
   box-shadow:
-    inset 0 0 24px rgba(176, 38, 255, 0.08),
-    0 0 22px rgba(0, 240, 255, 0.10);
+    inset 0 0 24px var(--page-inner-glow),
+    0 0 22px var(--page-outer-glow);
 }
 
 .hero {
@@ -900,7 +952,7 @@ body {
   left: 4px;
   width: 0;
   border-radius: 999px;
-  background: linear-gradient(120deg, rgba(176, 38, 255, 0.9), rgba(0, 240, 255, 0.9));
+  background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.36);
   opacity: 0;
   transform: translateX(0);
@@ -936,6 +988,56 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+}
+
+.theme-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  background: rgba(44, 46, 56, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.theme-switch-slider {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.36);
+  opacity: 0;
+  transform: translateX(0);
+  transition: width 0.24s ease, transform 0.24s ease, opacity 0.18s ease;
+  z-index: 0;
+}
+
+.theme-switch button {
+  position: relative;
+  z-index: 1;
+  border: none;
+  background: transparent;
+  color: #b6bac6;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.theme-switch button:hover {
+  color: #f8fafc;
+}
+
+.theme-switch button.is-active {
+  color: #ffffff;
 }
 
 .file-button {
@@ -1288,6 +1390,11 @@ body {
       <button type="button" data-range="all" data-i18n="all_time">All</button>
     </div>
     <div class="range-actions">
+      <div class="theme-switch" id="theme-switch" aria-label="Color theme switch">
+        <span class="theme-switch-slider" id="theme-switch-slider" aria-hidden="true"></span>
+        <button type="button" data-theme-option="neon" class="is-active">Neon</button>
+        <button type="button" data-theme-option="bronze">Bronze</button>
+      </div>
       <button type="button" id="export-data" class="range-action-btn" data-i18n="export">Export</button>
       <label class="file-button"><span data-i18n="import">Import</span>
         <input type="file" id="import-data" accept="application/json" multiple>
@@ -1350,6 +1457,8 @@ let dailyChartInstance = null;
 let chartResizeBound = false;
 let chartWheelZoomBound = false;
 let quickRangeResizeBound = false;
+let themeSwitchResizeBound = false;
+const THEME_STORAGE_KEY = "token-report-theme";
 const calendarState = {
   open: false,
   minISO: "",
@@ -1449,6 +1558,84 @@ function updateRangeDateButton(startISO, endISO) {
   const text = formatRangeButtonLabel(startISO, endISO);
   if (label) label.textContent = text;
   if (trigger) trigger.setAttribute("aria-label", text);
+}
+
+function normalizeTheme(value) {
+  return value === "bronze" ? "bronze" : "neon";
+}
+
+function readStoredTheme() {
+  try {
+    return normalizeTheme(window.localStorage.getItem(THEME_STORAGE_KEY) || "");
+  } catch (_) {
+    return "neon";
+  }
+}
+
+function persistTheme(theme) {
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (_) {
+    // ignore
+  }
+}
+
+function updateThemeSwitchSlider() {
+  const switchEl = document.getElementById("theme-switch");
+  const slider = document.getElementById("theme-switch-slider");
+  if (!switchEl || !slider) return;
+  const activeBtn = switchEl.querySelector("button.is-active");
+  if (!(activeBtn instanceof HTMLElement)) {
+    slider.style.opacity = "0";
+    slider.style.width = "0";
+    slider.style.transform = "translateX(0)";
+    return;
+  }
+  const switchRect = switchEl.getBoundingClientRect();
+  const activeRect = activeBtn.getBoundingClientRect();
+  const offsetX = Math.max(0, activeRect.left - switchRect.left);
+  slider.style.opacity = "1";
+  slider.style.width = `${Math.round(activeRect.width)}px`;
+  slider.style.transform = `translateX(${Math.round(offsetX)}px)`;
+}
+
+function updateThemeSwitchState(theme) {
+  const switchEl = document.getElementById("theme-switch");
+  if (!switchEl) return;
+  switchEl.querySelectorAll("button[data-theme-option]").forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.themeOption === theme);
+  });
+  updateThemeSwitchSlider();
+}
+
+function getThemePalette() {
+  const style = window.getComputedStyle(document.documentElement);
+  const read = (name, fallback) => {
+    const value = style.getPropertyValue(name).trim();
+    return value || fallback;
+  };
+  return {
+    lineStart: read("--chart-line-start", "#B026FF"),
+    lineEnd: read("--chart-line-end", "#00F0FF"),
+    areaStart: read("--chart-area-start", "rgba(176, 38, 255, 0.55)"),
+    areaMid: read("--chart-area-mid", "rgba(0, 240, 255, 0.22)"),
+    areaEnd: read("--chart-area-end", "rgba(0, 240, 255, 0)"),
+    tooltipBorder: read("--tooltip-border", "rgba(176, 38, 255, 0.45)"),
+    axisPointer: read("--axis-pointer", "rgba(0, 240, 255, 0.7)"),
+  };
+}
+
+function applyTheme(theme, options) {
+  const opts = options || {};
+  const nextTheme = normalizeTheme(theme);
+  document.documentElement.dataset.theme = nextTheme;
+  updateThemeSwitchState(nextTheme);
+  if (opts.persist !== false) {
+    persistTheme(nextTheme);
+  }
+  if (opts.refreshChart !== false && currentRange.start && currentRange.end) {
+    applyRangePreview(currentRange.start, currentRange.end);
+  }
 }
 
 function quickRangePresetFor(startISO, endISO, minISO, maxISO) {
@@ -1914,6 +2101,7 @@ function lineChart(el, labels, values) {
   const windowSize = chartValues.length > 200 ? Math.max(MIN_WINDOW_PERCENT, (200 / chartValues.length) * 100) : 100;
   const zoomStart = Math.max(0, (100 - windowSize) / 2);
   const zoomEnd = Math.min(100, zoomStart + windowSize);
+  const palette = getThemePalette();
   dailyChartInstance.setOption(
     {
       backgroundColor: "transparent",
@@ -1922,10 +2110,10 @@ function lineChart(el, labels, values) {
       tooltip: {
         trigger: "axis",
         backgroundColor: "rgba(10,10,10,0.92)",
-        borderColor: "rgba(176,38,255,0.45)",
+        borderColor: palette.tooltipBorder,
         borderWidth: 1,
         textStyle: { color: "#f8fafc" },
-        axisPointer: { type: "line", lineStyle: { color: "rgba(0,240,255,0.7)", width: 1 } },
+        axisPointer: { type: "line", lineStyle: { color: palette.axisPointer, width: 1 } },
         valueFormatter: (value) => formatChartNumber(value),
       },
       xAxis: {
@@ -1964,15 +2152,15 @@ function lineChart(el, labels, values) {
           lineStyle: {
             width: 2.8,
             color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
-              { offset: 0, color: "#B026FF" },
-              { offset: 1, color: "#00F0FF" },
+              { offset: 0, color: palette.lineStart },
+              { offset: 1, color: palette.lineEnd },
             ]),
           },
           areaStyle: {
             color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(176,38,255,0.55)" },
-              { offset: 0.45, color: "rgba(0,240,255,0.22)" },
-              { offset: 1, color: "rgba(0,240,255,0)" },
+              { offset: 0, color: palette.areaStart },
+              { offset: 0.45, color: palette.areaMid },
+              { offset: 1, color: palette.areaEnd },
             ]),
           },
           emphasis: { focus: "series" },
@@ -2563,6 +2751,22 @@ function setupRangeControls() {
   });
 }
 
+function setupThemeSwitch() {
+  const switchEl = document.getElementById("theme-switch");
+  if (!switchEl) return;
+  const initialTheme = readStoredTheme();
+  applyTheme(initialTheme, { persist: false, refreshChart: false });
+  switchEl.querySelectorAll("button[data-theme-option]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      applyTheme(btn.dataset.themeOption || "neon", { persist: true, refreshChart: true });
+    });
+  });
+  if (!themeSwitchResizeBound) {
+    window.addEventListener("resize", updateThemeSwitchSlider);
+    themeSwitchResizeBound = true;
+  }
+}
+
 function setupCustomDatePicker() {
   const popover = document.getElementById("calendar-popover");
   const weekdays = document.getElementById("calendar-weekdays");
@@ -2684,6 +2888,7 @@ function setupDailyChartZoom() {
 window.addEventListener("load", () => {
   applyI18n("en", { animate: false, source: "boot" });
   rebuildHourEventMap();
+  setupThemeSwitch();
   setupRangeControls();
   setupCustomDatePicker();
   setupDailyChartZoom();
