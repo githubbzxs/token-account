@@ -86,9 +86,9 @@ I18N = {
         "share_downloaded": "图片已下载",
         "share_copied_image": "图片已复制，可直接粘贴发送",
         "time_panel": "时间相关分析",
-        "time_gap_note": "会话窗口法（gap=15分钟）",
-        "time_you_share": "你编程时间占比",
-        "time_ai_share": "AI编程时间占比",
+        "time_gap_note": "估算口径：输入 240 tok/min，输出 120 tok/min",
+        "time_you_share": "估算输入时长",
+        "time_ai_share": "估算输出时长",
         "time_total_duration": "估算编程时长",
         "time_avg_daily_duration": "日均编程时长",
         "time_median_session": "会话中位时长",
@@ -161,9 +161,9 @@ I18N = {
         "share_downloaded": "Image downloaded",
         "share_copied_image": "Image copied, paste to share",
         "time_panel": "Time Analysis",
-        "time_gap_note": "Session window method (gap=15 minutes)",
-        "time_you_share": "Your coding time share",
-        "time_ai_share": "AI coding time share",
+        "time_gap_note": "Estimation basis: input 240 tok/min, output 120 tok/min",
+        "time_you_share": "Estimated input duration",
+        "time_ai_share": "Estimated output duration",
         "time_total_duration": "Estimated coding duration",
         "time_avg_daily_duration": "Average coding time per day",
         "time_median_session": "Median session duration",
@@ -1694,6 +1694,8 @@ const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
 const SESSION_GAP_MINUTES = 15;
 const SESSION_GAP_MS = SESSION_GAP_MINUTES * 60_000;
+const INPUT_EST_TOKENS_PER_MINUTE = 240;
+const OUTPUT_EST_TOKENS_PER_MINUTE = 120;
 const MAX_CHART_POINTS = 1600;
 let hourEventMap = new Map();
 
@@ -1938,8 +1940,8 @@ function splitSessionsByGap(events) {
 function renderTimeAnalysis(startISO, endISO, animate) {
   const scoped = collectRangeEvents(startISO, endISO);
   const result = {
-    userShare: null,
-    aiShare: null,
+    estimatedInputMinutes: null,
+    estimatedOutputMinutes: null,
     totalMinutes: null,
     avgDailyMinutes: null,
     medianSessionMinutes: null,
@@ -1954,8 +1956,8 @@ function renderTimeAnalysis(startISO, endISO, animate) {
     const sessionDurations = [];
     let totalMs = 0;
     let nightMs = 0;
-    let userMs = 0;
-    let aiMs = 0;
+    let inputTokensTotal = 0;
+    let outputTokensTotal = 0;
     let switches = 0;
     let splitUnknown = false;
 
@@ -1993,9 +1995,9 @@ function renderTimeAnalysis(startISO, endISO, animate) {
           prevDominant = null;
           continue;
         }
+        inputTokensTotal += userTokens;
+        outputTokensTotal += aiTokens;
         const aiRatio = aiTokens / tokenTotal;
-        aiMs += segMs * aiRatio;
-        userMs += segMs * (1 - aiRatio);
         const dominant = aiRatio >= 0.5 ? "ai" : "user";
         if (prevDominant && prevDominant !== dominant) switches += 1;
         prevDominant = dominant;
@@ -2012,19 +2014,22 @@ function renderTimeAnalysis(startISO, endISO, animate) {
       result.medianSessionMinutes = medianMs / 60_000;
       result.longestSessionMinutes = sorted[sorted.length - 1] / 60_000;
       result.nightRatio = nightMs / totalMs;
+      if (totalMs > 0) {
+        result.switchPerHour = switches / (totalMs / HOUR_MS);
+      }
       if (!splitUnknown) {
-        const splitTotal = userMs + aiMs;
-        if (splitTotal > 0) {
-          result.userShare = userMs / splitTotal;
-          result.aiShare = aiMs / splitTotal;
-          result.switchPerHour = switches / (totalMs / HOUR_MS);
+        if (inputTokensTotal > 0) {
+          result.estimatedInputMinutes = inputTokensTotal / INPUT_EST_TOKENS_PER_MINUTE;
+        }
+        if (outputTokensTotal > 0) {
+          result.estimatedOutputMinutes = outputTokensTotal / OUTPUT_EST_TOKENS_PER_MINUTE;
         }
       }
     }
   }
 
-  setDisplayText("time-you-share", formatPercentOrNA(result.userShare), animate);
-  setDisplayText("time-ai-share", formatPercentOrNA(result.aiShare), animate);
+  setDisplayText("time-you-share", formatDurationMinutes(result.estimatedInputMinutes), animate);
+  setDisplayText("time-ai-share", formatDurationMinutes(result.estimatedOutputMinutes), animate);
   setDisplayText("time-total-duration", formatDurationMinutes(result.totalMinutes), animate);
   setDisplayText("time-avg-daily-duration", formatDurationMinutes(result.avgDailyMinutes), animate);
   setDisplayText("time-median-session", formatDurationMinutes(result.medianSessionMinutes), animate);
