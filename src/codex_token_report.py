@@ -572,7 +572,6 @@ body {
     radial-gradient(1200px 700px at 12% 2%, rgba(176, 38, 255, 0.20), transparent 60%),
     radial-gradient(980px 620px at 88% 8%, rgba(0, 240, 255, 0.16), transparent 64%),
     radial-gradient(820px 500px at 52% 112%, rgba(176, 38, 255, 0.08), transparent 70%),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 4px),
     linear-gradient(170deg, #06070d 0%, #090d16 55%, #05060a 100%);
   color: var(--text);
   font-family: var(--app-font);
@@ -671,7 +670,7 @@ body {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
-  box-shadow: var(--shadow);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .range-fields {
