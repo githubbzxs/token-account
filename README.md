@@ -13,7 +13,7 @@ Or just double-click `open-report.bat`.
 
 Report features:
 - Chinese/English toggle in the HTML report
-- Hourly token trend chart
+- 时间分析模块（核心分析）：按时间维度展示会话分布与活跃趋势
 - Estimated cost in USD using OpenAI API pricing (standard tier)
 - Default range is all-time, with in-page date range filters (Last 7/30/90, or custom)
 - One-click export/import in the report to merge data from multiple machines
