@@ -85,6 +85,17 @@ I18N = {
         "auto_sync": "自动同步最新数据",
         "share_downloaded": "图片已下载",
         "share_copied_image": "图片已复制，可直接粘贴发送",
+        "time_panel": "时间相关分析",
+        "time_gap_note": "会话窗口法（gap=15分钟）",
+        "time_you_share": "你编程时间占比",
+        "time_ai_share": "AI编程时间占比",
+        "time_total_duration": "估算编程时长",
+        "time_avg_daily_duration": "日均编程时长",
+        "time_median_session": "会话中位时长",
+        "time_longest_session": "最长连续会话",
+        "time_switch_frequency": "人机切换频率",
+        "time_night_ratio": "夜间编程占比（00:00-06:00）",
+        "time_session_count": "会话窗口数",
     },
     "en": {
         "title": "Codex Token Usage",
@@ -149,6 +160,17 @@ I18N = {
         "auto_sync": "Auto-sync latest data",
         "share_downloaded": "Image downloaded",
         "share_copied_image": "Image copied, paste to share",
+        "time_panel": "Time Analysis",
+        "time_gap_note": "Session window method (gap=15 minutes)",
+        "time_you_share": "Your coding time share",
+        "time_ai_share": "AI coding time share",
+        "time_total_duration": "Estimated coding duration",
+        "time_avg_daily_duration": "Average coding time per day",
+        "time_median_session": "Median session duration",
+        "time_longest_session": "Longest continuous session",
+        "time_switch_frequency": "Human-AI switch frequency",
+        "time_night_ratio": "Night coding share (00:00-06:00)",
+        "time_session_count": "Session windows",
     },
 }
 
@@ -421,6 +443,11 @@ def collect_usage(session_root: Path, since: date | None, until: date | None):
                         "ts": local.strftime("%Y-%m-%d %H:%M"),
                         "day": day.isoformat(),
                         "value": dtokens,
+                        "input": delta["input_tokens"],
+                        "cached": delta["cached_input_tokens"],
+                        "output": delta["output_tokens"],
+                        "reasoning": delta["reasoning_output_tokens"],
+                        "total": delta["total_tokens"],
                     }
                 )
                 heapq.heappush(top_events, (dtokens, local))
@@ -864,6 +891,37 @@ body {
   color: var(--muted);
 }
 
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.time-metric {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
+  background: rgba(17, 17, 19, 0.72);
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.time-metric-label {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.time-metric-value {
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .legend {
   margin-top: 12px;
   display: grid;
@@ -1093,6 +1151,48 @@ body {
       <h3 data-i18n="daily_chart">Hourly total tokens</h3>
       <div id="chart-daily" class="chart"></div>
       <div class="chart-tip" data-i18n="zoom_hint">滚轮可缩放，按住 Ctrl + 滚轮可对准位置并居中放大，连续操作会持续聚焦该区域</div>
+    </div>
+    <div class="panel wide" style="--delay:0.32s">
+      <h3 data-i18n="time_panel">时间相关分析</h3>
+      <div class="note" data-i18n="time_gap_note">会话窗口法（gap=15分钟）</div>
+      <div class="time-grid">
+        <div class="time-metric">
+          <div class="time-metric-label" data-i18n="time_you_share">你编程时间占比</div>
+          <div class="time-metric-value" id="time-you-share">n/a</div>
+        </div>
+        <div class="time-metric">
+          <div class="time-metric-label" data-i18n="time_ai_share">AI编程时间占比</div>
+          <div class="time-metric-value" id="time-ai-share">n/a</div>
+        </div>
+        <div class="time-metric">
+          <div class="time-metric-label" data-i18n="time_total_duration">估算编程时长</div>
+          <div class="time-metric-value" id="time-total-duration">n/a</div>
+        </div>
+        <div class="time-metric">
+          <div class="time-metric-label" data-i18n="time_avg_daily_duration">日均编程时长</div>
+          <div class="time-metric-value" id="time-avg-daily-duration">n/a</div>
+        </div>
+        <div class="time-metric">
+          <div class="time-metric-label" data-i18n="time_median_session">会话中位时长</div>
+          <div class="time-metric-value" id="time-median-session">n/a</div>
+        </div>
+        <div class="time-metric">
+          <div class="time-metric-label" data-i18n="time_longest_session">最长连续会话</div>
+          <div class="time-metric-value" id="time-longest-session">n/a</div>
+        </div>
+        <div class="time-metric">
+          <div class="time-metric-label" data-i18n="time_switch_frequency">人机切换频率</div>
+          <div class="time-metric-value" id="time-switch-frequency">n/a</div>
+        </div>
+        <div class="time-metric">
+          <div class="time-metric-label" data-i18n="time_night_ratio">夜间编程占比（00:00-06:00）</div>
+          <div class="time-metric-value" id="time-night-ratio">n/a</div>
+        </div>
+        <div class="time-metric">
+          <div class="time-metric-label" data-i18n="time_session_count">会话窗口数</div>
+          <div class="time-metric-value" id="time-session-count">n/a</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1591,6 +1691,9 @@ let currentRange = {
 };
 let hasInitialMetricsRender = false;
 const HOUR_MS = 3_600_000;
+const DAY_MS = 24 * HOUR_MS;
+const SESSION_GAP_MINUTES = 15;
+const SESSION_GAP_MS = SESSION_GAP_MINUTES * 60_000;
 const MAX_CHART_POINTS = 1600;
 let hourEventMap = new Map();
 
@@ -1608,7 +1711,8 @@ function rebuildHourEventMap() {
     if (!ev || !ev.ts) return;
     const hourMs = parseHourMs(ev.ts);
     if (hourMs == null) return;
-    next.set(hourMs, (next.get(hourMs) || 0) + Number(ev.value || 0));
+    const totalValue = ev.total != null ? ev.total : ev.value;
+    next.set(hourMs, (next.get(hourMs) || 0) + Number(totalValue || 0));
   });
   hourEventMap = next;
 }
@@ -1708,6 +1812,226 @@ function sessionsInRange(startISO, endISO) {
     }
   });
   return count;
+}
+
+function toNonNegativeNumber(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  if (num < 0) return 0;
+  return num;
+}
+
+function parseEventMs(ts) {
+  if (!ts) return null;
+  const iso = String(ts).replace(" ", "T");
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return null;
+  return ms;
+}
+
+function overlapMs(startA, endA, startB, endB) {
+  const left = Math.max(startA, startB);
+  const right = Math.min(endA, endB);
+  return Math.max(0, right - left);
+}
+
+function nightOverlapMs(startMs, endMs) {
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return 0;
+  let total = 0;
+  const base = new Date(startMs);
+  base.setHours(0, 0, 0, 0);
+  for (let dayStart = base.getTime(); dayStart < endMs; dayStart += DAY_MS) {
+    const nightStart = dayStart;
+    const nightEnd = dayStart + 6 * HOUR_MS;
+    total += overlapMs(startMs, endMs, nightStart, nightEnd);
+  }
+  return total;
+}
+
+function formatDurationMinutes(value) {
+  const minutes = Number(value);
+  if (!Number.isFinite(minutes) || minutes < 0) return "n/a";
+  const rounded = Math.round(minutes);
+  const hours = Math.floor(rounded / 60);
+  const mins = rounded % 60;
+  if (currentLang === "zh") {
+    if (hours && mins) return `${hours}小时${mins}分`;
+    if (hours) return `${hours}小时`;
+    return `${mins}分`;
+  }
+  if (hours && mins) return `${hours}h ${mins}m`;
+  if (hours) return `${hours}h`;
+  return `${mins}m`;
+}
+
+function formatPercentOrNA(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 0) return "n/a";
+  return `${(num * 100).toFixed(1)}%`;
+}
+
+function formatSwitchFrequency(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 0) return "n/a";
+  if (currentLang === "zh") return `${num.toFixed(2)} 次/小时`;
+  return `${num.toFixed(2)} /h`;
+}
+
+function collectRangeEvents(startISO, endISO) {
+  const startMs = new Date(`${startISO}T00:00:00`).getTime();
+  const endExclusiveMs = new Date(`${endISO}T00:00:00`).getTime() + DAY_MS;
+  const validRange = Number.isFinite(startMs) && Number.isFinite(endExclusiveMs) && startMs < endExclusiveMs;
+  if (!validRange) {
+    return { startMs: 0, endExclusiveMs: 0, rangeDays: 1, events: [] };
+  }
+  const events = [];
+  (DATA.events || []).forEach(raw => {
+    if (!raw || !raw.ts) return;
+    const ms = parseEventMs(raw.ts);
+    if (ms == null || ms < startMs || ms >= endExclusiveMs) return;
+    const input = toNonNegativeNumber(raw.input);
+    const cached = toNonNegativeNumber(raw.cached);
+    const output = toNonNegativeNumber(raw.output);
+    const reasoning = toNonNegativeNumber(raw.reasoning);
+    const hasBreakdown = [input, cached, output, reasoning].every(v => v != null);
+    let total = toNonNegativeNumber(raw.total);
+    if (total == null) total = toNonNegativeNumber(raw.value);
+    if (total == null && hasBreakdown) {
+      total = input + cached + output + reasoning;
+    }
+    if (total == null) total = 0;
+    events.push({
+      ms,
+      input,
+      cached,
+      output,
+      reasoning,
+      total,
+      hasBreakdown,
+    });
+  });
+  events.sort((a, b) => a.ms - b.ms);
+  const rangeDays = Math.max(1, Math.round((endExclusiveMs - startMs) / DAY_MS));
+  return { startMs, endExclusiveMs, rangeDays, events };
+}
+
+function splitSessionsByGap(events) {
+  const sessions = [];
+  let current = [];
+  events.forEach(ev => {
+    if (!current.length) {
+      current = [ev];
+      return;
+    }
+    const prev = current[current.length - 1];
+    if (ev.ms - prev.ms > SESSION_GAP_MS) {
+      sessions.push(current);
+      current = [ev];
+      return;
+    }
+    current.push(ev);
+  });
+  if (current.length) sessions.push(current);
+  return sessions;
+}
+
+function renderTimeAnalysis(startISO, endISO, animate) {
+  const scoped = collectRangeEvents(startISO, endISO);
+  const result = {
+    userShare: null,
+    aiShare: null,
+    totalMinutes: null,
+    avgDailyMinutes: null,
+    medianSessionMinutes: null,
+    longestSessionMinutes: null,
+    switchPerHour: null,
+    nightRatio: null,
+    sessionCount: 0,
+  };
+
+  if (scoped.events.length) {
+    const sessions = splitSessionsByGap(scoped.events);
+    const sessionDurations = [];
+    let totalMs = 0;
+    let nightMs = 0;
+    let userMs = 0;
+    let aiMs = 0;
+    let switches = 0;
+    let splitUnknown = false;
+
+    sessions.forEach(session => {
+      if (!session.length) return;
+      const sessionStart = Math.max(scoped.startMs, session[0].ms);
+      const sessionEnd = Math.min(scoped.endExclusiveMs, session[session.length - 1].ms + SESSION_GAP_MS);
+      if (sessionEnd <= sessionStart) return;
+      sessionDurations.push(sessionEnd - sessionStart);
+
+      let prevDominant = null;
+      for (let i = 0; i < session.length; i++) {
+        const ev = session[i];
+        const nextEv = session[i + 1];
+        const rawStart = ev.ms;
+        const rawEnd = nextEv ? Math.min(nextEv.ms, ev.ms + SESSION_GAP_MS) : (ev.ms + SESSION_GAP_MS);
+        const segStart = Math.max(scoped.startMs, rawStart);
+        const segEnd = Math.min(scoped.endExclusiveMs, rawEnd);
+        if (segEnd <= segStart) continue;
+        const segMs = segEnd - segStart;
+        totalMs += segMs;
+        nightMs += nightOverlapMs(segStart, segEnd);
+
+        if (!ev.hasBreakdown) {
+          splitUnknown = true;
+          prevDominant = null;
+          continue;
+        }
+
+        const userTokens = ev.input + ev.cached;
+        const aiTokens = ev.output + ev.reasoning;
+        const tokenTotal = userTokens + aiTokens;
+        if (!(tokenTotal > 0)) {
+          splitUnknown = true;
+          prevDominant = null;
+          continue;
+        }
+        const aiRatio = aiTokens / tokenTotal;
+        aiMs += segMs * aiRatio;
+        userMs += segMs * (1 - aiRatio);
+        const dominant = aiRatio >= 0.5 ? "ai" : "user";
+        if (prevDominant && prevDominant !== dominant) switches += 1;
+        prevDominant = dominant;
+      }
+    });
+
+    result.sessionCount = sessionDurations.length;
+    if (sessionDurations.length && totalMs > 0) {
+      const sorted = sessionDurations.slice().sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const medianMs = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+      result.totalMinutes = totalMs / 60_000;
+      result.avgDailyMinutes = result.totalMinutes / scoped.rangeDays;
+      result.medianSessionMinutes = medianMs / 60_000;
+      result.longestSessionMinutes = sorted[sorted.length - 1] / 60_000;
+      result.nightRatio = nightMs / totalMs;
+      if (!splitUnknown) {
+        const splitTotal = userMs + aiMs;
+        if (splitTotal > 0) {
+          result.userShare = userMs / splitTotal;
+          result.aiShare = aiMs / splitTotal;
+          result.switchPerHour = switches / (totalMs / HOUR_MS);
+        }
+      }
+    }
+  }
+
+  setDisplayText("time-you-share", formatPercentOrNA(result.userShare), animate);
+  setDisplayText("time-ai-share", formatPercentOrNA(result.aiShare), animate);
+  setDisplayText("time-total-duration", formatDurationMinutes(result.totalMinutes), animate);
+  setDisplayText("time-avg-daily-duration", formatDurationMinutes(result.avgDailyMinutes), animate);
+  setDisplayText("time-median-session", formatDurationMinutes(result.medianSessionMinutes), animate);
+  setDisplayText("time-longest-session", formatDurationMinutes(result.longestSessionMinutes), animate);
+  setDisplayText("time-switch-frequency", formatSwitchFrequency(result.switchPerHour), animate);
+  setDisplayText("time-night-ratio", formatPercentOrNA(result.nightRatio), animate);
+  setDisplayText("time-session-count", formatNumber(result.sessionCount), animate);
 }
 
 function normalizeModelName(model) {
@@ -2062,6 +2386,7 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   setDisplayText("value-cache-rate", `${(cacheRate * 100).toFixed(1)}%`, animateMetrics);
   setDisplayText("value-avg-day", formatNumber(avgPerDay), animateMetrics);
   setDisplayText("value-avg-session", formatNumber(avgPerSession), animateMetrics);
+  renderTimeAnalysis(startISO, endISO, animateMetrics);
 
   const modelTotals = aggregateModels(dayLabels);
   const modelItems = Object.keys(modelTotals).map(model => ({ model, rec: modelTotals[model] }));
