@@ -1,39 +1,29 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-set "REFRESH_SECONDS=15"
+if /i "%~1"=="--run" goto run_once
 
+if exist "%~dpn0.vbs" (
+  wscript //nologo "%~dpn0.vbs" "%~f0" --run
+  exit /b 0
+)
+
+start "" /min cmd /c ""%~f0" --run"
+exit /b 0
+
+:run_once
 where python >nul 2>nul
 if %errorlevel%==0 (
   python src\codex_token_report.py --out report --open
-  if not %errorlevel%==0 exit /b %errorlevel%
-  goto loop_python
+  exit /b %errorlevel%
 )
 
 where py >nul 2>nul
 if %errorlevel%==0 (
   py -3 src\codex_token_report.py --out report --open
-  if not %errorlevel%==0 exit /b %errorlevel%
-  goto loop_py
+  exit /b %errorlevel%
 )
 
-echo Python not found. Install Python 3.8+ and ensure it is in PATH.
-pause
+start "" cmd /k "echo 未检测到 python 或 py 命令。& echo 请安装 Python 3.8+ 并加入 PATH 后重试。& pause"
 exit /b 1
-
-:loop_python
-timeout /t %REFRESH_SECONDS% /nobreak >nul
-python src\codex_token_report.py --out report >nul
-if not %errorlevel%==0 (
-  echo Report refresh failed. Retrying in %REFRESH_SECONDS%s...
-)
-goto loop_python
-
-:loop_py
-timeout /t %REFRESH_SECONDS% /nobreak >nul
-py -3 src\codex_token_report.py --out report >nul
-if not %errorlevel%==0 (
-  echo Report refresh failed. Retrying in %REFRESH_SECONDS%s...
-)
-goto loop_py
 
