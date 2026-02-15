@@ -55,7 +55,6 @@ I18N = {
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
         "daily_chart": "每小时总 token",
-        "zoom_hint": "滚轮可按鼠标位置缩放，指针所在位置会保持在视图中心",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
         "model_mix": "模型占比",
@@ -121,7 +120,6 @@ I18N = {
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
         "daily_chart": "Hourly total tokens",
-        "zoom_hint": "Scroll to zoom around the pointer; the hovered position stays centered",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
         "model_mix": "Model share",
@@ -1014,12 +1012,6 @@ body {
   cursor: grabbing;
 }
 
-.chart-tip {
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
 .legend {
   margin-top: 12px;
   display: grid;
@@ -1261,7 +1253,6 @@ body {
     <div class="panel wide" style="--delay:0.25s">
       <h3 data-i18n="daily_chart">Hourly total tokens</h3>
       <div id="chart-daily" class="chart"></div>
-      <div class="chart-tip" data-i18n="zoom_hint">Scroll to zoom around the pointer; the hovered position stays centered</div>
     </div>
   </div>
 
