@@ -25,7 +25,6 @@ python src/codex_token_report.py --out report --open
 - 默认会从 `web/dist` 复制前端构建产物到 `report/`
 - 同时写入 `report/data.json`
 - 若 `web/dist` 不存在，命令会报错并提示先构建前端
-- `--open` 会优先通过本地 `http://127.0.0.1:8765` 打开，避免 `file://` 直开导致白屏
 
 ## 常用参数
 - `--codex-home PATH`：`.codex` 目录路径

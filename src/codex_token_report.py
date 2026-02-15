@@ -8,10 +8,7 @@ import json
 import os
 import re
 import shutil
-import socket
-import subprocess
 import sys
-import time
 from collections import defaultdict
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta, date
@@ -3089,51 +3086,6 @@ def sync_frontend_dist(frontend_dist: Path, out_dir: Path) -> Path:
     return out_dir / "index.html"
 
 
-def _is_local_port_open(port: int) -> bool:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.settimeout(0.2)
-        return sock.connect_ex(("127.0.0.1", port)) == 0
-
-
-def start_local_http_server(out_dir: Path, port: int = 8765) -> str | None:
-    url = f"http://127.0.0.1:{port}/index.html"
-    if _is_local_port_open(port):
-        return url
-
-    cmd = [
-        sys.executable,
-        "-m",
-        "http.server",
-        str(port),
-        "--bind",
-        "127.0.0.1",
-        "--directory",
-        str(out_dir),
-    ]
-    kwargs = {
-        "stdout": subprocess.DEVNULL,
-        "stderr": subprocess.DEVNULL,
-    }
-    if os.name == "nt":
-        kwargs["creationflags"] = (
-            getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-            | getattr(subprocess, "DETACHED_PROCESS", 0)
-        )
-    else:
-        kwargs["start_new_session"] = True
-
-    try:
-        subprocess.Popen(cmd, **kwargs)
-    except OSError:
-        return None
-
-    for _ in range(25):
-        if _is_local_port_open(port):
-            return url
-        time.sleep(0.1)
-    return None
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Generate a local Codex token usage report from session logs."
@@ -3308,12 +3260,8 @@ def main() -> int:
     print(f"Report written to {index_path}")
     if args.open:
         if hasattr(os, "startfile"):
-            target = str(index_path)
-            server_url = start_local_http_server(out_dir)
-            if server_url:
-                target = server_url
             try:
-                os.startfile(target)
+                os.startfile(index_path)
             except Exception as exc:
                 print(f"Could not open report: {exc}", file=sys.stderr)
         else:
