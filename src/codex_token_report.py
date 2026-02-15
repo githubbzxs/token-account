@@ -972,6 +972,9 @@ body {
 }
 
 .range-buttons {
+  display: flex;
+  flex: 1 1 520px;
+  justify-content: center;
   min-width: 0;
 }
 
@@ -986,7 +989,9 @@ body {
   border: 1px solid var(--stroke);
   background: rgba(44, 46, 56, 0.92);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  overflow-x: auto;
+  width: 100%;
+  max-width: 700px;
+  overflow: hidden;
 }
 
 .range-segmented-slider {
@@ -1020,16 +1025,20 @@ body {
 .range-segmented button {
   position: relative;
   z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
   border: none;
   background: transparent;
   color: #b6bac6;
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2px;
   cursor: pointer;
   white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
   transition: color 0.22s ease;
 }
 
