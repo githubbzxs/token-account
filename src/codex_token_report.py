@@ -779,9 +779,9 @@ html.theme-ready .chart {
 
 .range-controls {
   --range-selector-width: 260px;
-  --range-selector-height: 40px;
+  --range-selector-height: 36px;
   margin: 16px 0 8px;
-  padding: 10px 14px;
+  padding: 6px 12px;
   border: 1px solid var(--stroke);
   background: linear-gradient(140deg, rgba(26, 27, 32, 0.9), rgba(17, 17, 19, 0.88));
   border-radius: 14px;
@@ -815,12 +815,13 @@ html.theme-ready .chart {
   background: linear-gradient(140deg, rgba(36, 38, 46, 0.94), rgba(24, 26, 33, 0.94));
   color: #eef2ff;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 14px;
+  line-height: 1;
   letter-spacing: 0.2px;
   cursor: pointer;
   width: 100%;
   height: var(--range-selector-height);
-  padding: 0 12px;
+  padding: 0 14px;
   min-width: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
@@ -844,6 +845,7 @@ html.theme-ready .chart {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+  line-height: 1;
   text-overflow: ellipsis;
   overflow: hidden;
 }
@@ -1031,7 +1033,7 @@ html.theme-ready .chart {
   position: absolute;
   top: 2px;
   bottom: 2px;
-  left: 2px;
+  left: 0;
   width: 0;
   border-radius: 999px;
   background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
@@ -1060,7 +1062,7 @@ html.theme-ready .chart {
   z-index: 1;
   flex: 1 1 0;
   min-width: 0;
-  min-height: calc(var(--range-selector-height) - 6px);
+  min-height: calc(var(--range-selector-height) - 4px);
   border: none;
   background: transparent;
   color: #b6bac6;
@@ -1069,7 +1071,8 @@ html.theme-ready .chart {
   justify-content: center;
   padding: 0 8px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 13px;
+  line-height: 1;
   font-weight: 600;
   letter-spacing: 0.2px;
   cursor: pointer;
@@ -1729,11 +1732,10 @@ function updateQuickRangeSlider() {
     slider.style.transform = "translateX(0)";
     return;
   }
-  const segmentedRect = segmented.getBoundingClientRect();
-  const activeRect = activeBtn.getBoundingClientRect();
-  const offsetX = Math.max(0, activeRect.left - segmentedRect.left);
+  const offsetX = Math.max(0, activeBtn.offsetLeft);
+  const activeWidth = Math.max(0, activeBtn.offsetWidth);
   slider.style.opacity = "1";
-  slider.style.width = `${activeRect.width.toFixed(2)}px`;
+  slider.style.width = `${activeWidth.toFixed(2)}px`;
   slider.style.transform = `translate3d(${offsetX.toFixed(2)}px, 0, 0)`;
 }
 
