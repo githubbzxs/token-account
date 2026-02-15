@@ -745,6 +745,27 @@ body {
   display: none;
 }
 
+html.theme-ready body,
+html.theme-ready .page,
+html.theme-ready .page::before,
+html.theme-ready .range-controls,
+html.theme-ready .range-date-trigger,
+html.theme-ready .range-segmented,
+html.theme-ready .range-segmented-slider,
+html.theme-ready .range-action-btn,
+html.theme-ready .file-button,
+html.theme-ready .theme-dot-toggle,
+html.theme-ready .card,
+html.theme-ready .panel,
+html.theme-ready .chart {
+  transition:
+    color 280ms ease,
+    border-color 320ms ease,
+    background-color 320ms ease,
+    background-image 320ms ease,
+    box-shadow 320ms ease;
+}
+
 .range-controls {
   margin: 18px 0 10px;
   padding: 14px 16px;
@@ -1390,6 +1411,21 @@ body {
   .metric-value-anim,
   .i18n-switch-anim {
     animation: none !important;
+    transition: none !important;
+  }
+  html.theme-ready body,
+  html.theme-ready .page,
+  html.theme-ready .page::before,
+  html.theme-ready .range-controls,
+  html.theme-ready .range-date-trigger,
+  html.theme-ready .range-segmented,
+  html.theme-ready .range-segmented-slider,
+  html.theme-ready .range-action-btn,
+  html.theme-ready .file-button,
+  html.theme-ready .theme-dot-toggle,
+  html.theme-ready .card,
+  html.theme-ready .panel,
+  html.theme-ready .chart {
     transition: none !important;
   }
 }
@@ -2905,6 +2941,9 @@ window.addEventListener("load", () => {
     getRangeInputValue(startInput) || (DATA.range && DATA.range.start) || "",
     getRangeInputValue(endInput) || (DATA.range && DATA.range.end) || ""
   );
+  window.requestAnimationFrame(() => {
+    document.documentElement.classList.add("theme-ready");
+  });
 });
 </script>
 </body>
