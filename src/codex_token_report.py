@@ -767,17 +767,19 @@ body {
   border: 1px solid var(--stroke);
   background: linear-gradient(140deg, rgba(26, 27, 32, 0.9), rgba(17, 17, 19, 0.88));
   border-radius: 16px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 260px minmax(420px, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 12px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .range-fields {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  width: 260px;
   min-width: 0;
 }
 
@@ -788,7 +790,7 @@ body {
 .range-date-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
   border: 1px solid var(--stroke);
   background: linear-gradient(140deg, rgba(36, 38, 46, 0.94), rgba(24, 26, 33, 0.94));
   color: #eef2ff;
@@ -797,6 +799,7 @@ body {
   font-size: 13px;
   letter-spacing: 0.2px;
   cursor: pointer;
+  width: 100%;
   min-width: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
@@ -814,9 +817,14 @@ body {
 }
 
 #range-date-label {
+  display: block;
+  width: 100%;
+  text-align: center;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .calendar-popover {
@@ -1052,9 +1060,10 @@ body {
 
 .range-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   align-items: center;
+  justify-self: end;
 }
 
 .file-button {
@@ -1310,13 +1319,34 @@ body {
     height: 180px;
   }
   .range-controls {
+    grid-template-columns: 1fr;
     gap: 10px;
+  }
+  .range-fields {
+    width: 100%;
+  }
+  .range-buttons {
+    width: 100%;
+    flex-basis: auto;
+  }
+  .range-actions {
+    justify-self: start;
+    flex-wrap: wrap;
   }
 }
 
 @media (max-width: 1280px) {
   .cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  .range-controls {
+    grid-template-columns: 236px minmax(320px, 1fr) auto;
+  }
+  .range-fields {
+    width: 236px;
   }
 }
 
