@@ -24,6 +24,6 @@ if %errorlevel%==0 (
   exit /b %errorlevel%
 )
 
-start "" cmd /k "echo 未检测到 python 或 py 命令。& echo 请安装 Python 3.8+ 并加入 PATH 后重试。& pause"
+start "" cmd /k "echo Python not found: neither python nor py is available. && echo Install Python 3.8+ and add it to PATH, then retry. && pause"
 exit /b 1
 
