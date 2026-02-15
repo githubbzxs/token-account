@@ -675,45 +675,52 @@ body {
 
 .range-fields {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  font-size: 12px;
-  color: var(--muted);
+  min-width: 0;
 }
 
-.range-fields input {
-  border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 12px;
+.range-fields input[type="hidden"] {
+  display: none;
 }
 
-.date-field {
+.range-date-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-}
-
-.date-input {
-  width: 138px;
+  gap: 10px;
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.04);
-  color: #f3f4f6;
-  border-radius: 12px;
-  padding: 8px 12px;
+  background: linear-gradient(140deg, rgba(36, 38, 46, 0.94), rgba(24, 26, 33, 0.94));
+  color: #eef2ff;
+  border-radius: 999px;
+  padding: 8px 14px;
   font-size: 13px;
-  font-weight: 600;
   letter-spacing: 0.2px;
   cursor: pointer;
-  outline: none;
+  min-width: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.date-input:focus-visible {
+.range-date-trigger:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: linear-gradient(140deg, rgba(42, 45, 56, 0.96), rgba(27, 29, 37, 0.96));
+}
+
+.range-date-trigger:focus-visible {
+  outline: none;
   border-color: rgba(34, 211, 238, 0.52);
   box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.16);
+}
+
+.range-date-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+#range-date-label {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
 .calendar-popover {
@@ -807,6 +814,18 @@ body {
 .calendar-day-btn.is-selected {
   border-color: rgba(34, 211, 238, 0.86);
   background: rgba(34, 211, 238, 0.28);
+  color: #ecfeff;
+}
+
+.calendar-day-btn.is-in-range {
+  border-color: rgba(34, 211, 238, 0.25);
+  background: rgba(34, 211, 238, 0.14);
+}
+
+.calendar-day-btn.is-range-start,
+.calendar-day-btn.is-range-end {
+  border-color: rgba(34, 211, 238, 0.88);
+  background: rgba(34, 211, 238, 0.3);
   color: #ecfeff;
 }
 
@@ -1252,9 +1271,12 @@ body {
   </div>
   <div class="range-controls">
     <div class="range-fields">
-      <label class="date-field"><span data-i18n="from">From</span> <input type="text" id="range-start" class="date-input" readonly></label>
-      <label class="date-field"><span data-i18n="to">To</span> <input type="text" id="range-end" class="date-input" readonly></label>
-      <button type="button" id="apply-range" class="range-action-btn" data-i18n="apply">Apply</button>
+      <button type="button" id="range-date-trigger" class="range-date-trigger" aria-haspopup="dialog" aria-expanded="false">
+        <span class="range-date-icon" aria-hidden="true">📅</span>
+        <span id="range-date-label">2000/01/01 - 01/01</span>
+      </button>
+      <input type="hidden" id="range-start">
+      <input type="hidden" id="range-end">
     </div>
     <div class="range-buttons range-segmented" id="quick-range-segmented">
       <span class="range-segmented-slider" id="quick-range-slider" aria-hidden="true"></span>
@@ -1330,11 +1352,13 @@ let chartWheelZoomBound = false;
 let quickRangeResizeBound = false;
 const calendarState = {
   open: false,
-  targetInputId: "",
   minISO: "",
   maxISO: "",
   viewYear: 0,
   viewMonth: 0,
+  draftStartISO: "",
+  draftEndISO: "",
+  selectingPhase: "start",
 };
 
 function prefersReducedMotion() {
@@ -1410,6 +1434,23 @@ function setRangeInputValue(input, value) {
   input.setAttribute("aria-label", iso || "");
 }
 
+function formatRangeButtonLabel(startISO, endISO) {
+  const start = normalizeISO(startISO);
+  const end = normalizeISO(endISO);
+  if (!start || !end) return "--/--/-- - --/--";
+  const startText = toDisplayISO(start);
+  const endText = start.slice(0, 4) === end.slice(0, 4) ? end.slice(5).replace(/-/g, "/") : toDisplayISO(end);
+  return `${startText} - ${endText}`;
+}
+
+function updateRangeDateButton(startISO, endISO) {
+  const trigger = document.getElementById("range-date-trigger");
+  const label = document.getElementById("range-date-label");
+  const text = formatRangeButtonLabel(startISO, endISO);
+  if (label) label.textContent = text;
+  if (trigger) trigger.setAttribute("aria-label", text);
+}
+
 function quickRangePresetFor(startISO, endISO, minISO, maxISO) {
   if (!startISO || !endISO || !minISO || !maxISO) return "";
   if (startISO === minISO && endISO === maxISO) return "all";
@@ -1456,25 +1497,22 @@ function updateQuickRangeState(startISO, endISO) {
   updateQuickRangeSlider();
 }
 
-function getCalendarTargetInput() {
-  if (!calendarState.targetInputId) return null;
-  return document.getElementById(calendarState.targetInputId);
-}
-
 function closeCalendarPopover() {
   const popover = document.getElementById("calendar-popover");
+  const trigger = document.getElementById("range-date-trigger");
   if (!popover) return;
   calendarState.open = false;
-  calendarState.targetInputId = "";
+  calendarState.selectingPhase = "start";
   popover.classList.add("hidden");
   popover.setAttribute("aria-hidden", "true");
+  if (trigger) trigger.setAttribute("aria-expanded", "false");
 }
 
 function positionCalendarPopover() {
   const popover = document.getElementById("calendar-popover");
-  const input = getCalendarTargetInput();
-  if (!popover || !input || !calendarState.open) return;
-  const rect = input.getBoundingClientRect();
+  const trigger = document.getElementById("range-date-trigger");
+  if (!popover || !trigger || !calendarState.open) return;
+  const rect = trigger.getBoundingClientRect();
   const gap = 8;
   const margin = 10;
   const popW = popover.offsetWidth || 320;
@@ -1497,8 +1535,13 @@ function renderCalendarDays() {
   if (!titleEl || !daysEl) return;
   const year = calendarState.viewYear;
   const month = calendarState.viewMonth;
-  const targetInput = getCalendarTargetInput();
-  const selectedISO = getRangeInputValue(targetInput);
+  let selectedStart = normalizeISO(calendarState.draftStartISO);
+  let selectedEnd = normalizeISO(calendarState.draftEndISO);
+  if (selectedStart && selectedEnd && selectedStart > selectedEnd) {
+    const tmp = selectedStart;
+    selectedStart = selectedEnd;
+    selectedEnd = tmp;
+  }
   const todayISO = toLocalISODate(new Date());
   const monthName = MONTH_LABELS[month] || "";
   titleEl.textContent = `${monthName} ${year}`;
@@ -1510,13 +1553,19 @@ function renderCalendarDays() {
     const d = new Date(gridStart.getTime() + i * DAY_MS);
     const iso = formatISODate(d);
     const isOutside = d.getUTCMonth() !== month;
-    const isSelected = iso === selectedISO;
+    const isRangeStart = iso === selectedStart;
+    const isRangeEnd = iso === selectedEnd;
+    const isSelected = isRangeStart || isRangeEnd;
+    const isInRange = Boolean(selectedStart && selectedEnd && iso > selectedStart && iso < selectedEnd);
     const isToday = iso === todayISO;
     const isDisabled = (calendarState.minISO && iso < calendarState.minISO) || (calendarState.maxISO && iso > calendarState.maxISO);
     const classes = [
       "calendar-day-btn",
       isOutside ? "is-outside" : "",
       isSelected ? "is-selected" : "",
+      isRangeStart ? "is-range-start" : "",
+      isRangeEnd ? "is-range-end" : "",
+      isInRange ? "is-in-range" : "",
       isToday ? "is-today" : "",
     ].filter(Boolean).join(" ");
     const disabledAttr = isDisabled ? " disabled" : "";
@@ -1541,25 +1590,46 @@ function shiftCalendarMonth(step) {
   renderCalendarDays();
 }
 
-function openCalendarForInput(input) {
+function applyCalendarRange(startISO, endISO) {
+  const startInput = document.getElementById("range-start");
+  const endInput = document.getElementById("range-end");
+  if (!startInput || !endInput) return;
+  setRangeInputValue(startInput, startISO);
+  setRangeInputValue(endInput, endISO);
+  applyRange(startISO, endISO);
+}
+
+function openCalendarPopover() {
   const popover = document.getElementById("calendar-popover");
-  if (!input || !popover) return;
+  const trigger = document.getElementById("range-date-trigger");
+  const startInput = document.getElementById("range-start");
+  const endInput = document.getElementById("range-end");
+  if (!popover || !trigger || !startInput || !endInput) return;
   const minISO = normalizeISO((DATA.range && DATA.range.start) || "");
   const maxISO = normalizeISO((DATA.range && DATA.range.end) || "");
-  const selectedISO = getRangeInputValue(input) || minISO || maxISO || toLocalISODate(new Date());
-  let selectedDate = parseISODate(selectedISO);
+  let startISO = getRangeInputValue(startInput) || minISO || maxISO || toLocalISODate(new Date());
+  let endISO = getRangeInputValue(endInput) || startISO;
+  if (startISO > endISO) {
+    const tmp = startISO;
+    startISO = endISO;
+    endISO = tmp;
+  }
+  let selectedDate = parseISODate(startISO);
   if (!Number.isFinite(selectedDate.getTime())) {
     selectedDate = parseISODate(toLocalISODate(new Date()));
   }
   calendarState.open = true;
-  calendarState.targetInputId = input.id;
   calendarState.minISO = minISO;
   calendarState.maxISO = maxISO;
   calendarState.viewYear = selectedDate.getUTCFullYear();
   calendarState.viewMonth = selectedDate.getUTCMonth();
+  calendarState.draftStartISO = startISO;
+  calendarState.draftEndISO = endISO;
+  calendarState.selectingPhase = "start";
   renderCalendarDays();
   popover.classList.remove("hidden");
   popover.setAttribute("aria-hidden", "false");
+  trigger.setAttribute("aria-expanded", "true");
   positionCalendarPopover();
 }
 
@@ -2385,6 +2455,7 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   const endInput = document.getElementById("range-end");
   if (startInput) setRangeInputValue(startInput, startISO);
   if (endInput) setRangeInputValue(endInput, endISO);
+  updateRangeDateButton(startISO, endISO);
   updateQuickRangeState(startISO, endISO);
   setDisplayText("range-text", `${startISO} to ${endISO}`, false);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, "#B89C7A");
@@ -2456,20 +2527,16 @@ function syncRangeControls(minISO, maxISO) {
 function setupRangeControls() {
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
-  const applyBtn = document.getElementById("apply-range");
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
-  if (!startInput || !endInput || !applyBtn || !minISO || !maxISO) return;
+  if (!startInput || !endInput || !minISO || !maxISO) return;
   syncRangeControls(minISO, maxISO);
+  updateRangeDateButton(minISO, maxISO);
   updateQuickRangeState(minISO, maxISO);
   if (!quickRangeResizeBound) {
     window.addEventListener("resize", updateQuickRangeSlider);
     quickRangeResizeBound = true;
   }
-
-  applyBtn.addEventListener("click", () => {
-    applyRange(getRangeInputValue(startInput), getRangeInputValue(endInput));
-  });
 
   document.querySelectorAll("[data-range]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -2496,28 +2563,30 @@ function setupCustomDatePicker() {
   const nextBtn = document.getElementById("calendar-next");
   const clearBtn = document.getElementById("calendar-clear");
   const todayBtn = document.getElementById("calendar-today");
+  const trigger = document.getElementById("range-date-trigger");
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
-  if (!popover || !weekdays || !days || !prevBtn || !nextBtn || !clearBtn || !todayBtn || !startInput || !endInput) return;
+  if (!popover || !weekdays || !days || !prevBtn || !nextBtn || !clearBtn || !todayBtn || !trigger || !startInput || !endInput) return;
 
   weekdays.innerHTML = WEEKDAY_LABELS.map(label => `<span>${label}</span>`).join("");
 
-  const bindOpen = (input) => {
-    const open = () => openCalendarForInput(input);
-    input.addEventListener("click", open);
-    input.addEventListener("focus", open);
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
-        event.preventDefault();
-        open();
-      }
-      if (event.key === "Escape") {
-        closeCalendarPopover();
-      }
-    });
+  const open = () => {
+    if (calendarState.open) {
+      closeCalendarPopover();
+      return;
+    }
+    openCalendarPopover();
   };
-  bindOpen(startInput);
-  bindOpen(endInput);
+  trigger.addEventListener("click", open);
+  trigger.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+      event.preventDefault();
+      open();
+    }
+    if (event.key === "Escape") {
+      closeCalendarPopover();
+    }
+  });
 
   prevBtn.addEventListener("click", () => {
     shiftCalendarMonth(-1);
@@ -2534,37 +2603,54 @@ function setupCustomDatePicker() {
     if (!target.classList.contains("calendar-day-btn")) return;
     if (target.hasAttribute("disabled")) return;
     const iso = normalizeISO(target.dataset.iso || "");
-    const input = getCalendarTargetInput();
-    if (!iso || !input) return;
-    setRangeInputValue(input, iso);
+    if (!iso) return;
+    if (calendarState.selectingPhase === "start" || !calendarState.draftStartISO) {
+      calendarState.draftStartISO = iso;
+      calendarState.draftEndISO = iso;
+      calendarState.selectingPhase = "end";
+      renderCalendarDays();
+      return;
+    }
+    let startISO = normalizeISO(calendarState.draftStartISO) || iso;
+    let endISO = iso;
+    if (endISO < startISO) {
+      const tmp = startISO;
+      startISO = endISO;
+      endISO = tmp;
+    }
+    calendarState.draftStartISO = startISO;
+    calendarState.draftEndISO = endISO;
+    applyCalendarRange(startISO, endISO);
     closeCalendarPopover();
   });
 
   clearBtn.addEventListener("click", () => {
-    const input = getCalendarTargetInput();
-    if (!input) return;
-    const fallback = input.id === "range-end" ? calendarState.maxISO : calendarState.minISO;
-    setRangeInputValue(input, fallback);
+    const startISO = calendarState.minISO || getRangeInputValue(startInput);
+    const endISO = calendarState.maxISO || getRangeInputValue(endInput) || startISO;
+    if (!startISO || !endISO) return;
+    calendarState.draftStartISO = startISO;
+    calendarState.draftEndISO = endISO;
+    applyCalendarRange(startISO, endISO);
     closeCalendarPopover();
   });
 
   todayBtn.addEventListener("click", () => {
-    const input = getCalendarTargetInput();
-    if (!input) return;
     const todayISO = clampISO(toLocalISODate(new Date()), calendarState.minISO, calendarState.maxISO);
-    setRangeInputValue(input, todayISO);
+    if (!todayISO) return;
+    calendarState.draftStartISO = todayISO;
+    calendarState.draftEndISO = todayISO;
+    applyCalendarRange(todayISO, todayISO);
     closeCalendarPopover();
   });
 
   document.addEventListener("mousedown", (event) => {
     if (!calendarState.open) return;
-    const input = getCalendarTargetInput();
     const target = event.target;
-    if (!input || !(target instanceof Node)) {
+    if (!(target instanceof Node)) {
       closeCalendarPopover();
       return;
     }
-    if (popover.contains(target) || input.contains(target)) return;
+    if (popover.contains(target) || trigger.contains(target)) return;
     closeCalendarPopover();
   });
 
