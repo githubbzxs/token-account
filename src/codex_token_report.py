@@ -838,7 +838,7 @@ body {
   background: rgba(34, 211, 238, 0.15);
 }
 
-.range-controls button,
+.range-action-btn,
 .file-button {
   border: 1px solid var(--stroke);
   background: rgba(255, 255, 255, 0.04);
@@ -850,16 +850,66 @@ body {
   transition: all 0.2s ease;
 }
 
-.range-controls button:hover,
+.range-action-btn:hover,
 .file-button:hover {
   border-color: rgba(34, 211, 238, 0.5);
   background: rgba(34, 211, 238, 0.15);
 }
 
 .range-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  min-width: 0;
+}
+
+.range-segmented {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(44, 46, 56, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+}
+
+.range-segmented-slider {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(120deg, rgba(236, 72, 153, 0.88), rgba(34, 211, 238, 0.88));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.36);
+  opacity: 0;
+  transform: translateX(0);
+  transition: width 0.24s ease, transform 0.24s ease, opacity 0.18s ease;
+  z-index: 0;
+}
+
+.range-segmented button {
+  position: relative;
+  z-index: 1;
+  border: none;
+  background: transparent;
+  color: #b6bac6;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.range-segmented button:hover {
+  color: #f8fafc;
+}
+
+.range-segmented button.is-active {
+  color: #ffffff;
 }
 
 .range-actions {
@@ -1204,9 +1254,10 @@ body {
     <div class="range-fields">
       <label class="date-field"><span data-i18n="from">From</span> <input type="text" id="range-start" class="date-input" readonly></label>
       <label class="date-field"><span data-i18n="to">To</span> <input type="text" id="range-end" class="date-input" readonly></label>
-      <button type="button" id="apply-range" data-i18n="apply">Apply</button>
+      <button type="button" id="apply-range" class="range-action-btn" data-i18n="apply">Apply</button>
     </div>
-    <div class="range-buttons">
+    <div class="range-buttons range-segmented" id="quick-range-segmented">
+      <span class="range-segmented-slider" id="quick-range-slider" aria-hidden="true"></span>
       <button type="button" data-range="1" data-i18n="last_1">1 day</button>
       <button type="button" data-range="2" data-i18n="last_2">2 days</button>
       <button type="button" data-range="7" data-i18n="last_7">1 week</button>
@@ -1215,7 +1266,7 @@ body {
       <button type="button" data-range="all" data-i18n="all_time">All</button>
     </div>
     <div class="range-actions">
-      <button type="button" id="export-data" data-i18n="export">Export</button>
+      <button type="button" id="export-data" class="range-action-btn" data-i18n="export">Export</button>
       <label class="file-button"><span data-i18n="import">Import</span>
         <input type="file" id="import-data" accept="application/json" multiple>
       </label>
@@ -1276,6 +1327,7 @@ const MONTH_LABELS = [
 let dailyChartInstance = null;
 let chartResizeBound = false;
 let chartWheelZoomBound = false;
+let quickRangeResizeBound = false;
 const calendarState = {
   open: false,
   targetInputId: "",
@@ -1356,6 +1408,52 @@ function setRangeInputValue(input, value) {
   input.dataset.iso = iso;
   input.value = toDisplayISO(iso);
   input.setAttribute("aria-label", iso || "");
+}
+
+function quickRangePresetFor(startISO, endISO, minISO, maxISO) {
+  if (!startISO || !endISO || !minISO || !maxISO) return "";
+  if (startISO === minISO && endISO === maxISO) return "all";
+  if (endISO !== maxISO) return "";
+  const presetDays = [1, 2, 7, 30, 90];
+  for (const days of presetDays) {
+    let expectedStart = addDaysISO(maxISO, -(days - 1));
+    if (expectedStart < minISO) expectedStart = minISO;
+    if (startISO === expectedStart) {
+      return String(days);
+    }
+  }
+  return "";
+}
+
+function updateQuickRangeSlider() {
+  const segmented = document.getElementById("quick-range-segmented");
+  const slider = document.getElementById("quick-range-slider");
+  if (!segmented || !slider) return;
+  const activeBtn = segmented.querySelector("button.is-active");
+  if (!(activeBtn instanceof HTMLElement)) {
+    slider.style.opacity = "0";
+    slider.style.width = "0";
+    slider.style.transform = "translateX(0)";
+    return;
+  }
+  const segmentedRect = segmented.getBoundingClientRect();
+  const activeRect = activeBtn.getBoundingClientRect();
+  const offsetX = Math.max(0, activeRect.left - segmentedRect.left);
+  slider.style.opacity = "1";
+  slider.style.width = `${Math.round(activeRect.width)}px`;
+  slider.style.transform = `translateX(${Math.round(offsetX)}px)`;
+}
+
+function updateQuickRangeState(startISO, endISO) {
+  const segmented = document.getElementById("quick-range-segmented");
+  if (!segmented) return;
+  const minISO = (DATA.range && DATA.range.start) || "";
+  const maxISO = (DATA.range && DATA.range.end) || "";
+  const preset = quickRangePresetFor(startISO, endISO, minISO, maxISO);
+  segmented.querySelectorAll("button[data-range]").forEach((btn) => {
+    btn.classList.toggle("is-active", Boolean(preset) && btn.dataset.range === preset);
+  });
+  updateQuickRangeSlider();
 }
 
 function getCalendarTargetInput() {
@@ -2287,6 +2385,7 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   const endInput = document.getElementById("range-end");
   if (startInput) setRangeInputValue(startInput, startISO);
   if (endInput) setRangeInputValue(endInput, endISO);
+  updateQuickRangeState(startISO, endISO);
   setDisplayText("range-text", `${startISO} to ${endISO}`, false);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, "#B89C7A");
 
@@ -2362,6 +2461,11 @@ function setupRangeControls() {
   const maxISO = (DATA.range && DATA.range.end) || "";
   if (!startInput || !endInput || !applyBtn || !minISO || !maxISO) return;
   syncRangeControls(minISO, maxISO);
+  updateQuickRangeState(minISO, maxISO);
+  if (!quickRangeResizeBound) {
+    window.addEventListener("resize", updateQuickRangeSlider);
+    quickRangeResizeBound = true;
+  }
 
   applyBtn.addEventListener("click", () => {
     applyRange(getRangeInputValue(startInput), getRangeInputValue(endInput));
