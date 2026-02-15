@@ -668,6 +668,55 @@ body {
   margin-bottom: 12px;
 }
 
+.hero-tools {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.theme-dot-toggle {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(30, 33, 44, 0.88);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-dot-toggle:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--accent-cyan-rgb), 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+.theme-dot-toggle:focus-visible {
+  outline: none;
+  border-color: rgba(var(--accent-rgb), 0.62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 2px rgba(var(--accent-rgb), 0.2);
+}
+
+.theme-dot-core {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
+  box-shadow:
+    0 0 8px rgba(var(--accent-rgb), 0.55),
+    0 0 10px rgba(var(--accent-cyan-rgb), 0.42);
+}
+
 .title h1 {
   margin: 0 0 8px;
   font-size: clamp(30px, 5vw, 42px);
@@ -997,70 +1046,6 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-}
-
-.theme-switch {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 4px;
-  border: 1px solid var(--stroke);
-  border-radius: 999px;
-  background: rgba(44, 46, 56, 0.92);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.theme-switch-slider {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: 0;
-  border-radius: 999px;
-  background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.36);
-  opacity: 0;
-  transform: translateX(0);
-  will-change: transform, width, opacity;
-  transition:
-    transform 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-    width 0.38s cubic-bezier(0.2, 0.9, 0.2, 1),
-    opacity 0.2s ease;
-  z-index: 0;
-}
-
-.theme-switch-slider::after {
-  content: "";
-  position: absolute;
-  inset: 1px;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02));
-  pointer-events: none;
-}
-
-.theme-switch button {
-  position: relative;
-  z-index: 1;
-  border: none;
-  background: transparent;
-  color: #b6bac6;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.22s ease;
-}
-
-.theme-switch button:hover {
-  color: #f8fafc;
-}
-
-.theme-switch button.is-active {
-  color: #ffffff;
 }
 
 .file-button {
@@ -1393,6 +1378,11 @@ body {
     <div class="title">
       <h1 data-i18n="title">Codex Token Usage</h1>
     </div>
+    <div class="hero-tools">
+      <button type="button" id="theme-dot-toggle" class="theme-dot-toggle" aria-label="Switch color theme">
+        <span class="theme-dot-core" aria-hidden="true"></span>
+      </button>
+    </div>
   </div>
   <div class="range-controls">
     <div class="range-fields">
@@ -1412,11 +1402,6 @@ body {
       <button type="button" data-range="all" data-i18n="all_time">All</button>
     </div>
     <div class="range-actions">
-      <div class="theme-switch" id="theme-switch" aria-label="Color theme switch">
-        <span class="theme-switch-slider" id="theme-switch-slider" aria-hidden="true"></span>
-        <button type="button" data-theme-option="neon" class="is-active">Neon</button>
-        <button type="button" data-theme-option="bronze">Bronze</button>
-      </div>
       <button type="button" id="export-data" class="range-action-btn" data-i18n="export">Export</button>
       <label class="file-button"><span data-i18n="import">Import</span>
         <input type="file" id="import-data" accept="application/json" multiple>
@@ -1479,7 +1464,6 @@ let dailyChartInstance = null;
 let chartResizeBound = false;
 let chartWheelZoomBound = false;
 let quickRangeResizeBound = false;
-let themeSwitchResizeBound = false;
 const THEME_STORAGE_KEY = "token-report-theme";
 const calendarState = {
   open: false,
@@ -1602,32 +1586,13 @@ function persistTheme(theme) {
   }
 }
 
-function updateThemeSwitchSlider() {
-  const switchEl = document.getElementById("theme-switch");
-  const slider = document.getElementById("theme-switch-slider");
-  if (!switchEl || !slider) return;
-  const activeBtn = switchEl.querySelector("button.is-active");
-  if (!(activeBtn instanceof HTMLElement)) {
-    slider.style.opacity = "0";
-    slider.style.width = "0";
-    slider.style.transform = "translateX(0)";
-    return;
-  }
-  const switchRect = switchEl.getBoundingClientRect();
-  const activeRect = activeBtn.getBoundingClientRect();
-  const offsetX = Math.max(0, activeRect.left - switchRect.left);
-  slider.style.opacity = "1";
-  slider.style.width = `${activeRect.width.toFixed(2)}px`;
-  slider.style.transform = `translate3d(${offsetX.toFixed(2)}px, 0, 0)`;
-}
-
-function updateThemeSwitchState(theme) {
-  const switchEl = document.getElementById("theme-switch");
-  if (!switchEl) return;
-  switchEl.querySelectorAll("button[data-theme-option]").forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.themeOption === theme);
-  });
-  updateThemeSwitchSlider();
+function updateThemeDotToggle(theme) {
+  const btn = document.getElementById("theme-dot-toggle");
+  if (!btn) return;
+  const isBronze = theme === "bronze";
+  btn.classList.toggle("is-bronze", isBronze);
+  const nextThemeLabel = isBronze ? "Neon" : "Bronze";
+  btn.setAttribute("aria-label", `Switch to ${nextThemeLabel} theme`);
 }
 
 function getThemePalette() {
@@ -1651,7 +1616,7 @@ function applyTheme(theme, options) {
   const opts = options || {};
   const nextTheme = normalizeTheme(theme);
   document.documentElement.dataset.theme = nextTheme;
-  updateThemeSwitchState(nextTheme);
+  updateThemeDotToggle(nextTheme);
   if (opts.persist !== false) {
     persistTheme(nextTheme);
   }
@@ -2773,20 +2738,16 @@ function setupRangeControls() {
   });
 }
 
-function setupThemeSwitch() {
-  const switchEl = document.getElementById("theme-switch");
-  if (!switchEl) return;
+function setupThemeToggle() {
+  const btn = document.getElementById("theme-dot-toggle");
   const initialTheme = readStoredTheme();
   applyTheme(initialTheme, { persist: false, refreshChart: false });
-  switchEl.querySelectorAll("button[data-theme-option]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      applyTheme(btn.dataset.themeOption || "neon", { persist: true, refreshChart: true });
-    });
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const current = normalizeTheme(document.documentElement.dataset.theme || "neon");
+    const nextTheme = current === "neon" ? "bronze" : "neon";
+    applyTheme(nextTheme, { persist: true, refreshChart: true });
   });
-  if (!themeSwitchResizeBound) {
-    window.addEventListener("resize", updateThemeSwitchSlider);
-    themeSwitchResizeBound = true;
-  }
 }
 
 function setupCustomDatePicker() {
@@ -2910,7 +2871,7 @@ function setupDailyChartZoom() {
 window.addEventListener("load", () => {
   applyI18n("en", { animate: false, source: "boot" });
   rebuildHourEventMap();
-  setupThemeSwitch();
+  setupThemeToggle();
   setupRangeControls();
   setupCustomDatePicker();
   setupDailyChartZoom();
