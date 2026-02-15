@@ -1,50 +1,41 @@
 # Codex Token Usage Report
 
-本项目用于读取 Codex CLI 会话日志并生成可视化报告。当前架构为：
-- Python 负责聚合日志并写出 `data.json`
-- React 前端负责渲染交互页面（范围切换、动画图表、导入导出等）
+本地工具：读取 Codex CLI 会话日志并生成可视化 HTML 报告。
 
 ## 依赖
 - Python 3.8+
-- Node.js 18+
 
-## 前端初始化（首次）
-```bash
-cd web
-npm install
-npm run build
-```
-
-## 生成报告
-```bash
-python src/codex_token_report.py --out report
+## 快速开始
+python src/codex_token_report.py
 python src/codex_token_report.py --out report --open
-```
 
-说明：
-- 默认会从 `web/dist` 复制前端构建产物到 `report/`
-- 同时写入 `report/data.json`
-- 若 `web/dist` 不存在，命令会报错并提示先构建前端
+或直接双击 `open-report.bat`。
 
-## 常用参数
-- `--codex-home PATH`：`.codex` 目录路径
-- `--sessions-root PATH`：`sessions` 目录路径
-- `--out PATH`：输出目录（默认 `report`）
-- `--frontend-dist PATH`：前端构建目录（默认 `web/dist`）
-- `--days N`：最近 N 天（仅在未设置 `--since/--until` 时生效）
-- `--since YYYY-MM-DD`：起始日期
-- `--until YYYY-MM-DD`：结束日期
-- `--pricing-file PATH`：覆盖定价文件（可选）
-- `--open`：生成后用默认浏览器打开报告
+## 报告功能
+- 报告页面中英双语切换
+- 基于 OpenAI API 定价的美元成本估算（标准档）
+- 默认展示全量范围，支持页面内日期筛选（近 7/30/90 天与自定义）
+- 一键导出/导入，支持多机器数据合并
+
+## 日期筛选
+python src/codex_token_report.py --days 30
+python src/codex_token_report.py --since 2025-12-01 --until 2025-12-31
+
+## 参数
+--codex-home PATH        .codex 目录路径
+--sessions-root PATH     sessions 目录路径
+--out PATH               输出目录（默认：report）
+--days N                 最近 N 天（仅在未设置 since/until 时生效）
+--since YYYY-MM-DD       起始日期
+--until YYYY-MM-DD       结束日期
+--pricing-file PATH      覆盖定价文件（可选）
+--json                   同时写出 data.json
+--open                   用默认浏览器打开报告
 
 ## 输出文件
-- `report/index.html`
-- `report/data.json`
+- report/index.html
+- report/data.json（可选）
 
-## 本地开发前端
-```bash
-cd web
-npm run dev
-```
-
-开发环境中前端会请求同目录 `data.json`。如需联调，可先执行一次 Python 生成命令，或手动放置测试数据文件。
+## 定价
+默认内置定价来源：https://platform.openai.com/pricing （standard tier）。
+可通过 `--pricing-file` 或编辑 `pricing.json` 覆盖，也可为未列出的模型配置别名。

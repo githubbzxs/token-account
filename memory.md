@@ -7,16 +7,8 @@
   - Why：项目协作规范已明确“改完代码后必须在测试 VPS 上重新部署”。
   - Impact：后续交付需包含测试 VPS 部署与验证结果。
   - Verify：部署后记录命令与结果。
-- **[2026-02-15] 报告前端架构调整**：报告页从 Python 内嵌 HTML 模板切换为 React 构建产物，Python 仅负责复制 dist 并写出 `data.json`。
-  - Why：需要稳定实现状态驱动切换、弹簧数字和图表重绘动效。
-  - Impact：`src/codex_token_report.py`、`web/` 目录与报告生成命令。
-  - Verify：`python src/codex_token_report.py --out report-test --frontend-dist web/dist` 可生成并打开 React 页面。
 
 # Decisions
-- **[2026-02-15] 新前端技术栈定案**：采用 Vite + React + TypeScript + Framer Motion + ECharts，并沿用现有 `data.json` 数据结构。
-  - Why：满足交互手感目标，同时避免改动日志统计口径。
-  - Impact：新增 `web/src/App.tsx`、`web/src/components/*`、`web/src/utils/data.ts` 等实现文件。
-  - Verify：`cd web && npm run build` 成功，且切换范围时出现 500ms loading 与图表重绘。
 - **[2026-02-15] 主题切换动效恢复**：为主题切换增加显式 `theme-switching` 动画层，并补上主题按钮 `is-bronze` 状态过渡；保留 `prefers-reduced-motion` 下的无动画退化。
   - Why：用户反馈“两种主题切换的动效”缺失，变量替换在渐变场景下观感接近瞬切。
   - Impact：`src/codex_token_report.py` 的 `html.theme-ready` 过渡范围、`themeSwap` 关键帧、`playThemeSwitchMotion`、`applyTheme` 与 `.theme-dot-toggle.is-bronze`。
@@ -81,17 +73,12 @@
   - Verify：本地 `report-test/index.html` 与香港测试 VPS `/root/token-account/report-vps/index.html` 均可检索到 `--range-selector-height: 36px`、`left: 0`、`offsetLeft`、`offsetWidth`。
 
 # Commands
-- `cd web && npm install`
-- `cd web && npm run build`
-- `python src/codex_token_report.py --sessions-root dummy_sessions --out report-test --frontend-dist web/dist`
 - `python -m py_compile src/codex_token_report.py`
 - `python src/codex_token_report.py --sessions-root dummy_sessions --out report-test`
 - `python3 -m py_compile src/codex_token_report.py`（香港测试 VPS）
 - `python3 src/codex_token_report.py --out report-vps`（香港测试 VPS）
 
 # Status / Next
-- 当前：React 前端已接入报告链路，Python 改为复制 `web/dist` 并写出 `data.json`。
-- 下一步：在测试 VPS 重部署并完成基本健康检查，再评估是否进一步微调动画参数。
 - 当前：动态文本动效已统一为 `opacity-only 360ms`，并在本地与香港测试 VPS 重新生成报告验证通过。
 - 下一步：如需继续微调，可基于真实使用频率把时长从 `360ms` 下调到 `280ms`（仅参数调整，无需改逻辑）。
 
