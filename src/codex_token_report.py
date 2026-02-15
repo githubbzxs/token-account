@@ -2152,18 +2152,20 @@ function lineChart(el, labels, values) {
         type: "line",
         data: chartValues,
         showSymbol: false,
-        smooth: 0.42,
+        smooth: 0.46,
         lineStyle: {
-          width: 2.8,
+          width: 1.4,
           color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
             { offset: 0, color: palette.lineStart },
             { offset: 1, color: palette.lineEnd },
           ]),
+          opacity: 0.78,
         },
         areaStyle: {
           color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: palette.areaStart },
-            { offset: 0.45, color: palette.areaMid },
+            { offset: 0, color: palette.lineStart },
+            { offset: 0.38, color: palette.areaStart },
+            { offset: 0.62, color: palette.areaMid },
             { offset: 1, color: palette.areaEnd },
           ]),
         },

@@ -9,6 +9,10 @@
   - Verify：部署后记录命令与结果。
 
 # Decisions
+- **[2026-02-15] 主图视觉改为面积图风格**：将主图由“线条主导”调整为“面积主导”，弱化线宽并提升填充层层次（平滑 0.46、线宽 1.4、面积分层停靠点 0.38/0.62）。
+  - Why：用户要求“图表改为面积图”。
+  - Impact：`src/codex_token_report.py` 的 `lineChart` 系列样式参数（`smooth`、`lineStyle`、`areaStyle`）。
+  - Verify：本地 `report-test/index.html` 与香港测试 VPS `/root/token-account/report-vps/index.html` 均可检索到 `smooth: 0.46`、`width: 1.4`、`offset: 0.38/0.62`。
 - **[2026-02-15] 动态文本动效统一为纯透明过渡**：将动态文本动画统一为 `opacity-only`，时长 `360ms`，移除位移动效与强制重排触发，覆盖指标数值、范围标签、日历标题、导入状态与 i18n 动态文案。
   - Why：用户反馈“动画太生硬”，并明确选择“仅透明过渡 + 全站动态文本统一 + 360ms”。
   - Impact：`src/codex_token_report.py` 的 `.metric-value-anim`、`.i18n-switch-anim`、`@keyframes textFadeOnly`、`triggerSwapAnimation`、`setAnimatedText`、`applyI18n`、`updateRangeDateButton`、`renderCalendarDays`、`setupImportExport`。
