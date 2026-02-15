@@ -764,11 +764,6 @@ body {
   box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
 }
 
-.range-date-icon {
-  font-size: 13px;
-  line-height: 1;
-}
-
 #range-date-label {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -1374,7 +1369,6 @@ body {
   <div class="range-controls">
     <div class="range-fields">
       <button type="button" id="range-date-trigger" class="range-date-trigger" aria-haspopup="dialog" aria-expanded="false">
-        <span class="range-date-icon" aria-hidden="true">📅</span>
         <span id="range-date-label">2000/01/01 - 01/01</span>
       </button>
       <input type="hidden" id="range-start">
