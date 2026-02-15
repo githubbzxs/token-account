@@ -9,6 +9,10 @@
   - Verify：部署后记录命令与结果。
 
 # Decisions
+- **[2026-02-15] 动态文本动效统一为纯透明过渡**：将动态文本动画统一为 `opacity-only`，时长 `360ms`，移除位移动效与强制重排触发，覆盖指标数值、范围标签、日历标题、导入状态与 i18n 动态文案。
+  - Why：用户反馈“动画太生硬”，并明确选择“仅透明过渡 + 全站动态文本统一 + 360ms”。
+  - Impact：`src/codex_token_report.py` 的 `.metric-value-anim`、`.i18n-switch-anim`、`@keyframes textFadeOnly`、`triggerSwapAnimation`、`setAnimatedText`、`applyI18n`、`updateRangeDateButton`、`renderCalendarDays`、`setupImportExport`。
+  - Verify：本地 `report-test/index.html` 与香港测试 VPS `/root/token-account/report-vps/index.html` 均可检索到 `animation: textFadeOnly 360ms` 与 `setAnimatedText(...)`。
 - **[2026-02-15] 数字动效统一为单段轻量动画**：`setDisplayText` 覆盖点统一改为“轻微位移淡入”，移除原“淡出+淡入”双阶段与定时器链路，并将范围文本纳入同一动效入口。
   - Why：用户要求“统一数字变化动效，并稍微简单一点”。
   - Impact：`src/codex_token_report.py` 的 `.metric-value-anim`、`@keyframes metricFade`、`animateMetricValue`、`applyRangeInternal`。
@@ -63,10 +67,13 @@
 # Commands
 - `python -m py_compile src/codex_token_report.py`
 - `python src/codex_token_report.py --sessions-root dummy_sessions --out report-test`
+- `python3 -m py_compile src/codex_token_report.py`（香港测试 VPS）
+- `python3 src/codex_token_report.py --out report-vps`（香港测试 VPS）
 
 # Status / Next
-- 当前：范围控件已更新为 `36px` 档位，日期文字占比提升，快捷滑块定位改为 `offsetLeft/offsetWidth`，并已在香港测试 VPS 重新生成 `report-vps`。
-- 下一步：如需继续微调，可优先做真实页面截图回归（当前终端缺少 `agent-browser` 命令），再按视觉反馈微调按钮字重与左右留白。
+- 当前：动态文本动效已统一为 `opacity-only 360ms`，并在本地与香港测试 VPS 重新生成报告验证通过。
+- 下一步：如需继续微调，可基于真实使用频率把时长从 `360ms` 下调到 `280ms`（仅参数调整，无需改逻辑）。
 
 # Known Issues
 - `dummy_sessions/test.jsonl` 是本地未跟踪测试数据文件，默认不纳入提交。
+- 香港测试 VPS 环境无 `python`/`rg` 命令别名，需使用 `python3` 与 `grep`。

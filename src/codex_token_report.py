@@ -1163,17 +1163,11 @@ html.theme-ready .chart {
   font-feature-settings: "tnum" 1;
 }
 
-.metric-value-anim {
-  animation: metricFade 180ms var(--swift-ease-standard);
-  will-change: opacity, transform;
-  transform-origin: center bottom;
-  animation-fill-mode: both;
-}
-
+.text-fade-anim,
+.metric-value-anim,
 .i18n-switch-anim {
-  animation: i18nSwap var(--swift-duration-fast) var(--swift-ease-standard);
-  animation-fill-mode: both;
-  will-change: opacity, transform;
+  animation: textFadeOnly 360ms ease both;
+  will-change: opacity;
 }
 
 .card .sub {
@@ -1386,29 +1380,17 @@ html.theme-ready .chart {
   }
 }
 
-@keyframes metricFade {
-  0% {
-    opacity: 0.88;
-    transform: translateY(1px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes i18nSwap {
+@keyframes textFadeOnly {
   0% {
     opacity: 0.72;
-    transform: translateY(2px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .text-fade-anim,
   .metric-value-anim,
   .i18n-switch-anim {
     animation: none !important;
@@ -1544,8 +1526,40 @@ function prefersReducedMotion() {
 function triggerSwapAnimation(el, className) {
   if (!el || prefersReducedMotion()) return;
   el.classList.remove(className);
-  void el.offsetWidth;
-  el.classList.add(className);
+  const applyClass = () => {
+    el.classList.add(className);
+  };
+  if (window.requestAnimationFrame) {
+    window.requestAnimationFrame(applyClass);
+    return;
+  }
+  setTimeout(applyClass, 0);
+}
+
+function setAnimatedText(el, text, options) {
+  if (!el) return false;
+  const opts = options || {};
+  const nextText = String(text ?? "");
+  const prevText = el.dataset.animatedText != null
+    ? el.dataset.animatedText
+    : (el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || ""));
+  if (prevText === nextText) {
+    if (opts.syncAriaLabel) {
+      el.setAttribute("aria-label", nextText);
+    }
+    return false;
+  }
+  el.textContent = nextText;
+  el.dataset.animatedText = nextText;
+  el.dataset.metricText = nextText;
+  if (opts.syncAriaLabel) {
+    el.setAttribute("aria-label", nextText);
+  }
+  const shouldAnimate = opts.animate !== false;
+  if (shouldAnimate) {
+    triggerSwapAnimation(el, opts.className || "text-fade-anim");
+  }
+  return true;
 }
 
 function updateLangToggleState() {
@@ -1621,7 +1635,7 @@ function updateRangeDateButton(startISO, endISO) {
   const trigger = document.getElementById("range-date-trigger");
   const label = document.getElementById("range-date-label");
   const text = formatRangeButtonLabel(startISO, endISO);
-  if (label) label.textContent = text;
+  if (label) setAnimatedText(label, text, { animate: true });
   if (trigger) trigger.setAttribute("aria-label", text);
 }
 
@@ -1780,7 +1794,7 @@ function renderCalendarDays() {
   }
   const todayISO = toLocalISODate(new Date());
   const monthName = MONTH_LABELS[month] || "";
-  titleEl.textContent = `${monthName} ${year}`;
+  setAnimatedText(titleEl, `${monthName} ${year}`, { animate: true });
   const monthStart = new Date(Date.UTC(year, month, 1));
   const startOffset = monthStart.getUTCDay();
   const gridStart = new Date(Date.UTC(year, month, 1 - startOffset));
@@ -1880,10 +1894,10 @@ function applyI18n(lang, options) {
     const key = el.dataset.i18n;
     const nextText = dict[key];
     if (nextText && el.textContent !== nextText) {
-      el.textContent = nextText;
-      if (shouldAnimate) {
-        triggerSwapAnimation(el, "i18n-switch-anim");
-      }
+      setAnimatedText(el, nextText, {
+        animate: shouldAnimate,
+        className: "i18n-switch-anim",
+      });
     }
   });
   updateLangToggleState(lang, shouldAnimate);
@@ -1913,21 +1927,11 @@ function toLocalISODate(d) {
 }
 
 function animateMetricValue(el, text) {
-  const nextText = String(text ?? "");
-  const prevText = el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || "");
-  if (prevText === nextText) return;
-
-  const reduceMotion = prefersReducedMotion();
-  el.textContent = nextText;
-  el.dataset.metricText = nextText;
-  el.setAttribute("aria-label", nextText);
-  if (reduceMotion) {
-    return;
-  }
-
-  el.classList.remove("metric-value-anim");
-  void el.offsetWidth;
-  el.classList.add("metric-value-anim");
+  setAnimatedText(el, text, {
+    animate: true,
+    className: "metric-value-anim",
+    syncAriaLabel: true,
+  });
 }
 
 function setDisplayText(id, value, animate) {
@@ -1935,13 +1939,11 @@ function setDisplayText(id, value, animate) {
   if (!el) return;
   const text = String(value ?? "");
   const useAnimation = typeof animate === "object" ? animate.animate !== false : animate !== false;
-  if (!useAnimation) {
-    el.textContent = text;
-    el.dataset.metricText = text;
-    el.setAttribute("aria-label", text);
-    return;
-  }
-  animateMetricValue(el, text);
+  setAnimatedText(el, text, {
+    animate: useAnimation,
+    className: "metric-value-anim",
+    syncAriaLabel: true,
+  });
 }
 
 function readDailyValue(dayISO, key) {
@@ -2625,7 +2627,7 @@ function setupImportExport() {
     importInput.addEventListener("change", async () => {
       const files = Array.from(importInput.files || []);
       if (!files.length) return;
-      if (statusEl) statusEl.textContent = "";
+      if (statusEl) setAnimatedText(statusEl, "", { animate: false });
       const imported = [];
       let invalidCount = 0;
       for (const file of files) {
@@ -2644,15 +2646,15 @@ function setupImportExport() {
       }
       importInput.value = "";
       if (!imported.length) {
-        if (statusEl) statusEl.textContent = formatI18n("import_invalid");
+        if (statusEl) setAnimatedText(statusEl, formatI18n("import_invalid"), { animate: true });
         return;
       }
       const mergedOk = mergeImportedData([DATA, ...imported]);
       if (!mergedOk) {
-        if (statusEl) statusEl.textContent = formatI18n("import_failed");
+        if (statusEl) setAnimatedText(statusEl, formatI18n("import_failed"), { animate: true });
         return;
       }
-      if (statusEl) statusEl.textContent = formatI18n("import_done", { count: imported.length });
+      if (statusEl) setAnimatedText(statusEl, formatI18n("import_done", { count: imported.length }), { animate: true });
     });
   }
 }
