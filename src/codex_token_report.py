@@ -975,22 +975,22 @@ body {
   display: inline-flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 2px;
-  padding: 4px;
+  gap: 1px;
+  padding: 2px 3px;
   border-radius: 999px;
   border: 1px solid var(--stroke);
   background: rgba(44, 46, 56, 0.92);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   width: 100%;
-  max-width: 700px;
+  max-width: 620px;
   overflow: hidden;
 }
 
 .range-segmented-slider {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
+  top: 2px;
+  bottom: 2px;
+  left: 3px;
   width: 0;
   border-radius: 999px;
   background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
@@ -1022,9 +1022,9 @@ body {
   border: none;
   background: transparent;
   color: #b6bac6;
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.2px;
   cursor: pointer;
