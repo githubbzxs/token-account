@@ -9,6 +9,10 @@
   - Verify：部署后记录命令与结果。
 
 # Decisions
+- **[2026-02-15] 数字动效统一为单段轻量动画**：`setDisplayText` 覆盖点统一改为“轻微位移淡入”，移除原“淡出+淡入”双阶段与定时器链路，并将范围文本纳入同一动效入口。
+  - Why：用户要求“统一数字变化动效，并稍微简单一点”。
+  - Impact：`src/codex_token_report.py` 的 `.metric-value-anim`、`@keyframes metricFade`、`animateMetricValue`、`applyRangeInternal`。
+  - Verify：首次加载、切换范围、自动刷新时，指标与范围文本均为同款轻量淡入；开启减少动态效果后不播放动画。
 - **[2026-02-15] 数据分析增强方向**：从单点指标升级为对比型分析，覆盖效率、峰值集中度、活跃覆盖率、近 7 天趋势和波动性。
   - Why：原分析维度不足，缺少结构化深度判断。
   - Impact：`src/codex_token_report.py` 分析面板与 `applyRangeInternal` 计算逻辑。

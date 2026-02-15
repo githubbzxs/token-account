@@ -1163,15 +1163,9 @@ html.theme-ready .chart {
   font-feature-settings: "tnum" 1;
 }
 
-.metric-value-out {
-  animation: metricFadeOut var(--metric-out-duration, 120ms) var(--swift-ease-standard);
-  will-change: opacity, transform, filter;
-  animation-fill-mode: both;
-}
-
 .metric-value-anim {
-  animation: metricFade var(--metric-in-duration, 260ms) var(--swift-ease-standard);
-  will-change: opacity, transform, filter;
+  animation: metricFade 180ms var(--swift-ease-standard);
+  will-change: opacity, transform;
   transform-origin: center bottom;
   animation-fill-mode: both;
 }
@@ -1394,27 +1388,12 @@ html.theme-ready .chart {
 
 @keyframes metricFade {
   0% {
-    opacity: 0.86;
-    transform: translateY(0.5px);
-    filter: blur(0.6px);
+    opacity: 0.88;
+    transform: translateY(1px);
   }
   100% {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
-@keyframes metricFadeOut {
-  0% {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-  100% {
-    opacity: 0.86;
-    transform: translateY(-0.4px);
-    filter: blur(0.6px);
   }
 }
 
@@ -1430,7 +1409,6 @@ html.theme-ready .chart {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .metric-value-out,
   .metric-value-anim,
   .i18n-switch-anim {
     animation: none !important;
@@ -1934,81 +1912,22 @@ function toLocalISODate(d) {
   return `${y}-${m}-${day}`;
 }
 
-const metricSwapTimers = new WeakMap();
-
-function parseDurationMs(value, fallback) {
-  const raw = String(value || "").trim();
-  if (!raw) return fallback;
-  if (raw.endsWith("ms")) {
-    const n = Number(raw.slice(0, -2));
-    return Number.isFinite(n) ? n : fallback;
-  }
-  if (raw.endsWith("s")) {
-    const n = Number(raw.slice(0, -1));
-    return Number.isFinite(n) ? n * 1000 : fallback;
-  }
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function readRootDurationMs(varName, fallback) {
-  const style = window.getComputedStyle(document.documentElement);
-  return parseDurationMs(style.getPropertyValue(varName), fallback);
-}
-
-function clearMetricSwapState(el) {
-  const timers = metricSwapTimers.get(el);
-  if (timers) {
-    if (timers.out) window.clearTimeout(timers.out);
-    if (timers.enter) window.clearTimeout(timers.enter);
-    metricSwapTimers.delete(el);
-  }
-  el.classList.remove("metric-value-out", "metric-value-anim");
-  el.style.removeProperty("--metric-out-duration");
-  el.style.removeProperty("--metric-in-duration");
-}
-
 function animateMetricValue(el, text) {
   const nextText = String(text ?? "");
   const prevText = el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || "");
   if (prevText === nextText) return;
 
-  clearMetricSwapState(el);
-
   const reduceMotion = prefersReducedMotion();
+  el.textContent = nextText;
+  el.dataset.metricText = nextText;
+  el.setAttribute("aria-label", nextText);
   if (reduceMotion) {
-    el.textContent = nextText;
-    el.dataset.metricText = nextText;
-    el.setAttribute("aria-label", nextText);
     return;
   }
 
-  const inMs = 260;
-  const outMs = 120;
-  el.style.setProperty("--metric-out-duration", `${outMs}ms`);
-  el.style.setProperty("--metric-in-duration", `${inMs}ms`);
-  el.classList.add("metric-value-out");
-
-  const outTimer = window.setTimeout(() => {
-    el.classList.remove("metric-value-out");
-    el.textContent = nextText;
-    el.dataset.metricText = nextText;
-    el.setAttribute("aria-label", nextText);
-    el.classList.remove("metric-value-anim");
-    void el.offsetWidth;
-    el.classList.add("metric-value-anim");
-
-    const enterTimer = window.setTimeout(() => {
-      el.classList.remove("metric-value-anim");
-      el.style.removeProperty("--metric-out-duration");
-      el.style.removeProperty("--metric-in-duration");
-      metricSwapTimers.delete(el);
-    }, inMs);
-
-    metricSwapTimers.set(el, { enter: enterTimer });
-  }, outMs);
-
-  metricSwapTimers.set(el, { out: outTimer });
+  el.classList.remove("metric-value-anim");
+  void el.offsetWidth;
+  el.classList.add("metric-value-anim");
 }
 
 function setDisplayText(id, value, animate) {
@@ -2774,7 +2693,8 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   if (endInput) setRangeInputValue(endInput, endISO);
   updateRangeDateButton(startISO, endISO);
   updateQuickRangeState(startISO, endISO);
-  setDisplayText("range-text", `${startISO} to ${endISO}`, false);
+  const animateMetrics = true;
+  setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals);
 
   if (previewOnly) {
@@ -2792,7 +2712,6 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   const avgPerDay = activeDays ? Math.round(totalTokens / activeDays) : 0;
   const avgPerSession = sessions ? Math.round(totalTokens / sessions) : 0;
   const cacheRate = inputTokens ? (cachedTokens / inputTokens) : 0;
-  const animateMetrics = hasInitialMetricsRender;
 
   const banner = document.getElementById("range-banner");
   if (banner) {
