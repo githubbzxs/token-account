@@ -13,7 +13,7 @@ Or just double-click `open-report.bat`.
 
 Report features:
 - Chinese/English toggle in the HTML report
-- Model-level breakdown and token mix
+- Deep usage analysis (efficiency, concentration, trend, stability)
 - Estimated cost in USD using OpenAI API pricing (standard tier)
 - Default range is all-time, with in-page date range filters (Last 7/30/90, or custom)
 - One-click export/import in the report to merge data from multiple machines
