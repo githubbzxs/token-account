@@ -23,14 +23,18 @@
   - Why：用户认为旧估算不可信，要求改为估算输入/输出并聚焦时间分布。
   - Impact：`src/codex_token_report.py` 时间面板文案与 `renderTimeAnalysis` 计算逻辑。
   - Verify：页面展示输入/输出估算时长、输入/输出高峰时段、工作时段/夜间占比、Top3 集中度与活跃小时覆盖率。
+- **[2026-02-15] 再次移除时间分析模块**：按用户最新指令，报告页去掉“时间相关分析”面板及其前端计算逻辑。
+  - Why：用户明确要求“去掉时间分析”。
+  - Impact：`src/codex_token_report.py` 的 i18n、样式、模板与 `applyRangeInternal` 流程；`README.md` 功能说明。
+  - Verify：报告页不再出现时间分析卡片，筛选区间更新时无时间分析相关渲染调用。
 
 # Commands
 - `python -m py_compile src/codex_token_report.py`
 - `python src/codex_token_report.py --sessions-root dummy_sessions --out report-test`
 
 # Status / Next
-- 当前：时间相关分析模块已恢复并上线，已在测试 VPS 完成部署回归。
-- 下一步：根据实际使用反馈调整输入/输出时长估算速率参数。
+- 当前：时间分析模块已移除，报告仅保留核心指标与图表。
+- 下一步：如需替代分析能力，按用户新口径再独立设计，不复用旧时间分析逻辑。
 
 # Known Issues
 - `dummy_sessions/test.jsonl` 是本地未跟踪测试数据文件，默认不纳入提交。
