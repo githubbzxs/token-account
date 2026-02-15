@@ -9,6 +9,10 @@
   - Verify：部署后记录命令与结果。
 
 # Decisions
+- **[2026-02-15] 主题切换动效恢复**：为主题切换增加显式 `theme-switching` 动画层，并补上主题按钮 `is-bronze` 状态过渡；保留 `prefers-reduced-motion` 下的无动画退化。
+  - Why：用户反馈“两种主题切换的动效”缺失，变量替换在渐变场景下观感接近瞬切。
+  - Impact：`src/codex_token_report.py` 的 `html.theme-ready` 过渡范围、`themeSwap` 关键帧、`playThemeSwitchMotion`、`applyTheme` 与 `.theme-dot-toggle.is-bronze`。
+  - Verify：本地 `report-test/index.html` 与香港测试 VPS `/root/token-account/report-vps/index.html` 均可检索到 `theme-switching`、`@keyframes themeSwap`、`playThemeSwitchMotion`。
 - **[2026-02-15] 主图视觉改为面积图风格**：将主图由“线条主导”调整为“面积主导”，弱化线宽并提升填充层层次（平滑 0.46、线宽 1.4、面积分层停靠点 0.38/0.62）。
   - Why：用户要求“图表改为面积图”。
   - Impact：`src/codex_token_report.py` 的 `lineChart` 系列样式参数（`smooth`、`lineStyle`、`areaStyle`）。

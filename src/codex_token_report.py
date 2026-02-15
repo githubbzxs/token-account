@@ -713,6 +713,11 @@ body {
   box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
 }
 
+.theme-dot-toggle.is-bronze {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.2);
+}
+
 .title h1 {
   margin: 0 0 8px;
   font-size: clamp(30px, 5vw, 42px);
@@ -760,6 +765,7 @@ body {
 html.theme-ready body,
 html.theme-ready .page,
 html.theme-ready .page::before,
+html.theme-ready .page::after,
 html.theme-ready .range-controls,
 html.theme-ready .range-date-trigger,
 html.theme-ready .range-segmented,
@@ -775,6 +781,22 @@ html.theme-ready .chart {
     background-color 320ms ease,
     background-image 320ms ease,
     box-shadow 320ms ease;
+}
+
+html.theme-switching body,
+html.theme-switching .page,
+html.theme-switching .page::before,
+html.theme-switching .page::after,
+html.theme-switching .range-controls,
+html.theme-switching .range-date-trigger,
+html.theme-switching .range-segmented,
+html.theme-switching .range-action-btn,
+html.theme-switching .file-button,
+html.theme-switching .theme-dot-toggle,
+html.theme-switching .card,
+html.theme-switching .panel,
+html.theme-switching .chart {
+  animation: themeSwap 460ms var(--swift-ease-standard);
 }
 
 .range-controls {
@@ -1389,10 +1411,35 @@ html.theme-ready .chart {
   }
 }
 
+@keyframes themeSwap {
+  0% {
+    opacity: 0.72;
+  }
+  68% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .text-fade-anim,
   .metric-value-anim,
-  .i18n-switch-anim {
+  .i18n-switch-anim,
+  html.theme-switching body,
+  html.theme-switching .page,
+  html.theme-switching .page::before,
+  html.theme-switching .page::after,
+  html.theme-switching .range-controls,
+  html.theme-switching .range-date-trigger,
+  html.theme-switching .range-segmented,
+  html.theme-switching .range-action-btn,
+  html.theme-switching .file-button,
+  html.theme-switching .theme-dot-toggle,
+  html.theme-switching .card,
+  html.theme-switching .panel,
+  html.theme-switching .chart {
     animation: none !important;
     transition: none !important;
   }
@@ -1402,6 +1449,7 @@ html.theme-ready .chart {
   html.theme-ready body,
   html.theme-ready .page,
   html.theme-ready .page::before,
+  html.theme-ready .page::after,
   html.theme-ready .range-controls,
   html.theme-ready .range-date-trigger,
   html.theme-ready .range-segmented,
@@ -1508,6 +1556,7 @@ let chartResizeBound = false;
 let chartWheelZoomBound = false;
 let quickRangeResizeBound = false;
 const THEME_STORAGE_KEY = "token-report-theme";
+let themeSwitchTimer = null;
 const calendarState = {
   open: false,
   minISO: "",
@@ -1685,11 +1734,36 @@ function getThemePalette() {
   };
 }
 
+function playThemeSwitchMotion() {
+  if (prefersReducedMotion()) return;
+  const root = document.documentElement;
+  root.classList.remove("theme-switching");
+  const addClass = () => {
+    root.classList.add("theme-switching");
+  };
+  if (window.requestAnimationFrame) {
+    window.requestAnimationFrame(addClass);
+  } else {
+    setTimeout(addClass, 0);
+  }
+  if (themeSwitchTimer != null) {
+    window.clearTimeout(themeSwitchTimer);
+  }
+  themeSwitchTimer = window.setTimeout(() => {
+    root.classList.remove("theme-switching");
+    themeSwitchTimer = null;
+  }, 540);
+}
+
 function applyTheme(theme, options) {
   const opts = options || {};
+  const currentTheme = normalizeTheme(document.documentElement.dataset.theme || "neon");
   const nextTheme = normalizeTheme(theme);
   document.documentElement.dataset.theme = nextTheme;
   updateThemeDotToggle(nextTheme);
+  if (opts.animate !== false && currentTheme !== nextTheme) {
+    playThemeSwitchMotion();
+  }
   if (opts.persist !== false) {
     persistTheme(nextTheme);
   }
@@ -2807,7 +2881,7 @@ function setupRangeControls() {
 function setupThemeToggle() {
   const btn = document.getElementById("theme-dot-toggle");
   const initialTheme = readStoredTheme();
-  applyTheme(initialTheme, { persist: false, refreshChart: false });
+  applyTheme(initialTheme, { persist: false, refreshChart: false, animate: false });
   if (!btn) return;
   btn.addEventListener("click", () => {
     const current = normalizeTheme(document.documentElement.dataset.theme || "neon");
