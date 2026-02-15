@@ -1847,7 +1847,7 @@ function setupAutoSync() {
   });
 }
 
-function lineChart(el, labels, values, color) {
+function lineChart(el, labels, values) {
   if (!el) return;
   const chartLabels = Array.isArray(labels) ? labels : [];
   const chartValues = Array.isArray(values) ? values.map(v => Number(v || 0)) : [];
@@ -1923,10 +1923,10 @@ function lineChart(el, labels, values, color) {
       tooltip: {
         trigger: "axis",
         backgroundColor: "rgba(10,10,10,0.92)",
-        borderColor: "rgba(184,156,122,0.45)",
+        borderColor: "rgba(176,38,255,0.45)",
         borderWidth: 1,
         textStyle: { color: "#f8fafc" },
-        axisPointer: { type: "line" },
+        axisPointer: { type: "line", lineStyle: { color: "rgba(0,240,255,0.7)", width: 1 } },
         valueFormatter: (value) => formatChartNumber(value),
       },
       xAxis: {
@@ -1943,7 +1943,7 @@ function lineChart(el, labels, values, color) {
           color: CHART_AXIS_TEXT,
           formatter: (value) => formatChartNumber(value),
         },
-        splitLine: { lineStyle: { color: "rgba(148,163,184,0.15)" } },
+        splitLine: { lineStyle: { color: "rgba(148,163,184,0.10)" } },
       },
       dataZoom: [
         {
@@ -1961,14 +1961,22 @@ function lineChart(el, labels, values, color) {
           type: "line",
           data: chartValues,
           showSymbol: false,
-          smooth: true,
-          lineStyle: { color, width: 2.5 },
-          areaStyle: {
-            color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(184,156,122,0.38)" },
-              { offset: 1, color: "rgba(184,156,122,0.05)" },
+          smooth: 0.42,
+          lineStyle: {
+            width: 2.8,
+            color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
+              { offset: 0, color: "#B026FF" },
+              { offset: 1, color: "#00F0FF" },
             ]),
           },
+          areaStyle: {
+            color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "rgba(176,38,255,0.55)" },
+              { offset: 0.45, color: "rgba(0,240,255,0.22)" },
+              { offset: 1, color: "rgba(0,240,255,0)" },
+            ]),
+          },
+          emphasis: { focus: "series" },
         },
       ],
     },
@@ -2459,7 +2467,7 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   updateRangeDateButton(startISO, endISO);
   updateQuickRangeState(startISO, endISO);
   setDisplayText("range-text", `${startISO} to ${endISO}`, false);
-  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, "#B89C7A");
+  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals);
 
   if (previewOnly) {
     return;
