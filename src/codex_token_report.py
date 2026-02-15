@@ -55,7 +55,7 @@ I18N = {
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
         "daily_chart": "每小时总 token",
-        "zoom_hint": "滚轮可缩放，按住 Ctrl + 滚轮可对准位置并居中放大，连续操作会持续聚焦该区域",
+        "zoom_hint": "滚轮可按鼠标位置缩放，指针所在位置会保持在视图中心",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
         "model_mix": "模型占比",
@@ -85,6 +85,8 @@ I18N = {
         "auto_sync": "自动同步最新数据",
         "share_downloaded": "图片已下载",
         "share_copied_image": "图片已复制，可直接粘贴发送",
+        "calendar_clear": "清除",
+        "calendar_today": "今天",
     },
     "en": {
         "title": "Codex Token Usage",
@@ -119,7 +121,7 @@ I18N = {
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
         "daily_chart": "Hourly total tokens",
-        "zoom_hint": "Wheel to zoom; hold Ctrl + wheel to center on pointer and keep focus during continuous zoom",
+        "zoom_hint": "Scroll to zoom around the pointer; the hovered position stays centered",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
         "model_mix": "Model share",
@@ -149,6 +151,8 @@ I18N = {
         "auto_sync": "Auto-sync latest data",
         "share_downloaded": "Image downloaded",
         "share_copied_image": "Image copied, paste to share",
+        "calendar_clear": "Clear",
+        "calendar_today": "Today",
     },
 }
 
@@ -689,6 +693,153 @@ body {
   font-size: 12px;
 }
 
+.date-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-input {
+  width: 138px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f3f4f6;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  outline: none;
+}
+
+.date-input:focus-visible {
+  border-color: rgba(34, 211, 238, 0.52);
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.16);
+}
+
+.calendar-popover {
+  position: fixed;
+  z-index: 999;
+  width: min(320px, calc(100vw - 20px));
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  background: linear-gradient(150deg, rgba(26, 27, 32, 0.98), rgba(16, 17, 21, 0.96));
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.45);
+  padding: 12px;
+}
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.calendar-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f3f4f6;
+  letter-spacing: 0.2px;
+}
+
+.calendar-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e4e7;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.calendar-nav-btn:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.15);
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.calendar-weekdays span {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  padding: 4px 0;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.calendar-day-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #e4e4e7;
+  border-radius: 9px;
+  min-height: 34px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.calendar-day-btn:hover:not(:disabled) {
+  border-color: rgba(34, 211, 238, 0.4);
+  background: rgba(34, 211, 238, 0.14);
+}
+
+.calendar-day-btn.is-outside {
+  color: #64748b;
+}
+
+.calendar-day-btn.is-today {
+  border-color: rgba(184, 156, 122, 0.7);
+}
+
+.calendar-day-btn.is-selected {
+  border-color: rgba(34, 211, 238, 0.86);
+  background: rgba(34, 211, 238, 0.28);
+  color: #ecfeff;
+}
+
+.calendar-day-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.calendar-actions {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.calendar-actions button {
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e4e7;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.calendar-actions button:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.15);
+}
+
 .range-controls button,
 .file-button {
   border: 1px solid var(--stroke);
@@ -1059,17 +1210,17 @@ body {
   </div>
   <div class="range-controls">
     <div class="range-fields">
-      <label><span data-i18n="from">From</span> <input type="date" id="range-start"></label>
-      <label><span data-i18n="to">To</span> <input type="date" id="range-end"></label>
+      <label class="date-field"><span data-i18n="from">From</span> <input type="text" id="range-start" class="date-input" readonly></label>
+      <label class="date-field"><span data-i18n="to">To</span> <input type="text" id="range-end" class="date-input" readonly></label>
       <button type="button" id="apply-range" data-i18n="apply">Apply</button>
     </div>
     <div class="range-buttons">
-      <button type="button" data-range="1" data-i18n="last_1">一天</button>
-      <button type="button" data-range="2" data-i18n="last_2">两天</button>
-      <button type="button" data-range="7" data-i18n="last_7">一周</button>
-      <button type="button" data-range="30" data-i18n="last_30">一月</button>
-      <button type="button" data-range="90" data-i18n="last_90">一季度</button>
-      <button type="button" data-range="all" data-i18n="all_time">全部</button>
+      <button type="button" data-range="1" data-i18n="last_1">1 day</button>
+      <button type="button" data-range="2" data-i18n="last_2">2 days</button>
+      <button type="button" data-range="7" data-i18n="last_7">1 week</button>
+      <button type="button" data-range="30" data-i18n="last_30">1 month</button>
+      <button type="button" data-range="90" data-i18n="last_90">1 quarter</button>
+      <button type="button" data-range="all" data-i18n="all_time">All</button>
     </div>
     <div class="range-actions">
       <button type="button" id="export-data" data-i18n="export">Export</button>
@@ -1077,6 +1228,19 @@ body {
         <input type="file" id="import-data" accept="application/json" multiple>
       </label>
       <span class="import-status" id="import-status"></span>
+    </div>
+  </div>
+  <div id="calendar-popover" class="calendar-popover hidden" aria-hidden="true">
+    <div class="calendar-head">
+      <button type="button" id="calendar-prev" class="calendar-nav-btn" aria-label="Previous month">&lsaquo;</button>
+      <div class="calendar-title" id="calendar-title">January 2000</div>
+      <button type="button" id="calendar-next" class="calendar-nav-btn" aria-label="Next month">&rsaquo;</button>
+    </div>
+    <div class="calendar-weekdays" id="calendar-weekdays"></div>
+    <div class="calendar-days" id="calendar-days"></div>
+    <div class="calendar-actions">
+      <button type="button" id="calendar-clear" data-i18n="calendar_clear">Clear</button>
+      <button type="button" id="calendar-today" data-i18n="calendar_today">Today</button>
     </div>
   </div>
   __EMPTY_BANNER__
@@ -1097,7 +1261,7 @@ body {
     <div class="panel wide" style="--delay:0.25s">
       <h3 data-i18n="daily_chart">Hourly total tokens</h3>
       <div id="chart-daily" class="chart"></div>
-      <div class="chart-tip" data-i18n="zoom_hint">滚轮可缩放，按住 Ctrl + 滚轮可对准位置并居中放大，连续操作会持续聚焦该区域</div>
+      <div class="chart-tip" data-i18n="zoom_hint">Scroll to zoom around the pointer; the hovered position stays centered</div>
     </div>
   </div>
 
@@ -1106,18 +1270,29 @@ body {
 <script>
 const DATA = __DATA_JSON__;
 const I18N = __I18N_JSON__;
-let currentLang = "zh";
+let currentLang = "en";
 const CHART_AXIS_TEXT = "#94a3b8";
 const CHART_AXIS_LINE = "rgba(148,163,184,0.28)";
 const ZOOM_IN_FACTOR = 0.72;
 const ZOOM_OUT_FACTOR = 1.25;
 const MIN_WINDOW_PERCENT = 0.05;
-const CTRL_FOCUS_LOCK_MS = 200;
+const DAY_MS = 86_400_000;
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_LABELS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 let dailyChartInstance = null;
 let chartResizeBound = false;
-let chartCtrlZoomBound = false;
-let chartCtrlFocusRatio = null;
-let chartCtrlFocusTimer = null;
+let chartWheelZoomBound = false;
+const calendarState = {
+  open: false,
+  targetInputId: "",
+  minISO: "",
+  maxISO: "",
+  viewYear: 0,
+  viewMonth: 0,
+};
 
 function prefersReducedMotion() {
   return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -1168,23 +1343,135 @@ function clampPercent(value) {
   return num;
 }
 
-function clearCtrlFocusLock() {
-  if (chartCtrlFocusTimer != null) {
-    window.clearTimeout(chartCtrlFocusTimer);
-    chartCtrlFocusTimer = null;
-  }
-  chartCtrlFocusRatio = null;
+function normalizeISO(value) {
+  const raw = String(value || "").trim().replace(/\\//g, "-");
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(raw)) return "";
+  return raw;
 }
 
-function refreshCtrlFocusLock(ratio) {
-  chartCtrlFocusRatio = Math.min(1, Math.max(0, ratio));
-  if (chartCtrlFocusTimer != null) {
-    window.clearTimeout(chartCtrlFocusTimer);
+function toDisplayISO(value) {
+  const iso = normalizeISO(value);
+  return iso ? iso.replace(/-/g, "/") : "";
+}
+
+function getRangeInputValue(input) {
+  if (!input) return "";
+  return normalizeISO(input.dataset.iso || input.value || "");
+}
+
+function setRangeInputValue(input, value) {
+  if (!input) return;
+  const iso = normalizeISO(value);
+  input.dataset.iso = iso;
+  input.value = toDisplayISO(iso);
+  input.setAttribute("aria-label", iso || "");
+}
+
+function getCalendarTargetInput() {
+  if (!calendarState.targetInputId) return null;
+  return document.getElementById(calendarState.targetInputId);
+}
+
+function closeCalendarPopover() {
+  const popover = document.getElementById("calendar-popover");
+  if (!popover) return;
+  calendarState.open = false;
+  calendarState.targetInputId = "";
+  popover.classList.add("hidden");
+  popover.setAttribute("aria-hidden", "true");
+}
+
+function positionCalendarPopover() {
+  const popover = document.getElementById("calendar-popover");
+  const input = getCalendarTargetInput();
+  if (!popover || !input || !calendarState.open) return;
+  const rect = input.getBoundingClientRect();
+  const gap = 8;
+  const margin = 10;
+  const popW = popover.offsetWidth || 320;
+  const popH = popover.offsetHeight || 320;
+  let left = rect.left;
+  let top = rect.bottom + gap;
+  if (left + popW + margin > window.innerWidth) {
+    left = Math.max(margin, window.innerWidth - popW - margin);
   }
-  chartCtrlFocusTimer = window.setTimeout(() => {
-    chartCtrlFocusTimer = null;
-    chartCtrlFocusRatio = null;
-  }, CTRL_FOCUS_LOCK_MS);
+  if (top + popH + margin > window.innerHeight) {
+    top = Math.max(margin, rect.top - popH - gap);
+  }
+  popover.style.left = `${Math.round(left)}px`;
+  popover.style.top = `${Math.round(top)}px`;
+}
+
+function renderCalendarDays() {
+  const titleEl = document.getElementById("calendar-title");
+  const daysEl = document.getElementById("calendar-days");
+  if (!titleEl || !daysEl) return;
+  const year = calendarState.viewYear;
+  const month = calendarState.viewMonth;
+  const targetInput = getCalendarTargetInput();
+  const selectedISO = getRangeInputValue(targetInput);
+  const todayISO = toLocalISODate(new Date());
+  const monthName = MONTH_LABELS[month] || "";
+  titleEl.textContent = `${monthName} ${year}`;
+  const monthStart = new Date(Date.UTC(year, month, 1));
+  const startOffset = monthStart.getUTCDay();
+  const gridStart = new Date(Date.UTC(year, month, 1 - startOffset));
+  let htmlDays = "";
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart.getTime() + i * DAY_MS);
+    const iso = formatISODate(d);
+    const isOutside = d.getUTCMonth() !== month;
+    const isSelected = iso === selectedISO;
+    const isToday = iso === todayISO;
+    const isDisabled = (calendarState.minISO && iso < calendarState.minISO) || (calendarState.maxISO && iso > calendarState.maxISO);
+    const classes = [
+      "calendar-day-btn",
+      isOutside ? "is-outside" : "",
+      isSelected ? "is-selected" : "",
+      isToday ? "is-today" : "",
+    ].filter(Boolean).join(" ");
+    const disabledAttr = isDisabled ? " disabled" : "";
+    const dayText = String(d.getUTCDate());
+    htmlDays += `<button type="button" class="${classes}" data-iso="${iso}"${disabledAttr}>${dayText}</button>`;
+  }
+  daysEl.innerHTML = htmlDays;
+}
+
+function shiftCalendarMonth(step) {
+  let month = calendarState.viewMonth + step;
+  let year = calendarState.viewYear;
+  if (month < 0) {
+    month = 11;
+    year -= 1;
+  } else if (month > 11) {
+    month = 0;
+    year += 1;
+  }
+  calendarState.viewYear = year;
+  calendarState.viewMonth = month;
+  renderCalendarDays();
+}
+
+function openCalendarForInput(input) {
+  const popover = document.getElementById("calendar-popover");
+  if (!input || !popover) return;
+  const minISO = normalizeISO((DATA.range && DATA.range.start) || "");
+  const maxISO = normalizeISO((DATA.range && DATA.range.end) || "");
+  const selectedISO = getRangeInputValue(input) || minISO || maxISO || toLocalISODate(new Date());
+  let selectedDate = parseISODate(selectedISO);
+  if (!Number.isFinite(selectedDate.getTime())) {
+    selectedDate = parseISODate(toLocalISODate(new Date()));
+  }
+  calendarState.open = true;
+  calendarState.targetInputId = input.id;
+  calendarState.minISO = minISO;
+  calendarState.maxISO = maxISO;
+  calendarState.viewYear = selectedDate.getUTCFullYear();
+  calendarState.viewMonth = selectedDate.getUTCMonth();
+  renderCalendarDays();
+  popover.classList.remove("hidden");
+  popover.setAttribute("aria-hidden", "false");
+  positionCalendarPopover();
 }
 
 function applyI18n(lang, options) {
@@ -1422,7 +1709,7 @@ function lineChart(el, labels, values, color) {
     });
     chartResizeBound = true;
   }
-  if (!chartCtrlZoomBound) {
+  if (!chartWheelZoomBound) {
     el.addEventListener(
       "wheel",
       (event) => {
@@ -1436,18 +1723,7 @@ function lineChart(el, labels, values, color) {
         const currentWindow = Math.max(MIN_WINDOW_PERCENT, currentEnd - currentStart);
         const rect = el.getBoundingClientRect();
         const ratioRaw = (event.clientX - rect.left) / Math.max(1, rect.width);
-        const pointerRatio = Math.min(1, Math.max(0, ratioRaw));
-        let anchorRatio = 0.5;
-        if (event.ctrlKey) {
-          if (chartCtrlFocusRatio == null) {
-            refreshCtrlFocusLock(pointerRatio);
-          } else {
-            refreshCtrlFocusLock(chartCtrlFocusRatio);
-          }
-          anchorRatio = chartCtrlFocusRatio == null ? pointerRatio : chartCtrlFocusRatio;
-        } else {
-          clearCtrlFocusLock();
-        }
+        const anchorRatio = Math.min(1, Math.max(0, ratioRaw));
         const anchor = currentStart + currentWindow * anchorRatio;
         const zoomFactor = event.deltaY < 0 ? ZOOM_IN_FACTOR : ZOOM_OUT_FACTOR;
         const nextWindow = Math.min(100, Math.max(MIN_WINDOW_PERCENT, currentWindow * zoomFactor));
@@ -1470,7 +1746,7 @@ function lineChart(el, labels, values, color) {
       },
       { passive: false, capture: true }
     );
-    chartCtrlZoomBound = true;
+    chartWheelZoomBound = true;
   }
   if (!chartValues.length) {
     dailyChartInstance.clear();
@@ -1513,25 +1789,11 @@ function lineChart(el, labels, values, color) {
         {
           type: "inside",
           xAxisIndex: 0,
+          start: zoomStart,
+          end: zoomEnd,
           zoomOnMouseWheel: false,
           moveOnMouseMove: true,
           moveOnMouseWheel: false,
-        },
-        {
-          type: "slider",
-          xAxisIndex: 0,
-          start: zoomStart,
-          end: zoomEnd,
-          height: 16,
-          bottom: 10,
-          borderColor: "rgba(148,163,184,0.3)",
-          fillerColor: "rgba(184,156,122,0.28)",
-          backgroundColor: "rgba(17,17,19,0.78)",
-          handleStyle: {
-            color: "#B89C7A",
-            borderColor: "rgba(15,23,42,0.95)",
-          },
-          moveHandleSize: 6,
         },
       ],
       series: [
@@ -2032,8 +2294,8 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
 
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
-  if (startInput) startInput.value = startISO;
-  if (endInput) endInput.value = endISO;
+  if (startInput) setRangeInputValue(startInput, startISO);
+  if (endInput) setRangeInputValue(endInput, endISO);
   setDisplayText("range-text", `${startISO} to ${endISO}`, false);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, "#B89C7A");
 
@@ -2097,8 +2359,8 @@ function syncRangeControls(minISO, maxISO) {
   startInput.max = maxISO;
   endInput.min = minISO;
   endInput.max = maxISO;
-  startInput.value = minISO;
-  endInput.value = maxISO;
+  setRangeInputValue(startInput, minISO);
+  setRangeInputValue(endInput, maxISO);
 }
 
 function setupRangeControls() {
@@ -2111,7 +2373,7 @@ function setupRangeControls() {
   syncRangeControls(minISO, maxISO);
 
   applyBtn.addEventListener("click", () => {
-    applyRange(startInput.value, endInput.value);
+    applyRange(getRangeInputValue(startInput), getRangeInputValue(endInput));
   });
 
   document.querySelectorAll("[data-range]").forEach(btn => {
@@ -2131,22 +2393,118 @@ function setupRangeControls() {
   });
 }
 
+function setupCustomDatePicker() {
+  const popover = document.getElementById("calendar-popover");
+  const weekdays = document.getElementById("calendar-weekdays");
+  const days = document.getElementById("calendar-days");
+  const prevBtn = document.getElementById("calendar-prev");
+  const nextBtn = document.getElementById("calendar-next");
+  const clearBtn = document.getElementById("calendar-clear");
+  const todayBtn = document.getElementById("calendar-today");
+  const startInput = document.getElementById("range-start");
+  const endInput = document.getElementById("range-end");
+  if (!popover || !weekdays || !days || !prevBtn || !nextBtn || !clearBtn || !todayBtn || !startInput || !endInput) return;
+
+  weekdays.innerHTML = WEEKDAY_LABELS.map(label => `<span>${label}</span>`).join("");
+
+  const bindOpen = (input) => {
+    const open = () => openCalendarForInput(input);
+    input.addEventListener("click", open);
+    input.addEventListener("focus", open);
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+        event.preventDefault();
+        open();
+      }
+      if (event.key === "Escape") {
+        closeCalendarPopover();
+      }
+    });
+  };
+  bindOpen(startInput);
+  bindOpen(endInput);
+
+  prevBtn.addEventListener("click", () => {
+    shiftCalendarMonth(-1);
+    positionCalendarPopover();
+  });
+  nextBtn.addEventListener("click", () => {
+    shiftCalendarMonth(1);
+    positionCalendarPopover();
+  });
+
+  days.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (!target.classList.contains("calendar-day-btn")) return;
+    if (target.hasAttribute("disabled")) return;
+    const iso = normalizeISO(target.dataset.iso || "");
+    const input = getCalendarTargetInput();
+    if (!iso || !input) return;
+    setRangeInputValue(input, iso);
+    closeCalendarPopover();
+  });
+
+  clearBtn.addEventListener("click", () => {
+    const input = getCalendarTargetInput();
+    if (!input) return;
+    const fallback = input.id === "range-end" ? calendarState.maxISO : calendarState.minISO;
+    setRangeInputValue(input, fallback);
+    closeCalendarPopover();
+  });
+
+  todayBtn.addEventListener("click", () => {
+    const input = getCalendarTargetInput();
+    if (!input) return;
+    const todayISO = clampISO(toLocalISODate(new Date()), calendarState.minISO, calendarState.maxISO);
+    setRangeInputValue(input, todayISO);
+    closeCalendarPopover();
+  });
+
+  document.addEventListener("mousedown", (event) => {
+    if (!calendarState.open) return;
+    const input = getCalendarTargetInput();
+    const target = event.target;
+    if (!input || !(target instanceof Node)) {
+      closeCalendarPopover();
+      return;
+    }
+    if (popover.contains(target) || input.contains(target)) return;
+    closeCalendarPopover();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (!calendarState.open) return;
+    if (event.key === "Escape") {
+      closeCalendarPopover();
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    if (calendarState.open) positionCalendarPopover();
+  });
+  window.addEventListener("scroll", () => {
+    if (calendarState.open) positionCalendarPopover();
+  }, true);
+}
+
 function setupDailyChartZoom() {
   // 已由 ECharts dataZoom 提供滑动与缩放。
 }
 
 window.addEventListener("load", () => {
-  applyI18n("zh", { animate: false, source: "boot" });
+  applyI18n("en", { animate: false, source: "boot" });
   rebuildHourEventMap();
   setupRangeControls();
+  setupCustomDatePicker();
   setupDailyChartZoom();
   setupImportExport();
   setupAutoSync();
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
   applyRange(
-    (startInput && startInput.value) || (DATA.range && DATA.range.start) || "",
-    (endInput && endInput.value) || (DATA.range && DATA.range.end) || ""
+    getRangeInputValue(startInput) || (DATA.range && DATA.range.start) || "",
+    getRangeInputValue(endInput) || (DATA.range && DATA.range.end) || ""
   );
 });
 </script>

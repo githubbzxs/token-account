@@ -27,14 +27,22 @@
   - Why：用户明确要求“去掉时间分析”。
   - Impact：`src/codex_token_report.py` 的 i18n、样式、模板与 `applyRangeInternal` 流程；`README.md` 功能说明。
   - Verify：报告页不再出现时间分析卡片，筛选区间更新时无时间分析相关渲染调用。
+- **[2026-02-15] 范围筛选交互重构**：改为自定义深色日历弹层，移除浏览器原生日期面板，默认全局英文。
+  - Why：用户要求日历与页面 UI 风格统一，并统一英文界面。
+  - Impact：`src/codex_token_report.py` 的范围输入控件、日历样式与语言初始化逻辑。
+  - Verify：范围输入点击后打开自定义日历；页面默认英文文案；不再出现原生白底日期控件。
+- **[2026-02-15] 图表缩放体验调整**：移除底部 dataZoom 滑块，滚轮缩放始终以鼠标位置为中心，无 Ctrl 依赖。
+  - Why：用户要求去除底部缩放条，并简化缩放为“指哪放哪”。
+  - Impact：`src/codex_token_report.py` 的 `lineChart` 事件处理与 `dataZoom` 配置。
+  - Verify：图表下方不再出现缩放条；滚轮缩放围绕当前鼠标位置居中。
 
 # Commands
 - `python -m py_compile src/codex_token_report.py`
 - `python src/codex_token_report.py --sessions-root dummy_sessions --out report-test`
 
 # Status / Next
-- 当前：时间分析模块已移除，报告仅保留核心指标与图表。
-- 下一步：如需替代分析能力，按用户新口径再独立设计，不复用旧时间分析逻辑。
+- 当前：时间分析已移除；日期筛选已切为自定义英文日历；图表缩放已改为鼠标锚点缩放且无底部滑块。
+- 下一步：如需继续微调日历交互（例如周起始日、快捷月份跳转），在现有自定义日历上迭代。
 
 # Known Issues
 - `dummy_sessions/test.jsonl` 是本地未跟踪测试数据文件，默认不纳入提交。
