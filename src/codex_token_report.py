@@ -567,7 +567,10 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --chart-area-end: rgba(0, 240, 255, 0);
   --tooltip-border: rgba(176, 38, 255, 0.45);
   --axis-pointer: rgba(0, 240, 255, 0.7);
-  --shadow: 0 22px 52px rgba(0, 0, 0, 0.62);
+  --gap-sm: 12px;
+  --gap-md: 16px;
+  --gap-lg: 24px;
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
   --ring: rgba(176, 38, 255, 0.28);
   --font-zh: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
   --font-en: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
@@ -639,7 +642,7 @@ body {
   position: relative;
   max-width: 1280px;
   margin: 24px auto 0;
-  padding: 24px 18px 38px;
+  padding: 24px clamp(18px, 2vw, 36px) 38px;
   border-radius: 24px;
   border: none;
   background: linear-gradient(170deg, var(--page-bg-start), var(--page-bg-end));
@@ -666,9 +669,9 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 22px;
+  height: 14px;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(8, 10, 18, 0), rgba(5, 6, 10, 0.92));
+  background: linear-gradient(180deg, rgba(8, 10, 18, 0), rgba(5, 6, 10, 0.6));
 }
 
 .hero {
@@ -677,7 +680,7 @@ body {
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
-  margin-bottom: 12px;
+  margin-bottom: var(--gap-sm);
 }
 
 .hero-tools {
@@ -687,8 +690,8 @@ body {
 }
 
 .theme-dot-toggle {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
   border: 1.5px solid rgba(var(--accent-rgb), 0.88);
   background: transparent;
@@ -701,10 +704,18 @@ body {
   transition: transform 0.2s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
+.theme-dot-toggle::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.9);
+}
+
 .theme-dot-toggle:hover {
   transform: scale(1.03);
   border-color: rgba(var(--accent-cyan-rgb), 0.78);
-  box-shadow: 0 0 0 1px rgba(var(--accent-cyan-rgb), 0.18);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.3);
 }
 
 .theme-dot-toggle:focus-visible {
@@ -721,9 +732,9 @@ body {
 .title h1 {
   margin: 0 0 8px;
   font-size: clamp(30px, 5vw, 42px);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   font-family: var(--app-font);
-  font-weight: 700;
+  font-weight: 600;
   text-wrap: balance;
 }
 
@@ -804,7 +815,7 @@ html.theme-switching .chart {
   --range-selector-height: 36px;
   margin: 16px 0 8px;
   padding: 6px 12px;
-  border: 1px solid var(--stroke);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   background: linear-gradient(140deg, rgba(26, 27, 32, 0.9), rgba(17, 17, 19, 0.88));
   border-radius: 14px;
   display: grid;
@@ -1136,8 +1147,8 @@ html.theme-switching .chart {
 .cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin: 24px 0 24px;
+  gap: var(--gap-md);
+  margin: var(--gap-lg) 0 var(--gap-lg);
   align-items: stretch;
 }
 
@@ -1145,7 +1156,7 @@ html.theme-switching .chart {
   background: linear-gradient(145deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
   border: 1px solid var(--stroke);
   border-radius: 20px;
-  padding: 14px 16px;
+  padding: 18px 20px;
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
@@ -1170,7 +1181,7 @@ html.theme-switching .chart {
 }
 
 .card .label {
-  font-size: 12px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--muted);
@@ -1178,7 +1189,7 @@ html.theme-switching .chart {
 
 .card .value {
   margin-top: 10px;
-  font-size: 26px;
+  font-size: clamp(24px, 4vw, 32px);
   font-weight: 700;
   letter-spacing: 0.2px;
   font-variant-numeric: tabular-nums;
@@ -1194,7 +1205,7 @@ html.theme-switching .chart {
 
 .card .sub {
   margin-top: 8px;
-  color: #b4b4bd;
+  color: var(--muted);
   font-size: 13px;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -1204,7 +1215,7 @@ html.theme-switching .chart {
 .panel-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 18px;
+  gap: var(--gap-md);
 }
 
 .panel {
@@ -1231,8 +1242,8 @@ html.theme-switching .chart {
 .chart {
   width: 100%;
   height: 240px;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 14px;
+  border: none;
+  border-radius: 12px;
   background: rgba(17, 17, 19, 0.82);
   overflow: hidden;
 }
@@ -1336,7 +1347,7 @@ html.theme-switching .chart {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
