@@ -1558,13 +1558,6 @@ html.theme-switching .chart {
       <button type="button" data-range="90" data-i18n="last_90">3M</button>
       <button type="button" data-range="all" data-i18n="all_time">ALL</button>
     </div>
-    <div class="range-actions">
-      <button type="button" id="export-data" class="range-action-btn" data-i18n="export">Export</button>
-      <label class="file-button"><span data-i18n="import">Import</span>
-        <input type="file" id="import-data" accept="application/json" multiple>
-      </label>
-      <span class="import-status" id="import-status"></span>
-    </div>
   </div>
   <div id="calendar-popover" class="calendar-popover hidden" aria-hidden="true">
     <div class="calendar-head">
@@ -3073,7 +3066,6 @@ window.addEventListener("load", () => {
   setupRangeControls();
   setupCustomDatePicker();
   setupDailyChartZoom();
-  setupImportExport();
   setupAutoSync();
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
