@@ -1,0 +1,19 @@
+# Git 与本地缓存
+.git
+__pycache__/
+*.pyc
+
+# 虚拟环境
+.venv/
+venv/
+
+# 本地服务数据
+report/
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# 平台文件
+.DS_Store
+Thumbs.db

@@ -1,0 +1,21 @@
+services:
+  token-account:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: token-account
+    ports:
+      - "${TOKEN_ACCOUNT_PORT:-8000}:8000"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+    command:
+      - python
+      - src/codex_token_report.py
+      - serve
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --db-file
+      - /data/token-account.db

@@ -9,6 +9,15 @@
   - Verify：部署后记录命令与结果。
 
 # Decisions
+
+- **[2026-03-08] 架构升级为常驻服务**：主入口改为 FastAPI + SQLite 服务，客户端通过 `sync` / `sync-loop` 推送规范化 token 增量事件，HTML 报告页改为服务直接提供并每 30 秒轮询刷新。
+  - Why：用户明确要求保留 HTML 报告，但改成“像 vibe usage 一样一直更新数据”的服务形态。
+  - Impact：新增 `serve` / `sync` / `sync-loop` 命令，仓库从静态报告生成器升级为服务端 + 同步端双角色结构。
+  - Verify：本地启动服务后访问 `/` 与 `/api/report`，执行一次 `sync` 后页面与接口均能看到入库数据。
+- **[2026-03-08] 静态报告改为常驻服务架构**：主入口改为 FastAPI + SQLite + 客户端同步，HTML 页面由服务直接提供并每 30 秒自动刷新。
+  - Why：用户要求保留 HTML 报告，但产品形态改成类似 usage service 的持续更新服务。
+  - Impact：新增 `serve` / `sync` / `sync-loop` 命令，`src/token_account/` 模块化拆分，`requirements.txt`、Docker 部署文件、Windows 启动脚本与 README 全部改为服务化用法。
+  - Verify：`python3 src/codex_token_report.py serve` 可启动服务，`python3 src/codex_token_report.py sync` 可推送事件，页面通过 `/api/report` 自动刷新。
 - **[2026-02-15] 主题切换动效恢复**：为主题切换增加显式 `theme-switching` 动画层，并补上主题按钮 `is-bronze` 状态过渡；保留 `prefers-reduced-motion` 下的无动画退化。
   - Why：用户反馈“两种主题切换的动效”缺失，变量替换在渐变场景下观感接近瞬切。
   - Impact：`src/codex_token_report.py` 的 `html.theme-ready` 过渡范围、`themeSwap` 关键帧、`playThemeSwitchMotion`、`applyTheme` 与 `.theme-dot-toggle.is-bronze`。

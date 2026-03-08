@@ -16,3 +16,9 @@ venv/
 .DS_Store
 Thumbs.db
 
+
+# 服务运行数据
+data/
+*.db
+*.sqlite3
+*token-account-sync-state.json
