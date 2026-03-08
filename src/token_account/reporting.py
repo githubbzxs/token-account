@@ -180,7 +180,12 @@ def build_report_document(
         if candidates:
             last_synced_at = max(candidates)
 
-    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    generated_dt = parse_iso(last_synced_at) if last_synced_at else None
+    if generated_dt is None and rows:
+        generated_dt = parse_iso(rows[-1].get("ts"))
+    if generated_dt is None:
+        generated_dt = datetime.now()
+    generated_at = generated_dt.strftime("%Y-%m-%d %H:%M:%S")
     data = {
         "range": {
             "start": range_start.isoformat(),

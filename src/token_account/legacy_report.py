@@ -1504,7 +1504,11 @@ html.theme-switching .chart {
       <button type="button" data-range="all" data-i18n="all_time">ALL</button>
     </div>
     <div class="range-actions">
-      <span class="import-status" id="sync-status">0 sources · --</span>
+      <button type="button" id="export-data" class="range-action-btn" data-i18n="export">Export</button>
+      <label class="file-button"><span data-i18n="import">Import</span>
+        <input type="file" id="import-data" accept="application/json" multiple>
+      </label>
+      <span class="import-status" id="import-status"></span>
     </div>
   </div>
   <div id="calendar-popover" class="calendar-popover hidden" aria-hidden="true">
@@ -2035,26 +2039,15 @@ function readDailyValue(dayISO, key) {
   return Number(arr[idx] || 0);
 }
 
-let latestDataStamp = getDataStamp(DATA);
+let latestDataStamp = (DATA.meta && DATA.meta.generated_at) || "";
 let syncInFlight = false;
 
 function getDataStamp(doc) {
-  if (doc && doc.meta && doc.meta.data_stamp) return String(doc.meta.data_stamp);
   if (doc && doc.meta && doc.meta.generated_at) return String(doc.meta.generated_at);
   const start = doc && doc.range ? doc.range.start : "";
   const end = doc && doc.range ? doc.range.end : "";
   const count = doc && doc.daily && Array.isArray(doc.daily.labels) ? doc.daily.labels.length : 0;
   return `${start}:${end}:${count}`;
-}
-
-function renderSyncStatus(doc) {
-  const el = document.getElementById("sync-status");
-  if (!el) return;
-  const meta = (doc && doc.meta) || {};
-  const sourceCount = Number(meta.source_count || 0);
-  const lastSync = meta.last_synced_at ? String(meta.last_synced_at).replace("T", " ").slice(0, 19) : "--";
-  const text = `${sourceCount} sources · ${lastSync}`;
-  setAnimatedText(el, text, { animate: true });
 }
 
 function applyLatestData(nextData) {
@@ -2070,8 +2063,6 @@ function applyLatestData(nextData) {
   DATA.events = nextData.events || [];
   DATA.pricing = nextData.pricing || DATA.pricing;
   DATA.meta = nextData.meta || {};
-  DATA.sources = nextData.sources || [];
-  renderSyncStatus(DATA);
   rebuildLabelIndex();
   rebuildHourEventMap();
 
@@ -2090,7 +2081,7 @@ async function syncLatestData() {
   if (syncInFlight) return false;
   syncInFlight = true;
   try {
-    const response = await fetch(`/api/report?ts=${Date.now()}`, { cache: "no-store" });
+    const response = await fetch(`data.json?ts=${Date.now()}`, { cache: "no-store" });
     if (!response.ok) return false;
     const incoming = await response.json();
     const incomingStamp = getDataStamp(incoming);
@@ -2111,7 +2102,7 @@ function setupAutoSync() {
   syncLatestData();
   window.setInterval(() => {
     syncLatestData();
-  }, 30000);
+  }, 15000);
   window.addEventListener("focus", () => {
     syncLatestData();
   });
@@ -3035,7 +3026,7 @@ window.addEventListener("load", () => {
   setupRangeControls();
   setupCustomDatePicker();
   setupDailyChartZoom();
-  renderSyncStatus(DATA);
+  setupImportExport();
   setupAutoSync();
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");

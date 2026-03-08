@@ -72,7 +72,7 @@ python3 src/codex_token_report.py sync-loop --service-url http://127.0.0.1:8000 
 
 ## 与旧版行为的变化
 - 不再以 `report/index.html` 为主交付物
-- 页面内手动导入/导出合并能力已移除为“服务同步”模式
+- UI 与原版报告保持一致，底层数据来源改为服务同步模式
 - HTML 报告页仍保留，但它现在是服务的一部分，而不是静态文件输出
 
 ## 公网部署提醒
