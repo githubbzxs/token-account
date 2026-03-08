@@ -2938,7 +2938,7 @@ function setupRangeControls() {
 }
 
 function setupThemeToggle() {
-  applyTheme("neon", { persist: false, refreshChart: false, animate: false });
+  applyTheme("bronze", { persist: false, refreshChart: false, animate: false });
 }
 
 function setupCustomDatePicker() {
