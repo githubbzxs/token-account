@@ -33,13 +33,21 @@ def iter_session_files(root: Path):
         yield path
 
 
-def build_event_id(source_id: str, session_id: str, ts_iso: str, model: str, delta: dict[str, int]) -> str:
+def build_event_id(
+    source_id: str,
+    session_id: str,
+    ts_iso: str,
+    model: str,
+    delta: dict[str, int],
+    sequence_index: int,
+) -> str:
     raw = json.dumps(
         {
             "source_id": source_id,
             "session_id": session_id,
             "ts": ts_iso,
             "model": model,
+            "sequence_index": int(sequence_index),
             "delta": {field: int(delta.get(field, 0) or 0) for field in FIELDS},
         },
         ensure_ascii=False,
@@ -86,7 +94,8 @@ def normalize_delta(delta: dict[str, int]) -> dict[str, int]:
 def extract_events_from_file(path: Path, session_root: Path, source_id: str, hostname: str) -> list[dict[str, Any]]:
     session_id = session_id_from_path(path, session_root)
     events: list[dict[str, Any]] = []
-    for ts, delta, model in iter_token_deltas(path) or []:
+    for sequence_index, payload in enumerate(iter_token_deltas(path) or [], start=1):
+        ts, delta, model = payload
         local = to_local(ts)
         if local is None:
             continue
@@ -97,7 +106,7 @@ def extract_events_from_file(path: Path, session_root: Path, source_id: str, hos
         ts_iso = local.isoformat()
         events.append(
             {
-                "event_id": build_event_id(source_id, session_id, ts_iso, model_name, normalized),
+                "event_id": build_event_id(source_id, session_id, ts_iso, model_name, normalized, sequence_index),
                 "session_id": session_id,
                 "ts": ts_iso,
                 "model": model_name,

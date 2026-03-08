@@ -329,6 +329,61 @@ def iter_session_files(root: Path):
         yield path
 
 
+def _normalize_usage_map(usage: dict | None) -> dict[str, int]:
+    usage = usage or {}
+    return {field: max(0, int(usage.get(field, 0) or 0)) for field in FIELDS}
+
+
+def _is_nonempty_usage_map(usage: dict | None) -> bool:
+    return bool(usage and isinstance(usage, dict) and any(field in usage for field in FIELDS))
+
+
+def _same_usage_map(a: dict | None, b: dict | None) -> bool:
+    left = _normalize_usage_map(a)
+    right = _normalize_usage_map(b)
+    return all(left[field] == right[field] for field in FIELDS)
+
+
+def _is_all_zero_usage_map(usage: dict | None) -> bool:
+    normalized = _normalize_usage_map(usage)
+    return all(normalized[field] == 0 for field in FIELDS)
+
+
+def _totals_reset(curr: dict | None, prev: dict | None) -> bool:
+    current_total = _normalize_usage_map(curr).get("total_tokens", 0)
+    previous_total = _normalize_usage_map(prev).get("total_tokens", 0)
+    return current_total < previous_total
+
+
+def _pick_token_delta(last_usage: dict | None, total_usage: dict | None, prev_totals: dict | None) -> dict[str, int] | None:
+    has_last = _is_nonempty_usage_map(last_usage)
+    has_total = _is_nonempty_usage_map(total_usage)
+    has_prev = _is_nonempty_usage_map(prev_totals)
+
+    if has_total and has_prev and _same_usage_map(total_usage, prev_totals):
+        return None
+
+    if (not has_last) and has_total and has_prev and _totals_reset(total_usage, prev_totals):
+        normalized = _normalize_usage_map(total_usage)
+        return None if _is_all_zero_usage_map(normalized) else normalized
+
+    if has_last:
+        normalized = _normalize_usage_map(last_usage)
+        return None if _is_all_zero_usage_map(normalized) else normalized
+
+    if has_total and has_prev:
+        current = _normalize_usage_map(total_usage)
+        previous = _normalize_usage_map(prev_totals)
+        delta = {field: max(0, current[field] - previous[field]) for field in FIELDS}
+        return None if _is_all_zero_usage_map(delta) else delta
+
+    if has_total:
+        normalized = _normalize_usage_map(total_usage)
+        return None if _is_all_zero_usage_map(normalized) else normalized
+
+    return None
+
+
 def iter_token_deltas(path: Path):
     prev_total = None
     current_model = "unknown"
@@ -358,19 +413,23 @@ def iter_token_deltas(path: Path):
                 continue
             if event_type != "event_msg":
                 continue
-            payload = obj.get("payload", {})
-            if payload.get("type") != "token_count":
+            payload = obj.get("payload") or {}
+            msg = payload.get("msg") if isinstance(payload.get("msg"), dict) else None
+            token_node = None
+            if payload.get("type") == "token_count":
+                token_node = payload
+            elif msg and msg.get("type") == "token_count":
+                token_node = msg
+            if not token_node:
                 continue
-            info = payload.get("info") or {}
-            total = info.get("total_token_usage") or {}
-            total_map = {k: int(total.get(k, 0) or 0) for k in FIELDS}
-            if prev_total is None:
-                delta = total_map
-            else:
-                delta = {k: max(0, total_map[k] - prev_total.get(k, 0)) for k in FIELDS}
-            prev_total = total_map
-            ts = parse_iso(obj.get("timestamp") or payload.get("timestamp"))
-            if ts is None:
+            info = token_node.get("info") or {}
+            last_usage = info.get("last_token_usage") or {}
+            total_usage = info.get("total_token_usage") or {}
+            delta = _pick_token_delta(last_usage, total_usage, prev_total)
+            if _is_nonempty_usage_map(total_usage):
+                prev_total = _normalize_usage_map(total_usage)
+            ts = parse_iso(obj.get("timestamp") or payload.get("timestamp") or token_node.get("timestamp"))
+            if ts is None or delta is None:
                 continue
             yield ts, delta, current_model
 
@@ -1480,10 +1539,6 @@ html.theme-switching .chart {
   <div class="hero">
     <div class="title">
       <h1 data-i18n="title">Codex Token Usage</h1>
-    </div>
-    <div class="hero-tools">
-      <button type="button" id="theme-dot-toggle" class="theme-dot-toggle" aria-label="Switch color theme">
-      </button>
     </div>
   </div>
   <div class="range-controls">
@@ -2890,15 +2945,7 @@ function setupRangeControls() {
 }
 
 function setupThemeToggle() {
-  const btn = document.getElementById("theme-dot-toggle");
-  const initialTheme = readStoredTheme();
-  applyTheme(initialTheme, { persist: false, refreshChart: false, animate: false });
-  if (!btn) return;
-  btn.addEventListener("click", () => {
-    const current = normalizeTheme(document.documentElement.dataset.theme || "neon");
-    const nextTheme = current === "neon" ? "bronze" : "neon";
-    applyTheme(nextTheme, { persist: true, refreshChart: true });
-  });
+  applyTheme("neon", { persist: false, refreshChart: false, animate: false });
 }
 
 function setupCustomDatePicker() {
