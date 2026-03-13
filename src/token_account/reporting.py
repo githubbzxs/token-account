@@ -16,7 +16,7 @@ from .legacy_report import (
     parse_iso,
     render_html,
 )
-from .pricing import load_pricing, normalize_model_name, resolve_pricing
+from .pricing import cost_for_record, load_pricing, normalize_model_name
 from .storage import fetch_events, fetch_sources
 
 
@@ -64,6 +64,7 @@ def collect_usage_from_rows(rows: list[dict[str, Any]]):
                 {
                     "ts": ts.strftime("%Y-%m-%d %H:%M"),
                     "day": day.isoformat(),
+                    "model": model,
                     "value": delta["total_tokens"],
                     "input": delta["input_tokens"],
                     "cached": delta["cached_input_tokens"],
@@ -102,6 +103,10 @@ def _pricing_payload(prices: dict[str, dict[str, Decimal]], aliases: dict[str, s
                 "input": float(entry["input"]),
                 "cached_input": float(entry["cached_input"]) if entry["cached_input"] is not None else None,
                 "output": float(entry["output"]),
+                "long_context_threshold": entry.get("long_context_threshold"),
+                "long_context_input": float(entry["long_context_input"]) if entry.get("long_context_input") is not None else None,
+                "long_context_cached_input": float(entry["long_context_cached_input"]) if entry.get("long_context_cached_input") is not None else None,
+                "long_context_output": float(entry["long_context_output"]) if entry.get("long_context_output") is not None else None,
             }
             for model, entry in prices.items()
         },
@@ -139,22 +144,11 @@ def build_report_document(
     cached_tokens = totals["cached_input_tokens"]
     cache_rate = cached_tokens / input_tokens if input_tokens else 0
 
-    model_items = sorted(
-        usage["models"].items(),
-        key=lambda item: item[1]["total_tokens"],
-        reverse=True,
-    )
     total_cost = Decimal("0")
-    for model, rec in model_items:
-        pricing = resolve_pricing(model, prices, aliases)
-        if not pricing:
-            continue
-        cached_price = pricing["cached_input"] if pricing["cached_input"] is not None else pricing["input"]
-        billable_input = max(0, int(rec["input_tokens"]) - int(rec["cached_input_tokens"]))
-        output_total = int(rec["output_tokens"]) + int(rec["reasoning_output_tokens"])
-        total_cost += (Decimal(billable_input) / Decimal(1_000_000)) * pricing["input"]
-        total_cost += (Decimal(int(rec["cached_input_tokens"])) / Decimal(1_000_000)) * cached_price
-        total_cost += (Decimal(output_total) / Decimal(1_000_000)) * pricing["output"]
+    for row in rows:
+        cost = cost_for_record(str(row.get("model") or ""), row, prices, aliases)
+        if cost is not None:
+            total_cost += cost
 
     daily_models_serialized: dict[str, Any] = {}
     for day, model_map in usage["daily_models"].items():

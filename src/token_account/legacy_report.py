@@ -218,7 +218,15 @@ PRICING_DEFAULT = {
         "gpt-5.3-codex-latest": "gpt-5.2",
     },
     "prices": {
-        "gpt-5.4": {"input": "2.50", "cached_input": "0.25", "output": "15.00"},
+        "gpt-5.4": {
+            "input": "2.50",
+            "cached_input": "0.25",
+            "output": "15.00",
+            "long_context_threshold": 272000,
+            "long_context_input": "5.00",
+            "long_context_cached_input": "0.50",
+            "long_context_output": "22.50",
+        },
         "gpt-5.2": {"input": "1.75", "cached_input": "0.175", "output": "14.00"},
         "gpt-5.1": {"input": "1.25", "cached_input": "0.125", "output": "10.00"},
         "gpt-5": {"input": "1.25", "cached_input": "0.125", "output": "10.00"},
@@ -291,10 +299,18 @@ def load_pricing(pricing_path: Path | None):
         if cached_raw not in (None, "", "-"):
             cached_price = Decimal(str(cached_raw))
         output_price = Decimal(str(entry.get("output", "0")))
+        long_context_input_raw = entry.get("long_context_input")
+        long_context_cached_raw = entry.get("long_context_cached_input")
+        long_context_output_raw = entry.get("long_context_output")
+        long_context_threshold_raw = entry.get("long_context_threshold")
         prices[model] = {
             "input": input_price,
             "cached_input": cached_price,
             "output": output_price,
+            "long_context_threshold": int(long_context_threshold_raw or 0) if long_context_threshold_raw not in (None, "", "-") else None,
+            "long_context_input": Decimal(str(long_context_input_raw)) if long_context_input_raw not in (None, "", "-") else None,
+            "long_context_cached_input": Decimal(str(long_context_cached_raw)) if long_context_cached_raw not in (None, "", "-") else None,
+            "long_context_output": Decimal(str(long_context_output_raw)) if long_context_output_raw not in (None, "", "-") else None,
         }
     return prices, meta, aliases
 
@@ -322,6 +338,44 @@ def resolve_pricing(model: str, prices: dict, aliases: dict) -> dict | None:
     if base.startswith("gpt-5"):
         return prices.get("gpt-5")
     return None
+
+
+def pricing_for_input_tokens(pricing: dict | None, input_tokens: int) -> dict | None:
+    if not pricing:
+        return None
+    threshold = pricing.get("long_context_threshold")
+    if not threshold or int(input_tokens or 0) <= int(threshold):
+        return pricing
+    return {
+        "input": pricing.get("long_context_input") or pricing["input"],
+        "cached_input": pricing.get("long_context_cached_input")
+        if pricing.get("long_context_cached_input") is not None
+        else pricing.get("cached_input"),
+        "output": pricing.get("long_context_output") or pricing["output"],
+        "long_context_threshold": threshold,
+        "long_context_input": pricing.get("long_context_input"),
+        "long_context_cached_input": pricing.get("long_context_cached_input"),
+        "long_context_output": pricing.get("long_context_output"),
+    }
+
+
+def cost_for_record(model: str, rec: dict, prices: dict, aliases: dict) -> Decimal | None:
+    pricing = resolve_pricing(model, prices, aliases)
+    if not pricing:
+        return None
+    input_tokens = int(rec.get("input_tokens", 0) or 0)
+    pricing = pricing_for_input_tokens(pricing, input_tokens)
+    if not pricing:
+        return None
+    cached_input_tokens = int(rec.get("cached_input_tokens", 0) or 0)
+    cached_price = pricing["cached_input"] if pricing["cached_input"] is not None else pricing["input"]
+    billable_input_tokens = max(0, input_tokens - cached_input_tokens)
+    output_total = int(rec.get("output_tokens", 0) or 0) + int(rec.get("reasoning_output_tokens", 0) or 0)
+    return (
+        dollars_from_tokens(billable_input_tokens, pricing["input"])
+        + dollars_from_tokens(cached_input_tokens, cached_price)
+        + dollars_from_tokens(output_total, pricing["output"])
+    )
 
 def iter_session_files(root: Path):
     if not root.exists():
@@ -482,6 +536,7 @@ def collect_usage(session_root: Path, since: date | None, until: date | None):
                     {
                         "ts": local.strftime("%Y-%m-%d %H:%M"),
                         "day": day.isoformat(),
+                        "model": model,
                         "value": dtokens,
                         "input": delta["input_tokens"],
                         "cached": delta["cached_input_tokens"],
@@ -2580,13 +2635,35 @@ function resolvePricing(model) {
   return null;
 }
 
-function costUSD(rec, pricing) {
+function pickUsageValue(rec, fullKey, shortKey) {
+  if (!rec) return 0;
+  if (rec[fullKey] != null) return Number(rec[fullKey] || 0);
+  if (shortKey && rec[shortKey] != null) return Number(rec[shortKey] || 0);
+  return 0;
+}
+
+function pricingForInputTokens(pricing, inputTokens) {
+  if (!pricing) return null;
+  const threshold = pricing.long_context_threshold;
+  if (!threshold || inputTokens <= threshold) return pricing;
+  return {
+    ...pricing,
+    input: pricing.long_context_input != null ? pricing.long_context_input : pricing.input,
+    cached_input: pricing.long_context_cached_input != null ? pricing.long_context_cached_input : pricing.cached_input,
+    output: pricing.long_context_output != null ? pricing.long_context_output : pricing.output,
+  };
+}
+
+function costUSD(model, rec) {
+  const basePricing = resolvePricing(model);
+  if (!basePricing) return null;
+  const inputTokens = pickUsageValue(rec, "input_tokens", "input");
+  const pricing = pricingForInputTokens(basePricing, inputTokens);
   if (!pricing) return null;
   const cachedPrice = pricing.cached_input != null ? pricing.cached_input : pricing.input;
-  const inputTokens = rec.input_tokens || 0;
-  const cachedInputTokens = rec.cached_input_tokens || 0;
+  const cachedInputTokens = pickUsageValue(rec, "cached_input_tokens", "cached");
   const billableInputTokens = Math.max(0, inputTokens - cachedInputTokens);
-  const outputTotal = (rec.output_tokens || 0) + (rec.reasoning_output_tokens || 0);
+  const outputTotal = pickUsageValue(rec, "output_tokens", "output") + pickUsageValue(rec, "reasoning_output_tokens", "reasoning");
   return (
     (billableInputTokens / 1_000_000) * (pricing.input || 0) +
     (cachedInputTokens / 1_000_000) * (cachedPrice || 0) +
@@ -2866,15 +2943,11 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   setDisplayText("value-avg-day", formatNumber(avgPerDay), animateMetrics);
   setDisplayText("value-avg-session", formatNumber(avgPerSession), animateMetrics);
 
-  const modelTotals = aggregateModels(dayLabels);
-  const modelItems = Object.keys(modelTotals).map(model => ({ model, rec: modelTotals[model] }));
-  modelItems.sort((a, b) => (b.rec.total_tokens || 0) - (a.rec.total_tokens || 0));
-
   let totalCost = 0;
   let anyPriced = false;
-  modelItems.forEach(item => {
-    const pricing = resolvePricing(item.model);
-    const cost = costUSD(item.rec, pricing);
+  (DATA.events || []).forEach(item => {
+    if (!item || !item.day || item.day < startISO || item.day > endISO) return;
+    const cost = costUSD(item.model, item);
     if (cost != null) {
       totalCost += cost;
       anyPriced = true;
@@ -3176,24 +3249,20 @@ def main() -> int:
         key=lambda item: item[1]["total_tokens"],
         reverse=True,
     )
-    model_costs = {}
     total_cost = Decimal("0")
-    for model, rec in model_items:
-        pricing = resolve_pricing(model, prices, aliases)
-        if not pricing:
-            continue
-        cached_price = pricing["cached_input"] if pricing["cached_input"] is not None else pricing["input"]
-        input_tokens_total = rec["input_tokens"]
-        cached_input_tokens = rec["cached_input_tokens"]
-        billable_input_tokens = max(0, input_tokens_total - cached_input_tokens)
-        output_total = rec["output_tokens"] + rec["reasoning_output_tokens"]
-        cost = (
-            dollars_from_tokens(billable_input_tokens, pricing["input"])
-            + dollars_from_tokens(cached_input_tokens, cached_price)
-            + dollars_from_tokens(output_total, pricing["output"])
-        )
-        model_costs[model] = cost
-        total_cost += cost
+    for path in iter_session_files(session_root) or []:
+        for ts, delta, model in iter_token_deltas(path) or []:
+            local = to_local(ts)
+            if local is None:
+                continue
+            day = local.date()
+            if since and day < since:
+                continue
+            if until and day > until:
+                continue
+            cost = cost_for_record(model, delta, prices, aliases)
+            if cost is not None:
+                total_cost += cost
 
     daily_models_serialized = {}
     for day, model_map in usage["daily_models"].items():
@@ -3218,6 +3287,10 @@ def main() -> int:
                 "input": float(entry["input"]),
                 "cached_input": float(entry["cached_input"]) if entry["cached_input"] else None,
                 "output": float(entry["output"]),
+                "long_context_threshold": entry.get("long_context_threshold"),
+                "long_context_input": float(entry["long_context_input"]) if entry.get("long_context_input") is not None else None,
+                "long_context_cached_input": float(entry["long_context_cached_input"]) if entry.get("long_context_cached_input") is not None else None,
+                "long_context_output": float(entry["long_context_output"]) if entry.get("long_context_output") is not None else None,
             }
             for model, entry in prices.items()
         },
