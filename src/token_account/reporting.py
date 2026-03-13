@@ -145,10 +145,17 @@ def build_report_document(
     cache_rate = cached_tokens / input_tokens if input_tokens else 0
 
     total_cost = Decimal("0")
+    event_costs: list[float | None] = []
     for row in rows:
         cost = cost_for_record(str(row.get("model") or ""), row, prices, aliases)
         if cost is not None:
             total_cost += cost
+        if int(row.get("total_tokens", 0) or 0) > 0:
+            event_costs.append(float(cost) if cost is not None else None)
+
+    for event, cost in zip(usage["events"], event_costs):
+        if cost is not None:
+            event["cost_usd"] = cost
 
     daily_models_serialized: dict[str, Any] = {}
     for day, model_map in usage["daily_models"].items():

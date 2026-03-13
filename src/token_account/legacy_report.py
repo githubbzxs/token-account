@@ -2655,6 +2655,9 @@ function pricingForInputTokens(pricing, inputTokens) {
 }
 
 function costUSD(model, rec) {
+  if (rec && rec.cost_usd != null && Number.isFinite(Number(rec.cost_usd))) {
+    return Number(rec.cost_usd);
+  }
   const basePricing = resolvePricing(model);
   if (!basePricing) return null;
   const inputTokens = pickUsageValue(rec, "input_tokens", "input");
@@ -3250,6 +3253,7 @@ def main() -> int:
         reverse=True,
     )
     total_cost = Decimal("0")
+    event_costs = []
     for path in iter_session_files(session_root) or []:
         for ts, delta, model in iter_token_deltas(path) or []:
             local = to_local(ts)
@@ -3263,6 +3267,12 @@ def main() -> int:
             cost = cost_for_record(model, delta, prices, aliases)
             if cost is not None:
                 total_cost += cost
+            if int(delta.get("total_tokens", 0) or 0) > 0:
+                event_costs.append(float(cost) if cost is not None else None)
+
+    for event, cost in zip(usage["events"], event_costs):
+        if cost is not None:
+            event["cost_usd"] = cost
 
     daily_models_serialized = {}
     for day, model_map in usage["daily_models"].items():
