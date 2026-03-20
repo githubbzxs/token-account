@@ -1318,6 +1318,56 @@ html.theme-switching .chart {
   will-change: opacity;
 }
 
+.metric-roll {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.02em;
+  min-height: 1em;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.metric-roll-static {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: min-content;
+}
+
+.metric-roll-column {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 0.68em;
+  height: 1em;
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.96) 18%, rgba(0, 0, 0, 0.96) 82%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.96) 18%, rgba(0, 0, 0, 0.96) 82%, transparent 100%);
+}
+
+.metric-roll-track {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  transform: translateY(calc(var(--roll-from, 0) * -1em));
+}
+
+.metric-roll-track.is-animating {
+  transition:
+    transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 620ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(calc(var(--roll-to, 0) * -1em));
+}
+
+.metric-roll-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1em;
+}
+
 .card .sub {
   margin-top: 8px;
   color: var(--muted);
@@ -1552,6 +1602,7 @@ html.theme-switching .chart {
 @media (prefers-reduced-motion: reduce) {
   .text-fade-anim,
   .metric-value-anim,
+  .metric-roll-track.is-animating,
   .i18n-switch-anim,
   html.theme-switching body,
   html.theme-switching .page,
@@ -1723,6 +1774,91 @@ function setAnimatedText(el, text, options) {
   if (shouldAnimate) {
     triggerSwapAnimation(el, opts.className || "text-fade-anim");
   }
+  return true;
+}
+
+function canUseRollingNumber(text) {
+  return /^[0-9.,%$KMB+\\- ]+$/.test(String(text || ""));
+}
+
+function canRollDigits(prevText, nextText) {
+  const prev = String(prevText || "");
+  const next = String(nextText || "");
+  if (!prev || prev.length !== next.length) return false;
+  for (let i = 0; i < prev.length; i += 1) {
+    const prevIsDigit = /[0-9]/.test(prev[i]);
+    const nextIsDigit = /[0-9]/.test(next[i]);
+    if (prevIsDigit !== nextIsDigit) return false;
+    if (!prevIsDigit && prev[i] !== next[i]) return false;
+  }
+  return true;
+}
+
+function compareRollDirection(prevText, nextText) {
+  const prevDigits = String(prevText || "").replace(/[^0-9]/g, "").replace(/^0+/, "") || "0";
+  const nextDigits = String(nextText || "").replace(/[^0-9]/g, "").replace(/^0+/, "") || "0";
+  if (prevDigits.length !== nextDigits.length) {
+    return nextDigits.length > prevDigits.length ? 1 : -1;
+  }
+  return nextDigits >= prevDigits ? 1 : -1;
+}
+
+function renderRollingDigits(el, prevText, nextText, syncAriaLabel) {
+  const direction = compareRollDirection(prevText, nextText);
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < nextText.length; i += 1) {
+    const char = nextText[i];
+    if (!/[0-9]/.test(char)) {
+      const staticSpan = document.createElement("span");
+      staticSpan.className = "metric-roll-static";
+      staticSpan.textContent = char === " " ? "\u00A0" : char;
+      fragment.appendChild(staticSpan);
+      continue;
+    }
+
+    const prevDigit = Number(prevText[i] || 0);
+    const nextDigit = Number(char);
+    const delta = direction >= 0
+      ? ((nextDigit - prevDigit + 10) % 10)
+      : -((prevDigit - nextDigit + 10) % 10);
+    const fromIndex = 10 + prevDigit;
+    const toIndex = fromIndex + delta;
+
+    const column = document.createElement("span");
+    column.className = "metric-roll-column";
+    const track = document.createElement("span");
+    track.className = "metric-roll-track";
+    track.style.setProperty("--roll-from", String(fromIndex));
+    track.style.setProperty("--roll-to", String(toIndex));
+    track.style.transitionDelay = `${Math.max(0, nextText.length - i - 1) * 18}ms`;
+
+    for (let reelIndex = 0; reelIndex < 30; reelIndex += 1) {
+      const cell = document.createElement("span");
+      cell.className = "metric-roll-cell";
+      cell.textContent = String(reelIndex % 10);
+      track.appendChild(cell);
+    }
+
+    column.appendChild(track);
+    fragment.appendChild(column);
+  }
+
+  el.textContent = "";
+  el.classList.add("metric-roll");
+  el.appendChild(fragment);
+  el.dataset.animatedText = nextText;
+  el.dataset.metricText = nextText;
+  if (syncAriaLabel) {
+    el.setAttribute("aria-label", nextText);
+  }
+  if (prefersReducedMotion()) {
+    return true;
+  }
+  requestAnimationFrame(() => {
+    el.querySelectorAll(".metric-roll-track").forEach((track) => {
+      track.classList.add("is-animating");
+    });
+  });
   return true;
 }
 
@@ -2128,6 +2264,14 @@ function setDisplayText(id, value, animate) {
   if (!el) return;
   const text = String(value ?? "");
   const useAnimation = typeof animate === "object" ? animate.animate !== false : animate !== false;
+  const prevText = el.dataset.animatedText != null
+    ? el.dataset.animatedText
+    : (el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || ""));
+  if (useAnimation && canUseRollingNumber(text) && canRollDigits(prevText, text)) {
+    renderRollingDigits(el, prevText, text, true);
+    return;
+  }
+  el.classList.remove("metric-roll");
   setAnimatedText(el, text, {
     animate: useAnimation,
     className: "metric-value-anim",
@@ -2230,7 +2374,7 @@ function lineChart(el, labels, values) {
     if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
       dailyChartInstance.dispose();
     }
-    dailyChartInstance = window.echarts.init(el, null, { renderer: "canvas" });
+    dailyChartInstance = window.echarts.init(el, null, { renderer: "svg" });
   }
   if (!chartResizeBound) {
     window.addEventListener("resize", () => {
@@ -2291,10 +2435,14 @@ function lineChart(el, labels, values) {
   const chartOption = {
     backgroundColor: "transparent",
     animation: animateChartUpdate,
-    animationDuration: animateChartUpdate ? 260 : 0,
-    animationDurationUpdate: animateChartUpdate ? 320 : 0,
-    animationEasing: "cubicOut",
-    animationEasingUpdate: "cubicOut",
+    animationDuration: animateChartUpdate ? 420 : 0,
+    animationDurationUpdate: animateChartUpdate ? 560 : 0,
+    animationEasing: "quarticOut",
+    animationEasingUpdate: "quarticOut",
+    stateAnimation: {
+      duration: animateChartUpdate ? 280 : 0,
+      easing: "cubicOut",
+    },
     grid: { left: 48, right: 26, top: 16, bottom: 56 },
     tooltip: {
       trigger: "axis",
@@ -2302,6 +2450,7 @@ function lineChart(el, labels, values) {
       borderColor: palette.tooltipBorder,
       borderWidth: 1,
       textStyle: { color: "#f8fafc" },
+      transitionDuration: animateChartUpdate ? 0.14 : 0,
       axisPointer: { type: "line", lineStyle: { color: palette.axisPointer, width: 1 } },
       valueFormatter: (value) => formatChartNumber(value),
     },
@@ -2339,22 +2488,25 @@ function lineChart(el, labels, values) {
     series: [
       {
         type: "line",
+        id: "hourly-total-line",
         data: chartValues,
         showSymbol: false,
-        smooth: 0.46,
+        smooth: 0.58,
+        sampling: "lttb",
+        universalTransition: true,
         lineStyle: {
-          width: 1.4,
+          width: 1.8,
           color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
             { offset: 0, color: palette.lineStart },
             { offset: 1, color: palette.lineEnd },
           ]),
-          opacity: 0.78,
+          opacity: 0.9,
         },
         areaStyle: {
           color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: palette.lineStart },
-            { offset: 0.38, color: palette.areaStart },
-            { offset: 0.62, color: palette.areaMid },
+            { offset: 0.28, color: palette.areaStart },
+            { offset: 0.64, color: palette.areaMid },
             { offset: 1, color: palette.areaEnd },
           ]),
         },
@@ -2365,6 +2517,7 @@ function lineChart(el, labels, values) {
   dailyChartInstance.setOption(chartOption, {
     notMerge: false,
     lazyUpdate: true,
+    replaceMerge: ["xAxis", "yAxis", "series"],
   });
 }
 

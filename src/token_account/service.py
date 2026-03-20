@@ -50,10 +50,6 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
-        index_file = static_dir / "index.html"
-        if index_file.exists():
-            return HTMLResponse(index_file.read_text(encoding="utf-8"))
-
         with db_session(app.state.config.db_file) as conn:
             data, summary, empty = build_report_from_database(
                 conn,
