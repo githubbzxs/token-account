@@ -10,10 +10,6 @@
 
 # Decisions
 
-- **[2026-03-20] 仪表盘数字与主图表改用更强动画实现**：首页大数字切换统一改为 `RollingNumber` 列滚动，`每日走势/24 小时热度` 从 `@mantine/charts` 切到 `echarts svg renderer`，保留 `DonutChart` 与 `RingProgress`。
-  - Why：用户明确反馈数字切换“离苹果还有差距”，且原 `Mantine/Recharts` 封装在高频刷新场景下过渡不够丝滑。
-  - Impact：新增 `frontend/src/components/` 与 `frontend/src/hooks/usePrefersReducedMotion.ts`，前端构建产物新增 `echarts` chunk，并为 `prefers-reduced-motion` 增加动画降级分支。
-  - Verify：`npx tsc --noEmit`、`npm run build` 通过；测试 VPS 本机 `http://127.0.0.1:8000/api/health` 与公网 `https://usage.0xpsyche.me/api/health` 返回正常，首页引用新 `echarts`/`index` 资源。
 - **[2026-03-13] `gpt-5.4` 改为双档计费**：`gpt-5.4` 按单事件 `input_tokens` 是否超过 `272000` 选择短上下文或长上下文价格，不能再按模型汇总后统一套一个单价。
   - Why：真实库内已出现超过阈值的 `gpt-5.4` 事件，继续按短上下文单档价格会低估成本。
   - Impact：`pricing.json` 与服务端/前端估算成本逻辑都要保留长上下文字段，并按事件逐条计算。
@@ -96,8 +92,8 @@
 - `python3 src/codex_token_report.py --out report-vps`（香港测试 VPS）
 
 # Status / Next
-- 当前：React 仪表盘已切到滚动数字 + ECharts 主图表方案，法兰克福测试机上的 `usage.0xpsyche.me` 已重启服务并加载新静态资源。
-- 下一步：如需继续微调，优先观察真实数据刷新时的数字位数跨档场景（例如 `999 -> 1.0K`）与 ECharts 包体是否需要再拆分懒加载。
+- 当前：动态文本动效已统一为 `opacity-only 360ms`，并在本地与香港测试 VPS 重新生成报告验证通过。
+- 下一步：如需继续微调，可基于真实使用频率把时长从 `360ms` 下调到 `280ms`（仅参数调整，无需改逻辑）。
 
 # Known Issues
 - `dummy_sessions/test.jsonl` 是本地未跟踪测试数据文件，默认不纳入提交。

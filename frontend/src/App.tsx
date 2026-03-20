@@ -20,7 +20,7 @@ import {
   Title,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
-import { DonutChart } from '@mantine/charts';
+import { AreaChart, BarChart, DonutChart } from '@mantine/charts';
 import {
   IconActivityHeartbeat,
   IconCalendarMonth,
@@ -32,9 +32,6 @@ import {
   IconRefresh,
   IconSparkles,
 } from '@tabler/icons-react';
-import { HourlyBarsEChart } from './components/HourlyBarsEChart';
-import { RollingNumber } from './components/RollingNumber';
-import { TrendEChart } from './components/TrendEChart';
 
 type DashboardResponse = {
   data: ReportData;
@@ -140,6 +137,13 @@ function formatLargeNumber(value: number): string {
   return value.toString();
 }
 
+function formatDateLabel(value: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(`${value}T00:00:00`));
+}
+
 function formatDateTime(value: string | null | undefined): string {
   if (!value) {
     return '未同步';
@@ -182,6 +186,24 @@ function getPresetRange(preset: Preset, data: ReportData | null): { since?: stri
     since: startText < minDate ? minDate : startText,
     until: todayText,
   };
+}
+
+function buildDailySeries(data: ReportData) {
+  return data.daily.labels.map((label, index) => ({
+    date: formatDateLabel(label),
+    total: data.daily.total[index],
+    输入: data.daily.input[index],
+    输出: data.daily.output[index],
+    推理: data.daily.reasoning[index],
+    缓存: data.daily.cached[index],
+  }));
+}
+
+function buildHourlySeries(data: ReportData) {
+  return data.hourly.labels.map((label, index) => ({
+    hour: `${label}:00`,
+    总量: data.hourly.total[index],
+  }));
 }
 
 function toIsoDate(value: string | null): string | undefined {
@@ -258,6 +280,8 @@ export function App() {
     };
   }, [fetchDashboard]);
 
+  const dailySeries = useMemo(() => (dashboard ? buildDailySeries(dashboard.data) : []), [dashboard]);
+  const hourlySeries = useMemo(() => (dashboard ? buildHourlySeries(dashboard.data) : []), [dashboard]);
   const modelRows = useMemo(() => (dashboard ? dashboard.data.models : []), [dashboard]);
 
   if (loading && !dashboard) {
@@ -293,7 +317,6 @@ export function App() {
     value: item.value,
     color: ['#7ca8ff', '#89c8ff', '#8fe0d6', '#c3d8ff', '#d7e7ff'][index] ?? '#d7e7ff',
   }));
-  const hourlyLabels = data.hourly.labels.map((label) => `${label}:00`);
 
   return (
     <Box className="app-shell">
@@ -339,25 +362,25 @@ export function App() {
           </div>
           <Paper className="hero-spotlight" radius={32}>
             <Text className="eyebrow">今日质感卡片</Text>
-            <RollingNumber value={summary.total_tokens} className="spotlight-value" />
+            <div className="spotlight-value">{summary.total_tokens}</div>
             <Text className="spotlight-caption">总 Token</Text>
             <Divider my="md" color="rgba(138, 155, 180, 0.12)" />
             <SimpleGrid cols={2} spacing="md">
               <div>
                 <Text className="mini-label">会话</Text>
-                <RollingNumber value={summary.sessions} className="mini-metric-value" />
+                <Text fw={600}>{summary.sessions}</Text>
               </div>
               <div>
                 <Text className="mini-label">活跃天数</Text>
-                <RollingNumber value={summary.days_active} className="mini-metric-value" />
+                <Text fw={600}>{summary.days_active}</Text>
               </div>
               <div>
                 <Text className="mini-label">成本</Text>
-                <RollingNumber value={summary.total_cost} className="mini-metric-value" />
+                <Text fw={600}>{summary.total_cost}</Text>
               </div>
               <div>
                 <Text className="mini-label">缓存率</Text>
-                <RollingNumber value={summary.cache_rate} className="mini-metric-value" />
+                <Text fw={600}>{summary.cache_rate}</Text>
               </div>
             </SimpleGrid>
           </Paper>
@@ -449,12 +472,24 @@ export function App() {
               </div>
               <Text c="dimmed">按天汇总输入、输出、推理与缓存变化</Text>
             </Group>
-            <TrendEChart
-              labels={data.daily.labels}
-              total={data.daily.total}
-              input={data.daily.input}
-              output={data.daily.output}
-              reasoning={data.daily.reasoning}
+            <AreaChart
+              h={360}
+              data={dailySeries}
+              dataKey="date"
+              curveType="natural"
+              withDots={false}
+              gridAxis="xy"
+              series={[
+                { name: 'total', label: '总量', color: '#7ca8ff' },
+                { name: '输入', color: '#8cd8ff' },
+                { name: '输出', color: '#9be7cf' },
+                { name: '推理', color: '#c5d2ff' },
+              ]}
+              yAxisProps={{
+                width: 64,
+                tickFormatter: (value) => formatLargeNumber(Number(value)),
+              }}
+              valueFormatter={(value) => `${formatLargeNumber(Number(value))} tokens`}
             />
           </Paper>
 
@@ -480,7 +515,9 @@ export function App() {
                   ]}
                   label={
                     <Stack gap={0} align="center">
-                      <RollingNumber value={summary.cache_rate} className="ring-number" />
+                      <Text fw={700} size="xl">
+                        {summary.cache_rate}
+                      </Text>
                       <Text size="sm" c="dimmed">
                         缓存率
                       </Text>
@@ -509,19 +546,14 @@ export function App() {
                   <IconCpu size={22} />
                 </ThemeIcon>
               </Group>
-              <div className="donut-wrap">
-                <DonutChart
-                  size={220}
-                  thickness={26}
-                  data={modelDonutData}
-                  withLabelsLine={false}
-                  withTooltip
-                />
-                <div className="donut-center">
-                  <RollingNumber value={summary.total_tokens} className="donut-number" />
-                  <Text className="mini-label">总量</Text>
-                </div>
-              </div>
+              <DonutChart
+                size={220}
+                thickness={26}
+                data={modelDonutData}
+                withLabelsLine={false}
+                withTooltip
+                chartLabel={summary.total_tokens}
+              />
               <Stack gap="sm" mt="lg">
                 {topModels.map((item, index) => (
                   <Group key={item.name} justify="space-between" className="list-row">
@@ -529,7 +561,7 @@ export function App() {
                       <span className="model-swatch" style={{ background: modelDonutData[index]?.color ?? '#d7e7ff' }} />
                       <Text fw={600}>{item.name}</Text>
                     </Group>
-                    <RollingNumber value={formatLargeNumber(item.value)} className="model-value" />
+                    <Text c="dimmed">{formatLargeNumber(item.value)}</Text>
                   </Group>
                 ))}
               </Stack>
@@ -546,7 +578,17 @@ export function App() {
               </div>
               <Text c="dimmed">找到你最常触发高消耗的时间段</Text>
             </Group>
-            <HourlyBarsEChart labels={hourlyLabels} values={data.hourly.total} />
+            <BarChart
+              h={300}
+              data={hourlySeries}
+              dataKey="hour"
+              series={[{ name: '总量', color: '#8cb8ff' }]}
+              yAxisProps={{
+                width: 60,
+                tickFormatter: (value) => formatLargeNumber(Number(value)),
+              }}
+              valueFormatter={(value) => `${formatLargeNumber(Number(value))} tokens`}
+            />
           </Paper>
 
           <Paper className="canvas-panel" radius={32}>
@@ -619,7 +661,7 @@ export function App() {
                     </Text>
                   </div>
                   <div className="event-value">
-                    <RollingNumber value={formatLargeNumber(event.total)} className="event-number" />
+                    <Text fw={700}>{formatLargeNumber(event.total)}</Text>
                     <Text size="sm" c="dimmed">
                       {event.cost_usd ? `$${event.cost_usd.toFixed(4)}` : '未估价'}
                     </Text>
@@ -649,9 +691,7 @@ export function App() {
                 {topModels.map((item) => (
                   <Table.Tr key={item.name}>
                     <Table.Td>{item.name}</Table.Td>
-                    <Table.Td>
-                      <RollingNumber value={formatLargeNumber(item.value)} className="table-number" />
-                    </Table.Td>
+                    <Table.Td>{formatLargeNumber(item.value)}</Table.Td>
                     <Table.Td>{((item.value / totalModelTokens) * 100).toFixed(1)}%</Table.Td>
                   </Table.Tr>
                 ))}
@@ -677,7 +717,7 @@ function MetricCard({ icon: Icon, title, value, detail }: MetricCardProps) {
       <Group justify="space-between" align="flex-start">
         <Stack gap={6}>
           <Text className="eyebrow">{title}</Text>
-          <RollingNumber value={value} className="metric-value" />
+          <Text className="metric-value">{value}</Text>
           <Text c="dimmed">{detail}</Text>
         </Stack>
         <ThemeIcon size={46} radius="xl" variant="light" color="blue">
@@ -699,7 +739,7 @@ function DetailRow({ label, value, progress }: DetailRowProps) {
     <div>
       <Group justify="space-between" mb={6}>
         <Text fw={600}>{label}</Text>
-        <RollingNumber value={value} className="detail-value" />
+        <Text c="dimmed">{value}</Text>
       </Group>
       <Progress value={progress} radius="xl" color="blue" size="md" />
     </div>
