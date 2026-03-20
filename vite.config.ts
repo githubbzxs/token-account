@@ -15,6 +15,10 @@ export default defineConfig({
             return undefined;
           }
 
+          if (id.includes('/echarts/') || id.includes('/zrender/')) {
+            return 'echarts';
+          }
+
           if (id.includes('@mantine/charts') || id.includes('/recharts/')) {
             return 'charts';
           }
