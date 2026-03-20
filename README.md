@@ -20,6 +20,7 @@ Windows 下也可以直接双击 `open-report.bat`，它会在后台拉起本地
 
 启动后可访问：
 - 报告页：`http://127.0.0.1:8000/`
+- 仪表盘接口：`http://127.0.0.1:8000/api/dashboard`
 - 报表接口：`http://127.0.0.1:8000/api/report`
 - 来源列表：`http://127.0.0.1:8000/api/sources`
 - 健康检查：`http://127.0.0.1:8000/api/health`
@@ -96,3 +97,21 @@ docker compose up -d --build
 ```
 
 默认将本地 `./data` 挂载到容器 `/data`，用于持久化 SQLite 数据。
+
+## 前端开发
+当前首页已经改为独立前端应用，源码位于 `frontend/`，由 Vite 构建后输出到 `src/token_account/static/`，再由 FastAPI 直接托管。
+
+首次安装前端依赖：
+```bash
+npm install
+```
+
+开发调试：
+```bash
+npm run dev
+```
+
+重新构建首页：
+```bash
+npm run build
+```

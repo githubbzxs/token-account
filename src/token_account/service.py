@@ -5,9 +5,10 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .reporting import build_report_from_database, render_html
+from .reporting import build_dashboard_payload, build_report_from_database, render_html
 from .storage import db_session, fetch_sources, ingest_sync_events
 
 
@@ -42,9 +43,17 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
     )
     app = FastAPI(title="Codex Token Usage Service", version="1.0.0")
     app.state.config = config
+    static_dir = Path(__file__).resolve().parent / "static"
+
+    if (static_dir / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=static_dir / "assets"), name="assets")
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
+        index_file = static_dir / "index.html"
+        if index_file.exists():
+            return HTMLResponse(index_file.read_text(encoding="utf-8"))
+
         with db_session(app.state.config.db_file) as conn:
             data, summary, empty = build_report_from_database(
                 conn,
@@ -52,6 +61,24 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
                 source_label=app.state.config.db_file,
             )
         return HTMLResponse(render_html(data, summary, empty))
+
+    @app.get("/api/dashboard")
+    def api_dashboard(
+        since: str | None = Query(default=None, description="起始日期，格式 YYYY-MM-DD"),
+        until: str | None = Query(default=None, description="结束日期，格式 YYYY-MM-DD"),
+    ) -> dict[str, Any]:
+        try:
+            with db_session(app.state.config.db_file) as conn:
+                data, summary, empty = build_report_from_database(
+                    conn,
+                    since_text=since,
+                    until_text=until,
+                    pricing_path=Path(app.state.config.pricing_file) if app.state.config.pricing_file else None,
+                    source_label=app.state.config.db_file,
+                )
+            return build_dashboard_payload(data, summary, empty)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/report")
     def api_report(

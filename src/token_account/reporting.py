@@ -229,6 +229,32 @@ def build_report_document(
     return data, summary, empty
 
 
+def build_dashboard_payload(data: dict[str, Any], summary: dict[str, Any], empty: bool) -> dict[str, Any]:
+    model_totals: dict[str, int] = defaultdict(int)
+    for model_map in data.get("daily_models", {}).values():
+        for model, rec in model_map.items():
+            model_totals[model] += int(rec.get("total_tokens", 0) or 0)
+
+    top_models = [
+        {"name": model, "value": value}
+        for model, value in sorted(model_totals.items(), key=lambda item: item[1], reverse=True)[:8]
+    ]
+
+    return {
+        "data": {
+            "range": data["range"],
+            "daily": data["daily"],
+            "hourly": data["hourly"],
+            "models": top_models,
+            "events": data.get("events", [])[-24:],
+            "sources": data.get("sources", []),
+            "meta": data["meta"],
+        },
+        "summary": summary,
+        "empty": empty,
+    }
+
+
 def build_report_from_database(
     conn,
     *,
@@ -247,6 +273,7 @@ def build_report_from_database(
 
 
 __all__ = [
+    "build_dashboard_payload",
     "build_report_document",
     "build_report_from_database",
     "render_html",
