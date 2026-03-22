@@ -1193,14 +1193,19 @@ html.theme-switching .chart {
   width: 0;
   border-radius: 999px;
   background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.16) inset,
+    0 -1px 0 rgba(17, 24, 39, 0.12) inset;
   opacity: 0;
-  transform: translateX(0);
-  will-change: transform, width, opacity;
+  transform: translate3d(0, 0, 0);
+  transform-origin: center center;
+  will-change: transform, width, opacity, box-shadow;
   transition:
-    transform 0.34s cubic-bezier(0.2, 0.9, 0.24, 1),
-    width 0.34s cubic-bezier(0.2, 0.9, 0.24, 1),
-    opacity 0.18s ease;
+    transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.22s ease,
+    box-shadow 0.48s cubic-bezier(0.22, 1, 0.36, 1);
   z-index: 0;
 }
 
@@ -1211,6 +1216,13 @@ html.theme-switching .chart {
   border-radius: inherit;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02));
   pointer-events: none;
+}
+
+.range-segmented.is-animating .range-segmented-slider {
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 -1px 0 rgba(17, 24, 39, 0.14) inset;
 }
 
 .range-segmented button {
@@ -1235,7 +1247,11 @@ html.theme-switching .chart {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  transition: color 0.16s ease, opacity 0.16s ease;
+  transform: translateY(0);
+  transition:
+    color 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .range-segmented button:hover {
@@ -1243,11 +1259,21 @@ html.theme-switching .chart {
 }
 
 .range-segmented button:active {
-  opacity: 0.985;
+  opacity: 1;
+  transform: scale(0.968);
 }
 
 .range-segmented button.is-active {
   color: #ffffff;
+  transform: translateY(-0.5px);
+}
+
+.range-segmented.is-animating button:not(.is-active) {
+  opacity: 0.82;
+}
+
+.range-segmented.is-animating button.is-active {
+  animation: segmentedLabelSettle 0.44s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .range-actions {
@@ -1702,6 +1728,21 @@ html.theme-switching .chart {
   }
 }
 
+@keyframes segmentedLabelSettle {
+  0% {
+    transform: translateY(0.5px) scale(0.985);
+    opacity: 0.84;
+  }
+  58% {
+    transform: translateY(-0.7px) scale(1.012);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-0.5px) scale(1);
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .text-fade-anim,
   .metric-value-anim,
@@ -1726,6 +1767,9 @@ html.theme-switching .chart {
   }
   .range-segmented-slider {
     transition: none !important;
+  }
+  .range-segmented.is-animating button.is-active {
+    animation: none !important;
   }
   html.theme-ready body,
   html.theme-ready .page,
@@ -1837,6 +1881,8 @@ let chartResizeBound = false;
 let chartWheelZoomBound = false;
 let quickRangeResizeBound = false;
 let quickRangeSelection = "";
+let quickRangeSliderAnimation = null;
+let quickRangeSliderCleanupTimer = 0;
 const THEME_STORAGE_KEY = "token-report-theme";
 let themeSwitchTimer = null;
 const calendarState = {
@@ -2201,25 +2247,123 @@ function rememberQuickRangeSelection(preset) {
   quickRangeSelection = preset || "";
 }
 
-function updateQuickRangeSlider() {
+function clearQuickRangeSliderMotion(segmented, slider) {
+  if (quickRangeSliderAnimation) {
+    quickRangeSliderAnimation.cancel();
+    quickRangeSliderAnimation = null;
+  }
+  if (quickRangeSliderCleanupTimer) {
+    clearTimeout(quickRangeSliderCleanupTimer);
+    quickRangeSliderCleanupTimer = 0;
+  }
+  if (segmented) {
+    segmented.classList.remove("is-animating");
+    delete segmented.dataset.motionDirection;
+  }
+  if (slider) {
+    slider.classList.remove("is-animating");
+  }
+}
+
+function readQuickRangeSliderState(slider) {
+  return {
+    x: Number.parseFloat(slider.dataset.x || "0") || 0,
+    width: Number.parseFloat(slider.dataset.width || "0") || 0,
+    visible: slider.dataset.visible === "1",
+  };
+}
+
+function writeQuickRangeSliderState(slider, state) {
+  slider.dataset.x = state.x.toFixed(2);
+  slider.dataset.width = state.width.toFixed(2);
+  slider.dataset.visible = state.visible ? "1" : "0";
+}
+
+function animateQuickRangeSlider(segmented, slider, fromState, toState) {
+  const canAnimate =
+    !prefersReducedMotion() &&
+    typeof slider.animate === "function" &&
+    fromState.visible &&
+    toState.visible;
+  const travel = Math.abs(toState.x - fromState.x);
+  const widthDelta = Math.abs(toState.width - fromState.width);
+  if (!canAnimate || (travel < 0.5 && widthDelta < 0.5)) {
+    clearQuickRangeSliderMotion(segmented, slider);
+    return;
+  }
+  clearQuickRangeSliderMotion(segmented, slider);
+  const movingRight = toState.x >= fromState.x;
+  const stretch = Math.min(22, Math.max(8, travel * 0.18));
+  const midpointX = movingRight
+    ? Math.min(toState.x, fromState.x + travel * 0.68)
+    : Math.max(toState.x, fromState.x - travel * 0.68);
+  const midpointWidth = Math.max(fromState.width, toState.width) + stretch;
+  const duration = Math.min(580, Math.max(380, 340 + travel * 1.15));
+  segmented.classList.add("is-animating");
+  segmented.dataset.motionDirection = movingRight ? "right" : "left";
+  slider.classList.add("is-animating");
+  quickRangeSliderAnimation = slider.animate(
+    [
+      {
+        transform: `translate3d(${fromState.x.toFixed(2)}px, 0, 0) scaleY(0.94)`,
+        width: `${fromState.width.toFixed(2)}px`,
+        offset: 0,
+      },
+      {
+        transform: `translate3d(${midpointX.toFixed(2)}px, 0, 0) scaleY(1.02)`,
+        width: `${midpointWidth.toFixed(2)}px`,
+        offset: 0.58,
+      },
+      {
+        transform: `translate3d(${toState.x.toFixed(2)}px, 0, 0) scaleY(1)`,
+        width: `${toState.width.toFixed(2)}px`,
+        offset: 1,
+      },
+    ],
+    {
+      duration,
+      easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+      fill: "both",
+    }
+  );
+  const cleanup = () => clearQuickRangeSliderMotion(segmented, slider);
+  quickRangeSliderAnimation.finished.then(cleanup).catch(() => {});
+  quickRangeSliderCleanupTimer = window.setTimeout(cleanup, duration + 60);
+}
+
+function updateQuickRangeSlider(options) {
+  const opts = options || {};
   const segmented = document.getElementById("quick-range-segmented");
   const slider = document.getElementById("quick-range-slider");
   if (!segmented || !slider) return;
+  const previousState = readQuickRangeSliderState(slider);
   const activeBtn = segmented.querySelector("button.is-active");
   if (!(activeBtn instanceof HTMLElement)) {
+    clearQuickRangeSliderMotion(segmented, slider);
     slider.style.opacity = "0";
     slider.style.width = "0";
-    slider.style.transform = "translateX(0)";
+    slider.style.transform = "translate3d(0, 0, 0)";
+    writeQuickRangeSliderState(slider, { x: 0, width: 0, visible: false });
     return;
   }
-  const offsetX = Math.max(0, activeBtn.offsetLeft);
-  const activeWidth = Math.max(0, activeBtn.offsetWidth);
+  const nextState = {
+    x: Math.max(0, activeBtn.offsetLeft),
+    width: Math.max(0, activeBtn.offsetWidth),
+    visible: true,
+  };
   slider.style.opacity = "1";
-  slider.style.width = `${activeWidth.toFixed(2)}px`;
-  slider.style.transform = `translate3d(${offsetX.toFixed(2)}px, 0, 0)`;
+  slider.style.width = `${nextState.width.toFixed(2)}px`;
+  slider.style.transform = `translate3d(${nextState.x.toFixed(2)}px, 0, 0)`;
+  writeQuickRangeSliderState(slider, nextState);
+  if (opts.animate) {
+    animateQuickRangeSlider(segmented, slider, previousState, nextState);
+    return;
+  }
+  clearQuickRangeSliderMotion(segmented, slider);
 }
 
 function setQuickRangeActive(preset, options) {
+  const opts = options || {};
   const segmented = document.getElementById("quick-range-segmented");
   if (!segmented) return;
   const nextPreset = preset || "";
@@ -2228,7 +2372,7 @@ function setQuickRangeActive(preset, options) {
     btn.classList.toggle("is-active", nextActive);
   });
   segmented.dataset.activeRange = nextPreset;
-  updateQuickRangeSlider();
+  updateQuickRangeSlider({ animate: opts.animate === true });
 }
 
 function updateQuickRangeState(startISO, endISO, options) {
@@ -3362,7 +3506,7 @@ function setupRangeControls() {
       const value = btn.dataset.range;
       if (!value) return;
       rememberQuickRangeSelection(value);
-      setQuickRangeActive(value);
+      setQuickRangeActive(value, { animate: true });
       const runApply = (startISO, endISO) => {
         if (window.requestAnimationFrame) {
           window.requestAnimationFrame(() => applyRange(startISO, endISO, { forceRedraw: true }));

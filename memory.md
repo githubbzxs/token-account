@@ -10,6 +10,10 @@
 
 # Decisions
 
+- **[2026-03-22] 快捷范围切换改为 Swift 风格动效**：快捷范围胶囊改为“滑块吸附滑移 + 文本同步回弹”的分段动画，保留 `prefers-reduced-motion` 下的静态退化。
+  - Why：用户反馈范围切换动画过于生硬，希望更接近 Swift segmented control 的质感。
+  - Impact：`src/token_account/legacy_report.py` 的 `.range-segmented-slider`、`.range-segmented button`、`segmentedLabelSettle`、`updateQuickRangeSlider()` 与 `setQuickRangeActive()`。
+  - Verify：本地 `python3 -m py_compile src/token_account/legacy_report.py` 通过；香港测试 VPS 临时目录生成的 `report-vps/index.html` 可检索到 `segmentedLabelSettle`、`quickRangeSliderAnimation` 与 `setQuickRangeActive(value, { animate: true })`。
 - **[2026-03-13] `gpt-5.4` 改为双档计费**：`gpt-5.4` 按单事件 `input_tokens` 是否超过 `272000` 选择短上下文或长上下文价格，不能再按模型汇总后统一套一个单价。
   - Why：真实库内已出现超过阈值的 `gpt-5.4` 事件，继续按短上下文单档价格会低估成本。
   - Impact：`pricing.json` 与服务端/前端估算成本逻辑都要保留长上下文字段，并按事件逐条计算。
