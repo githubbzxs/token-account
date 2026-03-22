@@ -1329,7 +1329,7 @@ html.theme-switching .chart {
 .metric-roll {
   display: inline-flex;
   align-items: center;
-  gap: 0.02em;
+  gap: 0.01em;
   min-height: 1em;
   line-height: 1;
   white-space: nowrap;
@@ -1348,24 +1348,29 @@ html.theme-switching .chart {
   display: inline-flex;
   align-items: flex-start;
   justify-content: center;
-  width: 0.68em;
+  width: 0.66em;
   height: 1em;
   overflow: hidden;
-  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.96) 18%, rgba(0, 0, 0, 0.96) 82%, transparent 100%);
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.96) 18%, rgba(0, 0, 0, 0.96) 82%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.72) 12%, rgba(0, 0, 0, 0.98) 26%, rgba(0, 0, 0, 0.98) 74%, rgba(0, 0, 0, 0.72) 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.72) 12%, rgba(0, 0, 0, 0.98) 26%, rgba(0, 0, 0, 0.98) 74%, rgba(0, 0, 0, 0.72) 88%, transparent 100%);
 }
 
 .metric-roll-track {
   display: flex;
   flex-direction: column;
-  will-change: transform;
+  opacity: 0.6;
+  filter: blur(0.08em);
+  will-change: transform, filter, opacity;
   transform: translateY(calc(var(--roll-from, 0) * -1em));
 }
 
 .metric-roll-track.is-animating {
   transition:
-    transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 620ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform 560ms cubic-bezier(0.16, 0.84, 0.24, 1),
+    filter 560ms cubic-bezier(0.16, 0.84, 0.24, 1),
+    opacity 420ms ease-out;
+  opacity: 1;
+  filter: blur(0);
   transform: translateY(calc(var(--roll-to, 0) * -1em));
 }
 
@@ -1413,12 +1418,37 @@ html.theme-switching .chart {
 }
 
 .chart {
+  position: relative;
   width: 100%;
   height: 240px;
   border: none;
   border-radius: 12px;
   background: rgba(17, 17, 19, 0.82);
   overflow: hidden;
+  isolation: isolate;
+}
+
+.chart::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(102%);
+  background: linear-gradient(90deg, rgba(17, 17, 19, 0.98) 0%, rgba(17, 17, 19, 0.98) 72%, rgba(17, 17, 19, 0.52) 92%, rgba(17, 17, 19, 0) 100%);
+  z-index: 3;
+}
+
+.chart.chart-redraw-anim::after {
+  animation: chartRedrawWipe 760ms cubic-bezier(0.16, 0.84, 0.22, 1) both;
+  opacity: 1;
+}
+
+.chart.chart-redraw-anim > div,
+.chart.chart-redraw-anim canvas,
+.chart.chart-redraw-anim svg {
+  animation: chartContentSettle 760ms cubic-bezier(0.16, 0.84, 0.22, 1) both;
+  transform-origin: left center;
 }
 
 .chart.small {
@@ -1628,6 +1658,33 @@ html.theme-switching .chart {
   }
 }
 
+@keyframes chartRedrawWipe {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(102%);
+  }
+}
+
+@keyframes chartContentSettle {
+  0% {
+    opacity: 0.76;
+    transform: scaleX(0.985);
+    filter: saturate(0.92) blur(0.02rem);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+    filter: saturate(1) blur(0);
+  }
+}
+
 @keyframes themeSwap {
   0% {
     opacity: 0.72;
@@ -1647,6 +1704,11 @@ html.theme-switching .chart {
   .range-switch-anim,
   .range-button-switch-anim,
   .i18n-switch-anim,
+  .chart.chart-redraw-anim,
+  .chart.chart-redraw-anim::after,
+  .chart.chart-redraw-anim > div,
+  .chart.chart-redraw-anim canvas,
+  .chart.chart-redraw-anim svg,
   html.theme-switching body,
   html.theme-switching .page,
   html.theme-switching .page::before,
@@ -1879,7 +1941,7 @@ function renderRollingDigits(el, prevText, nextText, syncAriaLabel) {
     track.className = "metric-roll-track";
     track.style.setProperty("--roll-from", String(fromIndex));
     track.style.setProperty("--roll-to", String(toIndex));
-    track.style.transitionDelay = `${Math.max(0, nextText.length - i - 1) * 18}ms`;
+    track.style.transitionDelay = `${Math.max(0, nextText.length - i - 1) * 12}ms`;
 
     for (let reelIndex = 0; reelIndex < 30; reelIndex += 1) {
       const cell = document.createElement("span");
@@ -2474,11 +2536,12 @@ function setupAutoSync() {
   });
 }
 
-function lineChart(el, labels, values) {
+function lineChart(el, labels, values, options) {
   if (!el) return;
   const chartLabels = Array.isArray(labels) ? labels : [];
   const chartValues = Array.isArray(values) ? values.map(v => Number(v || 0)) : [];
   const xAxisLabelMode = pickXAxisLabelMode(chartLabels);
+  const opts = options || {};
   if (!window.echarts) {
     el.innerHTML = "";
     return;
@@ -2540,7 +2603,9 @@ function lineChart(el, labels, values) {
     dailyChartInstance.clear();
     return;
   }
-  const animateChartUpdate = hasInitialMetricsRender && !prefersReducedMotion();
+  const prefersReduced = prefersReducedMotion();
+  const shouldRedraw = Boolean(opts.redraw) && !prefersReduced;
+  const animateChartUpdate = false;
   const windowSize = chartValues.length > 200 ? Math.max(MIN_WINDOW_PERCENT, (200 / chartValues.length) * 100) : 100;
   const zoomStart = Math.max(0, (100 - windowSize) / 2);
   const zoomEnd = Math.min(100, zoomStart + windowSize);
@@ -2606,7 +2671,7 @@ function lineChart(el, labels, values) {
         showSymbol: false,
         smooth: 0.58,
         sampling: "lttb",
-        universalTransition: true,
+        universalTransition: false,
         lineStyle: {
           width: 1.8,
           color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
@@ -2628,10 +2693,12 @@ function lineChart(el, labels, values) {
     ],
   };
   dailyChartInstance.setOption(chartOption, {
-    notMerge: false,
-    lazyUpdate: true,
-    replaceMerge: ["xAxis", "yAxis", "series"],
+    notMerge: true,
+    lazyUpdate: false,
   });
+  if (shouldRedraw) {
+    triggerSwapAnimation(el, "chart-redraw-anim");
+  }
 }
 
 function barChart(el, labels, values, color) {
@@ -3180,7 +3247,9 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   updateQuickRangeState(startISO, endISO, { animate: rangeChanged });
   const animateMetrics = true;
   setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
-  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals);
+  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, {
+    redraw: rangeChanged && !previewOnly,
+  });
 
   if (previewOnly) {
     return;
