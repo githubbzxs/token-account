@@ -3455,7 +3455,7 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   if (startInput) setRangeInputValue(startInput, startISO);
   if (endInput) setRangeInputValue(endInput, endISO);
   updateRangeDateButton(startISO, endISO, { animate: rangeChanged });
-  updateQuickRangeState(startISO, endISO, { animate: rangeChanged });
+  updateQuickRangeState(startISO, endISO, { animate: false });
   const animateMetrics = true;
   setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, {
