@@ -1672,14 +1672,14 @@ html.theme-switching .chart {
 
 @keyframes rangeControlFade {
   0% {
-    opacity: 0.72;
-    transform: translateY(1px) scale(0.992);
+    opacity: 0.82;
+    transform: translateY(0.5px) scale(0.996);
     box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   }
   58% {
     opacity: 1;
     transform: translateY(0) scale(1);
-    box-shadow: 0 10px 28px rgba(var(--accent-cyan-rgb), 0.12);
+    box-shadow: 0 4px 12px rgba(var(--accent-cyan-rgb), 0.05);
   }
   100% {
     opacity: 1;
@@ -1690,12 +1690,12 @@ html.theme-switching .chart {
 
 @keyframes rangeButtonFade {
   0% {
-    opacity: 0.6;
-    transform: scale(0.96);
+    opacity: 0.84;
+    transform: scale(0.985);
   }
   62% {
     opacity: 1;
-    transform: scale(1.03);
+    transform: scale(1.008);
   }
   100% {
     opacity: 1;
@@ -2396,7 +2396,7 @@ function applyCalendarRange(startISO, endISO) {
   rememberQuickRangeSelection("");
   setRangeInputValue(startInput, startISO);
   setRangeInputValue(endInput, endISO);
-  applyRange(startISO, endISO);
+  applyRange(startISO, endISO, { forceRedraw: true });
 }
 
 function openCalendarPopover() {
@@ -3287,15 +3287,16 @@ function setupImportExport() {
   }
 }
 
-function applyRange(startISO, endISO) {
-  return applyRangeInternal(startISO, endISO, false);
+function applyRange(startISO, endISO, options) {
+  return applyRangeInternal(startISO, endISO, false, options);
 }
 
-function applyRangePreview(startISO, endISO) {
-  return applyRangeInternal(startISO, endISO, true);
+function applyRangePreview(startISO, endISO, options) {
+  return applyRangeInternal(startISO, endISO, true, options);
 }
 
-function applyRangeInternal(startISO, endISO, previewOnly) {
+function applyRangeInternal(startISO, endISO, previewOnly, options) {
+  const opts = options || {};
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
   if (!minISO || !maxISO || !DATA.daily || !DATA.daily.labels) return;
@@ -3327,7 +3328,7 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   const animateMetrics = true;
   setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, {
-    redraw: rangeChanged && !previewOnly,
+    redraw: (rangeChanged || opts.forceRedraw) && !previewOnly,
   });
 
   if (previewOnly) {
@@ -3411,9 +3412,9 @@ function setupRangeControls() {
       setQuickRangeActive(value);
       const runApply = (startISO, endISO) => {
         if (window.requestAnimationFrame) {
-          window.requestAnimationFrame(() => applyRange(startISO, endISO));
+          window.requestAnimationFrame(() => applyRange(startISO, endISO, { forceRedraw: true }));
         } else {
-          applyRange(startISO, endISO);
+          applyRange(startISO, endISO, { forceRedraw: true });
         }
       };
       if (value === "all") {
