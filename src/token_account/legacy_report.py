@@ -1313,25 +1313,31 @@ html.theme-switching .chart {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 18px;
+  align-items: end;
 }
 
 .summary-card-inline-item {
   min-width: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .summary-card-inline-label {
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.9px;
   text-transform: uppercase;
   color: var(--muted);
+  white-space: nowrap;
 }
 
 .summary-card-inline-value {
-  margin-top: 4px;
-  font-size: clamp(16px, 2.4vw, 20px);
+  margin-top: 0;
+  font-size: clamp(14px, 2vw, 17px);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
+  white-space: nowrap;
 }
 
 .card::after {
@@ -1412,7 +1418,7 @@ html.theme-switching .chart {
 }
 
 .metric-roll-track.is-animating {
-  transition: transform 540ms cubic-bezier(0.2, 0.86, 0.22, 1);
+  transition: transform 820ms cubic-bezier(0.2, 0.86, 0.22, 1);
   transform: translateY(calc(var(--roll-to, 0) * -1em));
 }
 
@@ -1471,7 +1477,7 @@ html.theme-switching .chart {
 }
 
 .chart-line-redraw {
-  animation: chartLineDraw 1100ms cubic-bezier(0.16, 0.84, 0.22, 1) both;
+  animation: chartLineDraw 3000ms cubic-bezier(0.18, 0.78, 0.2, 1) both;
   stroke-dasharray: var(--line-length);
   stroke-dashoffset: var(--line-length);
   stroke-linecap: round;
@@ -1650,8 +1656,8 @@ html.theme-switching .chart {
     height: 1px;
   }
   .summary-card-inline {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
   }
 }
 
