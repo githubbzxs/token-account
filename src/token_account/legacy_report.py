@@ -1316,6 +1316,16 @@ html.theme-switching .chart {
   will-change: opacity;
 }
 
+.range-switch-anim {
+  animation: rangeControlFade 420ms cubic-bezier(0.2, 0.78, 0.24, 1) both;
+  will-change: opacity, transform, box-shadow;
+}
+
+.range-button-switch-anim {
+  animation: rangeButtonFade 380ms cubic-bezier(0.22, 0.82, 0.24, 1) both;
+  will-change: opacity, transform;
+}
+
 .metric-roll {
   display: inline-flex;
   align-items: center;
@@ -1585,6 +1595,39 @@ html.theme-switching .chart {
   }
 }
 
+@keyframes rangeControlFade {
+  0% {
+    opacity: 0.72;
+    transform: translateY(1px) scale(0.992);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  58% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 10px 28px rgba(var(--accent-cyan-rgb), 0.12);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
+@keyframes rangeButtonFade {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.96);
+  }
+  62% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @keyframes themeSwap {
   0% {
     opacity: 0.72;
@@ -1601,6 +1644,8 @@ html.theme-switching .chart {
   .text-fade-anim,
   .metric-value-anim,
   .metric-roll-track.is-animating,
+  .range-switch-anim,
+  .range-button-switch-anim,
   .i18n-switch-anim,
   html.theme-switching body,
   html.theme-switching .page,
@@ -1747,6 +1792,10 @@ function triggerSwapAnimation(el, className) {
     return;
   }
   setTimeout(applyClass, 0);
+}
+
+function triggerRangeControlAnimation(el, className) {
+  triggerSwapAnimation(el, className || "range-switch-anim");
 }
 
 function setAnimatedText(el, text, options) {
@@ -1929,14 +1978,16 @@ function formatRangeButtonLabel(startISO, endISO) {
   return `${startText} - ${endText}`;
 }
 
-function updateRangeDateButton(startISO, endISO) {
+function updateRangeDateButton(startISO, endISO, options) {
+  const opts = options || {};
   const trigger = document.getElementById("range-date-trigger");
   const label = document.getElementById("range-date-label");
   const text = formatRangeButtonLabel(startISO, endISO);
-  const didUpdate = label ? setAnimatedText(label, text, { animate: true }) : false;
+  const shouldAnimate = opts.animate !== false;
+  const didUpdate = label ? setAnimatedText(label, text, { animate: shouldAnimate }) : false;
   if (trigger) trigger.setAttribute("aria-label", text);
-  if (didUpdate && trigger) {
-    triggerSwapAnimation(trigger, "metric-value-anim");
+  if (didUpdate && trigger && shouldAnimate) {
+    triggerRangeControlAnimation(trigger, "range-switch-anim");
   }
 }
 
@@ -2076,16 +2127,29 @@ function updateQuickRangeSlider() {
   slider.style.transform = `translate3d(${offsetX.toFixed(2)}px, 0, 0)`;
 }
 
-function setQuickRangeActive(preset) {
+function setQuickRangeActive(preset, options) {
+  const opts = options || {};
   const segmented = document.getElementById("quick-range-segmented");
   if (!segmented) return;
+  const nextPreset = preset || "";
+  const previousPreset = segmented.dataset.activeRange || "";
+  const didChange = previousPreset !== nextPreset;
   segmented.querySelectorAll("button[data-range]").forEach((btn) => {
-    btn.classList.toggle("is-active", Boolean(preset) && btn.dataset.range === preset);
+    const nextActive = Boolean(nextPreset) && btn.dataset.range === nextPreset;
+    const wasActive = btn.classList.contains("is-active");
+    btn.classList.toggle("is-active", nextActive);
+    if (opts.animate !== false && didChange && (wasActive || nextActive)) {
+      triggerRangeControlAnimation(btn, "range-button-switch-anim");
+    }
   });
+  segmented.dataset.activeRange = nextPreset;
   updateQuickRangeSlider();
+  if (opts.animate !== false && didChange) {
+    triggerRangeControlAnimation(segmented, "range-switch-anim");
+  }
 }
 
-function updateQuickRangeState(startISO, endISO) {
+function updateQuickRangeState(startISO, endISO, options) {
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
   let preset = "";
@@ -2100,7 +2164,7 @@ function updateQuickRangeState(startISO, endISO) {
   if (!preset) {
     preset = quickRangePresetFor(startISO, endISO, minISO, maxISO);
   }
-  setQuickRangeActive(preset);
+  setQuickRangeActive(preset, options);
 }
 
 function closeCalendarPopover() {
@@ -3080,6 +3144,7 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
     startISO = endISO;
     endISO = tmp;
   }
+  const rangeChanged = currentRange.start !== startISO || currentRange.end !== endISO;
   currentRange = { start: startISO, end: endISO };
 
   const startIdx = labelIndex.has(startISO) ? labelIndex.get(startISO) : 0;
@@ -3094,8 +3159,8 @@ function applyRangeInternal(startISO, endISO, previewOnly) {
   const endInput = document.getElementById("range-end");
   if (startInput) setRangeInputValue(startInput, startISO);
   if (endInput) setRangeInputValue(endInput, endISO);
-  updateRangeDateButton(startISO, endISO);
-  updateQuickRangeState(startISO, endISO);
+  updateRangeDateButton(startISO, endISO, { animate: rangeChanged });
+  updateQuickRangeState(startISO, endISO, { animate: rangeChanged });
   const animateMetrics = true;
   setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals);
@@ -3166,8 +3231,8 @@ function setupRangeControls() {
   const maxISO = (DATA.range && DATA.range.end) || "";
   if (!startInput || !endInput || !minISO || !maxISO) return;
   syncRangeControls(minISO, maxISO);
-  updateRangeDateButton(minISO, maxISO);
-  updateQuickRangeState(minISO, maxISO);
+  updateRangeDateButton(minISO, maxISO, { animate: false });
+  updateQuickRangeState(minISO, maxISO, { animate: false });
   if (!quickRangeResizeBound) {
     window.addEventListener("resize", updateQuickRangeSlider);
     quickRangeResizeBound = true;
