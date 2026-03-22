@@ -1202,10 +1202,10 @@ html.theme-switching .chart {
   transform-origin: center center;
   will-change: transform, width, opacity, box-shadow;
   transition:
-    transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
-    width 0.48s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.22s ease,
-    box-shadow 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+    transform 0.62s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.62s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.28s ease,
+    box-shadow 0.62s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 0;
 }
 
@@ -1249,9 +1249,9 @@ html.theme-switching .chart {
   overflow: hidden;
   transform: translateY(0);
   transition:
-    color 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.2s ease,
-    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    color 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.26s ease,
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .range-segmented button:hover {
@@ -1273,7 +1273,7 @@ html.theme-switching .chart {
 }
 
 .range-segmented.is-animating button.is-active {
-  animation: segmentedLabelSettle 0.44s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: segmentedLabelSettle 0.58s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .range-actions {
@@ -1730,11 +1730,15 @@ html.theme-switching .chart {
 
 @keyframes segmentedLabelSettle {
   0% {
-    transform: translateY(0.5px) scale(0.985);
-    opacity: 0.84;
+    transform: translateY(1px) scale(0.982);
+    opacity: 0.78;
   }
-  58% {
-    transform: translateY(-0.7px) scale(1.012);
+  34% {
+    transform: translateY(0.2px) scale(0.992);
+    opacity: 0.92;
+  }
+  72% {
+    transform: translateY(-0.85px) scale(1.01);
     opacity: 1;
   }
   100% {
@@ -2293,26 +2297,41 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   }
   clearQuickRangeSliderMotion(segmented, slider);
   const movingRight = toState.x >= fromState.x;
-  const stretch = Math.min(22, Math.max(8, travel * 0.18));
+  const overshoot = Math.min(4, Math.max(1.5, travel * 0.035));
+  const stretch = Math.min(16, Math.max(6, travel * 0.11));
+  const earlyX = movingRight
+    ? Math.min(toState.x, fromState.x + travel * 0.22)
+    : Math.max(toState.x, fromState.x - travel * 0.22);
   const midpointX = movingRight
-    ? Math.min(toState.x, fromState.x + travel * 0.68)
-    : Math.max(toState.x, fromState.x - travel * 0.68);
+    ? Math.min(toState.x + overshoot, fromState.x + travel * 0.72)
+    : Math.max(toState.x - overshoot, fromState.x - travel * 0.72);
   const midpointWidth = Math.max(fromState.width, toState.width) + stretch;
-  const duration = Math.min(580, Math.max(380, 340 + travel * 1.15));
+  const settleWidth = Math.max(fromState.width, toState.width) + (stretch * 0.28);
+  const duration = Math.min(760, Math.max(520, 440 + travel * 1.4));
   segmented.classList.add("is-animating");
   segmented.dataset.motionDirection = movingRight ? "right" : "left";
   slider.classList.add("is-animating");
   quickRangeSliderAnimation = slider.animate(
     [
       {
-        transform: `translate3d(${fromState.x.toFixed(2)}px, 0, 0) scaleY(0.94)`,
+        transform: `translate3d(${fromState.x.toFixed(2)}px, 0, 0) scaleY(0.96)`,
         width: `${fromState.width.toFixed(2)}px`,
         offset: 0,
       },
       {
-        transform: `translate3d(${midpointX.toFixed(2)}px, 0, 0) scaleY(1.02)`,
+        transform: `translate3d(${earlyX.toFixed(2)}px, 0, 0) scaleY(0.985)`,
+        width: `${(fromState.width + stretch * 0.35).toFixed(2)}px`,
+        offset: 0.22,
+      },
+      {
+        transform: `translate3d(${midpointX.toFixed(2)}px, 0, 0) scaleY(1.012)`,
         width: `${midpointWidth.toFixed(2)}px`,
-        offset: 0.58,
+        offset: 0.68,
+      },
+      {
+        transform: `translate3d(${toState.x.toFixed(2)}px, 0, 0) scaleY(1.002)`,
+        width: `${settleWidth.toFixed(2)}px`,
+        offset: 0.86,
       },
       {
         transform: `translate3d(${toState.x.toFixed(2)}px, 0, 0) scaleY(1)`,
@@ -2322,7 +2341,7 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     ],
     {
       duration,
-      easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+      easing: "cubic-bezier(0.16, 1, 0.3, 1)",
       fill: "both",
     }
   );
