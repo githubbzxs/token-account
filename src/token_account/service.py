@@ -4,8 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from .reporting import build_dashboard_payload, build_report_from_database, render_html
@@ -43,26 +42,9 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
     )
     app = FastAPI(title="Codex Token Usage Service", version="1.0.0")
     app.state.config = config
-    static_dir = Path(__file__).resolve().parent / "static"
-
-    if (static_dir / "assets").exists():
-        app.mount("/assets", StaticFiles(directory=static_dir / "assets"), name="assets")
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
-        index_file = static_dir / "index.html"
-        if index_file.exists():
-            return FileResponse(index_file)
-        with db_session(app.state.config.db_file) as conn:
-            data, summary, empty = build_report_from_database(
-                conn,
-                pricing_path=Path(app.state.config.pricing_file) if app.state.config.pricing_file else None,
-                source_label=app.state.config.db_file,
-            )
-        return HTMLResponse(render_html(data, summary, empty))
-
-    @app.get("/legacy", response_class=HTMLResponse)
-    def legacy_index() -> HTMLResponse:
         with db_session(app.state.config.db_file) as conn:
             data, summary, empty = build_report_from_database(
                 conn,

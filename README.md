@@ -98,20 +98,5 @@ docker compose up -d --build
 
 默认将本地 `./data` 挂载到容器 `/data`，用于持久化 SQLite 数据。
 
-## 前端开发
-当前首页已经改为独立前端应用，源码位于 `frontend/`，由 Vite 构建后输出到 `src/token_account/static/`，再由 FastAPI 直接托管。
-
-首次安装前端依赖：
-```bash
-npm install
-```
-
-开发调试：
-```bash
-npm run dev
-```
-
-重新构建首页：
-```bash
-npm run build
-```
+## 页面说明
+首页直接返回服务端渲染的旧版报表页面，不再依赖独立前端构建产物。
