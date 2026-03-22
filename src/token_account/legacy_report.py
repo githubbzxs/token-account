@@ -1435,11 +1435,6 @@ html.theme-switching .chart {
   width: 0.66em;
   height: 1em;
   overflow: hidden;
-  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.45) 10%, rgba(0, 0, 0, 1) 24%, rgba(0, 0, 0, 1) 76%, rgba(0, 0, 0, 0.45) 90%, transparent 100%);
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.45) 10%, rgba(0, 0, 0, 1) 24%, rgba(0, 0, 0, 1) 76%, rgba(0, 0, 0, 0.45) 90%, transparent 100%);
-}
-
-.summary-card-inline-value .metric-roll-column {
   mask-image: none;
   -webkit-mask-image: none;
 }
