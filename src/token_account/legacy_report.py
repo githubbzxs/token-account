@@ -1811,6 +1811,7 @@ function setAnimatedText(el, text, options) {
     }
     return false;
   }
+  el.classList.remove("metric-roll");
   el.textContent = nextText;
   el.dataset.animatedText = nextText;
   el.dataset.metricText = nextText;
@@ -1825,20 +1826,15 @@ function setAnimatedText(el, text, options) {
 }
 
 function canUseRollingNumber(text) {
-  return /^[0-9.,%$KMB+\\- ]+$/.test(String(text || ""));
+  return /^[0-9.,%$KMB+\\- /:]+$/.test(String(text || ""));
 }
 
 function canRollDigits(prevText, nextText) {
   const prev = String(prevText || "");
   const next = String(nextText || "");
-  if (!prev || prev.length !== next.length) return false;
-  for (let i = 0; i < prev.length; i += 1) {
-    const prevIsDigit = /[0-9]/.test(prev[i]);
-    const nextIsDigit = /[0-9]/.test(next[i]);
-    if (prevIsDigit !== nextIsDigit) return false;
-    if (!prevIsDigit && prev[i] !== next[i]) return false;
-  }
-  return true;
+  if (!prev || !next) return false;
+  if (!canUseRollingNumber(prev) || !canUseRollingNumber(next)) return false;
+  return /[0-9]/.test(prev) && /[0-9]/.test(next);
 }
 
 function compareRollDirection(prevText, nextText) {
@@ -1852,6 +1848,9 @@ function compareRollDirection(prevText, nextText) {
 
 function renderRollingDigits(el, prevText, nextText, syncAriaLabel) {
   const direction = compareRollDirection(prevText, nextText);
+  const prevDigits = String(prevText || "").match(/[0-9]/g) || [];
+  const nextDigitChars = String(nextText || "").match(/[0-9]/g) || [];
+  let nextDigitIndex = 0;
   const fragment = document.createDocumentFragment();
   for (let i = 0; i < nextText.length; i += 1) {
     const char = nextText[i];
@@ -1863,13 +1862,16 @@ function renderRollingDigits(el, prevText, nextText, syncAriaLabel) {
       continue;
     }
 
-    const prevDigit = Number(prevText[i] || 0);
+    const reverseIndex = nextDigitChars.length - nextDigitIndex - 1;
+    const prevDigitChar = prevDigits[prevDigits.length - reverseIndex - 1] || "0";
+    const prevDigit = Number(prevDigitChar || 0);
     const nextDigit = Number(char);
     const delta = direction >= 0
       ? ((nextDigit - prevDigit + 10) % 10)
       : -((prevDigit - nextDigit + 10) % 10);
     const fromIndex = 10 + prevDigit;
     const toIndex = fromIndex + delta;
+    nextDigitIndex += 1;
 
     const column = document.createElement("span");
     column.className = "metric-roll-column";
@@ -1907,6 +1909,26 @@ function renderRollingDigits(el, prevText, nextText, syncAriaLabel) {
     });
   });
   return true;
+}
+
+function setAnimatedNumericText(el, text, options) {
+  if (!el) return false;
+  const opts = options || {};
+  const nextText = String(text ?? "");
+  const prevText = el.dataset.animatedText != null
+    ? el.dataset.animatedText
+    : (el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || ""));
+  const shouldAnimate = opts.animate !== false;
+  if (prevText === nextText) {
+    if (opts.syncAriaLabel) {
+      el.setAttribute("aria-label", nextText);
+    }
+    return false;
+  }
+  if (shouldAnimate && canRollDigits(prevText, nextText)) {
+    return renderRollingDigits(el, prevText, nextText, opts.syncAriaLabel);
+  }
+  return setAnimatedText(el, nextText, opts);
 }
 
 function updateLangToggleState() {
@@ -1984,7 +2006,10 @@ function updateRangeDateButton(startISO, endISO, options) {
   const label = document.getElementById("range-date-label");
   const text = formatRangeButtonLabel(startISO, endISO);
   const shouldAnimate = opts.animate !== false;
-  const didUpdate = label ? setAnimatedText(label, text, { animate: shouldAnimate }) : false;
+  const didUpdate = label ? setAnimatedNumericText(label, text, {
+    animate: shouldAnimate,
+    syncAriaLabel: true,
+  }) : false;
   if (trigger) trigger.setAttribute("aria-label", text);
   if (didUpdate && trigger && shouldAnimate) {
     triggerRangeControlAnimation(trigger, "range-switch-anim");
@@ -2360,15 +2385,7 @@ function setDisplayText(id, value, animate) {
   if (!el) return;
   const text = String(value ?? "");
   const useAnimation = typeof animate === "object" ? animate.animate !== false : animate !== false;
-  const prevText = el.dataset.animatedText != null
-    ? el.dataset.animatedText
-    : (el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || ""));
-  if (useAnimation && canUseRollingNumber(text) && canRollDigits(prevText, text)) {
-    renderRollingDigits(el, prevText, text, true);
-    return;
-  }
-  el.classList.remove("metric-roll");
-  setAnimatedText(el, text, {
+  setAnimatedNumericText(el, text, {
     animate: useAnimation,
     className: "metric-value-anim",
     syncAriaLabel: true,
