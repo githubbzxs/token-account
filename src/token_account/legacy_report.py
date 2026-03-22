@@ -1202,10 +1202,10 @@ html.theme-switching .chart {
   transform-origin: center center;
   will-change: transform, width, opacity, box-shadow;
   transition:
-    transform 0.62s cubic-bezier(0.16, 1, 0.3, 1),
-    width 0.62s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 1s cubic-bezier(0.16, 1, 0.3, 1),
+    width 1s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.28s ease,
-    box-shadow 0.62s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow 1s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 0;
 }
 
@@ -1273,7 +1273,7 @@ html.theme-switching .chart {
 }
 
 .range-segmented.is-animating button.is-active {
-  animation: segmentedLabelSettle 0.58s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: segmentedLabelSettle 1s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .range-actions {
@@ -2307,7 +2307,7 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     : Math.max(toState.x - overshoot, fromState.x - travel * 0.72);
   const midpointWidth = Math.max(fromState.width, toState.width) + stretch;
   const settleWidth = Math.max(fromState.width, toState.width) + (stretch * 0.28);
-  const duration = Math.min(760, Math.max(520, 440 + travel * 1.4));
+  const duration = 1000;
   segmented.classList.add("is-animating");
   segmented.dataset.motionDirection = movingRight ? "right" : "left";
   slider.classList.add("is-animating");
