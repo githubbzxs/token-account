@@ -1259,7 +1259,7 @@ html.theme-switching .chart {
 
 .cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--gap-md);
   margin: var(--gap-lg) 0 var(--gap-lg);
   align-items: stretch;
@@ -1281,8 +1281,57 @@ html.theme-switching .chart {
 }
 
 .metric-card {
-  min-height: 124px;
+  min-height: 148px;
   justify-content: flex-start;
+}
+
+.summary-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) 1px minmax(220px, 0.78fr);
+  align-items: stretch;
+  gap: 18px;
+}
+
+.summary-card-divider {
+  width: 1px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(var(--accent-rgb), 0.28), rgba(255, 255, 255, 0.04));
+}
+
+.summary-card-main,
+.summary-card-side {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-card-side {
+  justify-content: center;
+}
+
+.summary-card-inline {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 18px;
+}
+
+.summary-card-inline-item {
+  min-width: 0;
+}
+
+.summary-card-inline-label {
+  font-size: 11px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.summary-card-inline-value {
+  margin-top: 4px;
+  font-size: clamp(16px, 2.4vw, 20px);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 .card::after {
@@ -1329,7 +1378,7 @@ html.theme-switching .chart {
 .metric-roll {
   display: inline-flex;
   align-items: center;
-  gap: 0.01em;
+  gap: 0;
   min-height: 1em;
   line-height: 1;
   white-space: nowrap;
@@ -1351,26 +1400,19 @@ html.theme-switching .chart {
   width: 0.66em;
   height: 1em;
   overflow: hidden;
-  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.72) 12%, rgba(0, 0, 0, 0.98) 26%, rgba(0, 0, 0, 0.98) 74%, rgba(0, 0, 0, 0.72) 88%, transparent 100%);
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.72) 12%, rgba(0, 0, 0, 0.98) 26%, rgba(0, 0, 0, 0.98) 74%, rgba(0, 0, 0, 0.72) 88%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.45) 10%, rgba(0, 0, 0, 1) 24%, rgba(0, 0, 0, 1) 76%, rgba(0, 0, 0, 0.45) 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.45) 10%, rgba(0, 0, 0, 1) 24%, rgba(0, 0, 0, 1) 76%, rgba(0, 0, 0, 0.45) 90%, transparent 100%);
 }
 
 .metric-roll-track {
   display: flex;
   flex-direction: column;
-  opacity: 0.6;
-  filter: blur(0.08em);
-  will-change: transform, filter, opacity;
+  will-change: transform;
   transform: translateY(calc(var(--roll-from, 0) * -1em));
 }
 
 .metric-roll-track.is-animating {
-  transition:
-    transform 560ms cubic-bezier(0.16, 0.84, 0.24, 1),
-    filter 560ms cubic-bezier(0.16, 0.84, 0.24, 1),
-    opacity 420ms ease-out;
-  opacity: 1;
-  filter: blur(0);
+  transition: transform 540ms cubic-bezier(0.2, 0.86, 0.22, 1);
   transform: translateY(calc(var(--roll-to, 0) * -1em));
 }
 
@@ -1428,27 +1470,12 @@ html.theme-switching .chart {
   isolation: isolate;
 }
 
-.chart::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  transform: translateX(102%);
-  background: linear-gradient(90deg, rgba(17, 17, 19, 0.98) 0%, rgba(17, 17, 19, 0.98) 72%, rgba(17, 17, 19, 0.52) 92%, rgba(17, 17, 19, 0) 100%);
-  z-index: 3;
-}
-
-.chart.chart-redraw-anim::after {
-  animation: chartRedrawWipe 760ms cubic-bezier(0.16, 0.84, 0.22, 1) both;
-  opacity: 1;
-}
-
-.chart.chart-redraw-anim > div,
-.chart.chart-redraw-anim canvas,
-.chart.chart-redraw-anim svg {
-  animation: chartContentSettle 760ms cubic-bezier(0.16, 0.84, 0.22, 1) both;
-  transform-origin: left center;
+.chart-line-redraw {
+  animation: chartLineDraw 1100ms cubic-bezier(0.16, 0.84, 0.22, 1) both;
+  stroke-dasharray: var(--line-length);
+  stroke-dashoffset: var(--line-length);
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .chart.small {
@@ -1593,7 +1620,7 @@ html.theme-switching .chart {
 
 @media (max-width: 1280px) {
   .cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1613,6 +1640,18 @@ html.theme-switching .chart {
   }
   .metric-card {
     min-height: 108px;
+  }
+  .summary-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .summary-card-divider {
+    width: 100%;
+    height: 1px;
+  }
+  .summary-card-inline {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
   }
 }
 
@@ -1658,30 +1697,19 @@ html.theme-switching .chart {
   }
 }
 
-@keyframes chartRedrawWipe {
+@keyframes chartLineDraw {
   0% {
-    opacity: 1;
-    transform: translateX(0);
+    stroke-dashoffset: var(--line-length);
+    opacity: 0.82;
+    stroke-width: 2.4;
   }
-  82% {
+  58% {
     opacity: 1;
   }
   100% {
-    opacity: 0;
-    transform: translateX(102%);
-  }
-}
-
-@keyframes chartContentSettle {
-  0% {
-    opacity: 0.76;
-    transform: scaleX(0.985);
-    filter: saturate(0.92) blur(0.02rem);
-  }
-  100% {
+    stroke-dashoffset: 0;
     opacity: 1;
-    transform: scaleX(1);
-    filter: saturate(1) blur(0);
+    stroke-width: 1.8;
   }
 }
 
@@ -1704,11 +1732,7 @@ html.theme-switching .chart {
   .range-switch-anim,
   .range-button-switch-anim,
   .i18n-switch-anim,
-  .chart.chart-redraw-anim,
-  .chart.chart-redraw-anim::after,
-  .chart.chart-redraw-anim > div,
-  .chart.chart-redraw-anim canvas,
-  .chart.chart-redraw-anim svg,
+  .chart-line-redraw,
   html.theme-switching body,
   html.theme-switching .page,
   html.theme-switching .page::before,
@@ -1786,14 +1810,26 @@ html.theme-switching .chart {
   __EMPTY_BANNER__
   <div class="banner hidden" id="range-banner" data-i18n="empty_banner">No token usage found in this range.</div>
   <div class="cards">
-    <div class="card metric-card" style="--delay:0.05s">
-      <div class="label" data-i18n="card_total">Total tokens</div>
-      <div class="value" id="value-total">__TOTAL_TOKENS__</div>
-      <div class="sub"><span data-i18n="input">Input</span> <span id="value-input">__INPUT_TOKENS__</span> | <span data-i18n="output">Output</span> <span id="value-output">__OUTPUT_TOKENS__</span></div>
-    </div>
-    <div class="card metric-card" style="--delay:0.1s">
-      <div class="label" data-i18n="card_cost">Estimated cost</div>
-      <div class="value" id="value-cost">__TOTAL_COST__</div>
+    <div class="card metric-card summary-card" style="--delay:0.05s">
+      <div class="summary-card-main">
+        <div class="label" data-i18n="card_total">Total tokens</div>
+        <div class="value" id="value-total">__TOTAL_TOKENS__</div>
+        <div class="summary-card-inline">
+          <div class="summary-card-inline-item">
+            <div class="summary-card-inline-label" data-i18n="input">Input</div>
+            <div class="summary-card-inline-value" id="value-input">__INPUT_TOKENS__</div>
+          </div>
+          <div class="summary-card-inline-item">
+            <div class="summary-card-inline-label" data-i18n="output">Output</div>
+            <div class="summary-card-inline-value" id="value-output">__OUTPUT_TOKENS__</div>
+          </div>
+        </div>
+      </div>
+      <div class="summary-card-divider" aria-hidden="true"></div>
+      <div class="summary-card-side">
+        <div class="label" data-i18n="card_cost">Estimated cost</div>
+        <div class="value" id="value-cost">__TOTAL_COST__</div>
+      </div>
     </div>
   </div>
 
@@ -1941,7 +1977,7 @@ function renderRollingDigits(el, prevText, nextText, syncAriaLabel) {
     track.className = "metric-roll-track";
     track.style.setProperty("--roll-from", String(fromIndex));
     track.style.setProperty("--roll-to", String(toIndex));
-    track.style.transitionDelay = `${Math.max(0, nextText.length - i - 1) * 12}ms`;
+    track.style.transitionDelay = `${Math.max(0, nextText.length - i - 1) * 8}ms`;
 
     for (let reelIndex = 0; reelIndex < 30; reelIndex += 1) {
       const cell = document.createElement("span");
@@ -2697,7 +2733,44 @@ function lineChart(el, labels, values, options) {
     lazyUpdate: false,
   });
   if (shouldRedraw) {
-    triggerSwapAnimation(el, "chart-redraw-anim");
+    playChartLineRedraw(el);
+  }
+}
+
+function playChartLineRedraw(el) {
+  if (!el || prefersReducedMotion()) return;
+  const run = () => {
+    const paths = Array.from(el.querySelectorAll("svg path"));
+    paths.forEach((path) => {
+      if (!(path instanceof SVGPathElement)) return;
+      const stroke = path.getAttribute("stroke");
+      const fill = path.getAttribute("fill");
+      if (!stroke || stroke === "none") return;
+      if (fill && fill !== "none" && fill !== "transparent") return;
+      let length = 0;
+      try {
+        length = path.getTotalLength();
+      } catch (_) {
+        return;
+      }
+      if (!Number.isFinite(length) || length < 240) return;
+      path.classList.remove("chart-line-redraw");
+      path.style.setProperty("--line-length", `${length}`);
+      path.style.strokeDasharray = `${length}`;
+      path.style.strokeDashoffset = `${length}`;
+      if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(() => {
+          path.classList.add("chart-line-redraw");
+        });
+      } else {
+        path.classList.add("chart-line-redraw");
+      }
+    });
+  };
+  if (window.requestAnimationFrame) {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(run));
+  } else {
+    setTimeout(run, 0);
   }
 }
 
