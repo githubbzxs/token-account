@@ -1439,6 +1439,11 @@ html.theme-switching .chart {
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.45) 10%, rgba(0, 0, 0, 1) 24%, rgba(0, 0, 0, 1) 76%, rgba(0, 0, 0, 0.45) 90%, transparent 100%);
 }
 
+.summary-card-inline-value .metric-roll-column {
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
 .metric-roll-track {
   display: flex;
   flex-direction: column;
@@ -2620,15 +2625,6 @@ function setDisplayText(id, value, animate) {
   if (!el) return;
   const text = String(value ?? "");
   const useAnimation = typeof animate === "object" ? animate.animate !== false : animate !== false;
-  const disableRollingDigits = el.classList.contains("summary-card-inline-value");
-  if (disableRollingDigits) {
-    setAnimatedText(el, text, {
-      animate: useAnimation,
-      className: "metric-value-anim",
-      syncAriaLabel: true,
-    });
-    return;
-  }
   setAnimatedNumericText(el, text, {
     animate: useAnimation,
     className: "metric-value-anim",
