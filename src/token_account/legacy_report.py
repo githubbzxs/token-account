@@ -971,11 +971,10 @@ html.theme-switching .chart {
   min-width: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   transition:
-    border-color 0.18s ease,
-    background 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.18s ease,
-    opacity 0.18s ease;
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease,
+    opacity 0.16s ease;
 }
 
 .range-date-trigger:hover {
@@ -984,8 +983,9 @@ html.theme-switching .chart {
 }
 
 .range-date-trigger:active {
-  transform: scale(0.992);
-  opacity: 0.96;
+  opacity: 0.992;
+  border-color: rgba(var(--accent-cyan-rgb), 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .range-date-trigger:focus-visible {
@@ -1193,14 +1193,14 @@ html.theme-switching .chart {
   width: 0;
   border-radius: 999px;
   background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
-  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
   opacity: 0;
   transform: translateX(0);
   will-change: transform, width, opacity;
   transition:
-    transform 0.3s cubic-bezier(0.22, 0.82, 0.24, 1),
-    width 0.26s cubic-bezier(0.22, 0.82, 0.24, 1),
-    opacity 0.16s ease;
+    transform 0.34s cubic-bezier(0.2, 0.9, 0.24, 1),
+    width 0.34s cubic-bezier(0.2, 0.9, 0.24, 1),
+    opacity 0.18s ease;
   z-index: 0;
 }
 
@@ -1209,7 +1209,7 @@ html.theme-switching .chart {
   position: absolute;
   inset: 1px;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02));
   pointer-events: none;
 }
 
@@ -1235,7 +1235,7 @@ html.theme-switching .chart {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  transition: color 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+  transition: color 0.16s ease, opacity 0.16s ease;
 }
 
 .range-segmented button:hover {
@@ -1243,8 +1243,7 @@ html.theme-switching .chart {
 }
 
 .range-segmented button:active {
-  transform: scale(0.985);
-  opacity: 0.94;
+  opacity: 0.985;
 }
 
 .range-segmented button.is-active {
@@ -1384,16 +1383,6 @@ html.theme-switching .chart {
 .i18n-switch-anim {
   animation: textFadeOnly 360ms ease both;
   will-change: opacity;
-}
-
-.range-switch-anim {
-  animation: rangeControlFade 220ms cubic-bezier(0.24, 0.8, 0.28, 1) both;
-  will-change: opacity, transform, box-shadow;
-}
-
-.range-button-switch-anim {
-  animation: rangeButtonFade 180ms cubic-bezier(0.24, 0.8, 0.28, 1) both;
-  will-change: opacity, transform;
 }
 
 .metric-roll {
@@ -1685,39 +1674,6 @@ html.theme-switching .chart {
   }
 }
 
-@keyframes rangeControlFade {
-  0% {
-    opacity: 0.9;
-    transform: translateY(0.5px) scale(0.998);
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-  }
-  58% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    box-shadow: 0 2px 6px rgba(var(--accent-cyan-rgb), 0.03);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-  }
-}
-
-@keyframes rangeButtonFade {
-  0% {
-    opacity: 0.92;
-    transform: scale(0.992);
-  }
-  62% {
-    opacity: 1;
-    transform: scale(1.002);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 @keyframes chartLineDraw {
   0% {
     stroke-dashoffset: var(--line-length);
@@ -1750,8 +1706,6 @@ html.theme-switching .chart {
   .text-fade-anim,
   .metric-value-anim,
   .metric-roll-track.is-animating,
-  .range-switch-anim,
-  .range-button-switch-anim,
   .i18n-switch-anim,
   .chart-line-redraw,
   html.theme-switching body,
@@ -1911,10 +1865,6 @@ function triggerSwapAnimation(el, className) {
     return;
   }
   setTimeout(applyClass, 0);
-}
-
-function triggerRangeControlAnimation(el, className) {
-  triggerSwapAnimation(el, className || "range-switch-anim");
 }
 
 function setAnimatedText(el, text, options) {
@@ -2130,9 +2080,7 @@ function updateRangeDateButton(startISO, endISO, options) {
     syncAriaLabel: true,
   }) : false;
   if (trigger) trigger.setAttribute("aria-label", text);
-  if (didUpdate && trigger && shouldAnimate) {
-    triggerRangeControlAnimation(trigger, "range-switch-anim");
-  }
+  void didUpdate;
 }
 
 function normalizeTheme(value) {
@@ -2272,25 +2220,15 @@ function updateQuickRangeSlider() {
 }
 
 function setQuickRangeActive(preset, options) {
-  const opts = options || {};
   const segmented = document.getElementById("quick-range-segmented");
   if (!segmented) return;
   const nextPreset = preset || "";
-  const previousPreset = segmented.dataset.activeRange || "";
-  const didChange = previousPreset !== nextPreset;
   segmented.querySelectorAll("button[data-range]").forEach((btn) => {
     const nextActive = Boolean(nextPreset) && btn.dataset.range === nextPreset;
-    const wasActive = btn.classList.contains("is-active");
     btn.classList.toggle("is-active", nextActive);
-    if (opts.animate !== false && didChange && (wasActive || nextActive)) {
-      triggerRangeControlAnimation(btn, "range-button-switch-anim");
-    }
   });
   segmented.dataset.activeRange = nextPreset;
   updateQuickRangeSlider();
-  if (opts.animate !== false && didChange) {
-    triggerRangeControlAnimation(segmented, "range-switch-anim");
-  }
 }
 
 function updateQuickRangeState(startISO, endISO, options) {
