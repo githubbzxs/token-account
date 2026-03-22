@@ -1200,10 +1200,9 @@ html.theme-switching .chart {
   opacity: 0;
   transform: translate3d(0, 0, 0);
   transform-origin: center center;
-  will-change: transform, width, opacity, box-shadow;
+  will-change: transform, opacity, box-shadow;
   transition:
     transform 1s cubic-bezier(0.16, 1, 0.3, 1),
-    width 1s cubic-bezier(0.16, 1, 0.3, 1),
     opacity 0.28s ease,
     box-shadow 1s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 0;
@@ -2320,18 +2319,17 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     return;
   }
   clearQuickRangeSliderMotion(segmented, slider);
-  applyQuickRangeSliderState(slider, fromState);
   const movingRight = toState.x >= fromState.x;
-  const overshoot = Math.min(4, Math.max(1.5, travel * 0.035));
-  const stretch = Math.min(16, Math.max(6, travel * 0.11));
-  const earlyX = movingRight
-    ? Math.min(toState.x, fromState.x + travel * 0.22)
-    : Math.max(toState.x, fromState.x - travel * 0.22);
+  const overshoot = Math.min(3, Math.max(1.25, travel * 0.024));
   const midpointX = movingRight
-    ? Math.min(toState.x + overshoot, fromState.x + travel * 0.72)
-    : Math.max(toState.x - overshoot, fromState.x - travel * 0.72);
-  const midpointWidth = Math.max(fromState.width, toState.width) + stretch;
-  const settleWidth = Math.max(fromState.width, toState.width) + (stretch * 0.28);
+    ? Math.min(toState.x + overshoot, fromState.x + travel * 0.78)
+    : Math.max(toState.x - overshoot, fromState.x - travel * 0.78);
+  const animatedWidth = Math.max(fromState.width, toState.width);
+  applyQuickRangeSliderState(slider, {
+    x: fromState.x,
+    width: animatedWidth,
+    visible: true,
+  });
   const duration = 1000;
   segmented.classList.add("is-animating");
   segmented.dataset.motionDirection = movingRight ? "right" : "left";
@@ -2339,28 +2337,15 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   const animation = slider.animate(
     [
       {
-        transform: `translate3d(${fromState.x.toFixed(2)}px, 0, 0) scaleY(0.96)`,
-        width: `${fromState.width.toFixed(2)}px`,
+        transform: `translate3d(${fromState.x.toFixed(2)}px, 0, 0) scaleY(0.988)`,
         offset: 0,
       },
       {
-        transform: `translate3d(${earlyX.toFixed(2)}px, 0, 0) scaleY(0.985)`,
-        width: `${(fromState.width + stretch * 0.35).toFixed(2)}px`,
-        offset: 0.22,
-      },
-      {
-        transform: `translate3d(${midpointX.toFixed(2)}px, 0, 0) scaleY(1.012)`,
-        width: `${midpointWidth.toFixed(2)}px`,
-        offset: 0.68,
-      },
-      {
-        transform: `translate3d(${toState.x.toFixed(2)}px, 0, 0) scaleY(1.002)`,
-        width: `${settleWidth.toFixed(2)}px`,
-        offset: 0.86,
+        transform: `translate3d(${midpointX.toFixed(2)}px, 0, 0) scaleY(1.004)`,
+        offset: 0.74,
       },
       {
         transform: `translate3d(${toState.x.toFixed(2)}px, 0, 0) scaleY(1)`,
-        width: `${toState.width.toFixed(2)}px`,
         offset: 1,
       },
     ],
