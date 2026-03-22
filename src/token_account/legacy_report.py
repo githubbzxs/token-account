@@ -2277,10 +2277,32 @@ function readQuickRangeSliderState(slider) {
   };
 }
 
+function captureQuickRangeSliderState(segmented, slider) {
+  if (!segmented || !slider) {
+    return { x: 0, width: 0, visible: false };
+  }
+  const segmentedRect = segmented.getBoundingClientRect();
+  const sliderRect = slider.getBoundingClientRect();
+  const visible = sliderRect.width > 0.5 && Number.parseFloat(window.getComputedStyle(slider).opacity || "0") > 0.01;
+  return {
+    x: Math.max(0, sliderRect.left - segmentedRect.left),
+    width: Math.max(0, sliderRect.width),
+    visible,
+  };
+}
+
 function writeQuickRangeSliderState(slider, state) {
   slider.dataset.x = state.x.toFixed(2);
   slider.dataset.width = state.width.toFixed(2);
   slider.dataset.visible = state.visible ? "1" : "0";
+}
+
+function applyQuickRangeSliderState(slider, state) {
+  slider.style.opacity = state.visible ? "1" : "0";
+  slider.style.width = state.visible ? `${state.width.toFixed(2)}px` : "0";
+  slider.style.transform = state.visible
+    ? `translate3d(${state.x.toFixed(2)}px, 0, 0)`
+    : "translate3d(0, 0, 0)";
 }
 
 function animateQuickRangeSlider(segmented, slider, fromState, toState) {
@@ -2293,9 +2315,12 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   const widthDelta = Math.abs(toState.width - fromState.width);
   if (!canAnimate || (travel < 0.5 && widthDelta < 0.5)) {
     clearQuickRangeSliderMotion(segmented, slider);
+    applyQuickRangeSliderState(slider, toState);
+    writeQuickRangeSliderState(slider, toState);
     return;
   }
   clearQuickRangeSliderMotion(segmented, slider);
+  applyQuickRangeSliderState(slider, fromState);
   const movingRight = toState.x >= fromState.x;
   const overshoot = Math.min(4, Math.max(1.5, travel * 0.035));
   const stretch = Math.min(16, Math.max(6, travel * 0.11));
@@ -2311,7 +2336,7 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   segmented.classList.add("is-animating");
   segmented.dataset.motionDirection = movingRight ? "right" : "left";
   slider.classList.add("is-animating");
-  quickRangeSliderAnimation = slider.animate(
+  const animation = slider.animate(
     [
       {
         transform: `translate3d(${fromState.x.toFixed(2)}px, 0, 0) scaleY(0.96)`,
@@ -2345,9 +2370,15 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
       fill: "both",
     }
   );
-  const cleanup = () => clearQuickRangeSliderMotion(segmented, slider);
-  quickRangeSliderAnimation.finished.then(cleanup).catch(() => {});
-  quickRangeSliderCleanupTimer = window.setTimeout(cleanup, duration + 60);
+  quickRangeSliderAnimation = animation;
+  const finish = () => {
+    if (quickRangeSliderAnimation !== animation) return;
+    applyQuickRangeSliderState(slider, toState);
+    writeQuickRangeSliderState(slider, toState);
+    clearQuickRangeSliderMotion(segmented, slider);
+  };
+  animation.finished.then(finish).catch(() => {});
+  quickRangeSliderCleanupTimer = window.setTimeout(finish, duration + 60);
 }
 
 function updateQuickRangeSlider(options) {
@@ -2355,14 +2386,15 @@ function updateQuickRangeSlider(options) {
   const segmented = document.getElementById("quick-range-segmented");
   const slider = document.getElementById("quick-range-slider");
   if (!segmented || !slider) return;
-  const previousState = readQuickRangeSliderState(slider);
+  const previousState = quickRangeSliderAnimation
+    ? captureQuickRangeSliderState(segmented, slider)
+    : readQuickRangeSliderState(slider);
   const activeBtn = segmented.querySelector("button.is-active");
   if (!(activeBtn instanceof HTMLElement)) {
     clearQuickRangeSliderMotion(segmented, slider);
-    slider.style.opacity = "0";
-    slider.style.width = "0";
-    slider.style.transform = "translate3d(0, 0, 0)";
-    writeQuickRangeSliderState(slider, { x: 0, width: 0, visible: false });
+    const hiddenState = { x: 0, width: 0, visible: false };
+    applyQuickRangeSliderState(slider, hiddenState);
+    writeQuickRangeSliderState(slider, hiddenState);
     return;
   }
   const nextState = {
@@ -2370,14 +2402,12 @@ function updateQuickRangeSlider(options) {
     width: Math.max(0, activeBtn.offsetWidth),
     visible: true,
   };
-  slider.style.opacity = "1";
-  slider.style.width = `${nextState.width.toFixed(2)}px`;
-  slider.style.transform = `translate3d(${nextState.x.toFixed(2)}px, 0, 0)`;
-  writeQuickRangeSliderState(slider, nextState);
   if (opts.animate) {
     animateQuickRangeSlider(segmented, slider, previousState, nextState);
     return;
   }
+  applyQuickRangeSliderState(slider, nextState);
+  writeQuickRangeSliderState(slider, nextState);
   clearQuickRangeSliderMotion(segmented, slider);
 }
 
