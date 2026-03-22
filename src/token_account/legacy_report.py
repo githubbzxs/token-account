@@ -2620,6 +2620,15 @@ function setDisplayText(id, value, animate) {
   if (!el) return;
   const text = String(value ?? "");
   const useAnimation = typeof animate === "object" ? animate.animate !== false : animate !== false;
+  const disableRollingDigits = el.classList.contains("summary-card-inline-value");
+  if (disableRollingDigits) {
+    setAnimatedText(el, text, {
+      animate: useAnimation,
+      className: "metric-value-anim",
+      syncAriaLabel: true,
+    });
+    return;
+  }
   setAnimatedNumericText(el, text, {
     animate: useAnimation,
     className: "metric-value-anim",
