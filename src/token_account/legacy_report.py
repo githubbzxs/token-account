@@ -970,18 +970,28 @@ html.theme-switching .chart {
   padding: 0 14px;
   min-width: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
+    opacity 0.18s ease;
 }
 
 .range-date-trigger:hover {
-  border-color: rgba(var(--accent-cyan-rgb), 0.5);
-  background: linear-gradient(140deg, rgba(42, 45, 56, 0.96), rgba(27, 29, 37, 0.96));
+  border-color: rgba(var(--accent-cyan-rgb), 0.32);
+  background: linear-gradient(140deg, rgba(40, 43, 53, 0.95), rgba(26, 28, 35, 0.95));
+}
+
+.range-date-trigger:active {
+  transform: scale(0.992);
+  opacity: 0.96;
 }
 
 .range-date-trigger:focus-visible {
   outline: none;
-  border-color: rgba(var(--accent-rgb), 0.58);
-  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.42);
+  box-shadow: 0 0 0 1.5px rgba(var(--accent-rgb), 0.12);
 }
 
 #range-date-label {
@@ -1183,14 +1193,14 @@ html.theme-switching .chart {
   width: 0;
   border-radius: 999px;
   background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
-  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.34);
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.22);
   opacity: 0;
   transform: translateX(0);
   will-change: transform, width, opacity;
   transition:
-    transform 0.66s cubic-bezier(0.18, 0.88, 0.26, 1),
-    width 0.54s cubic-bezier(0.2, 0.92, 0.24, 1),
-    opacity 0.24s ease;
+    transform 0.3s cubic-bezier(0.22, 0.82, 0.24, 1),
+    width 0.26s cubic-bezier(0.22, 0.82, 0.24, 1),
+    opacity 0.16s ease;
   z-index: 0;
 }
 
@@ -1225,11 +1235,16 @@ html.theme-switching .chart {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  transition: color 0.22s ease;
+  transition: color 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
 }
 
 .range-segmented button:hover {
   color: #f8fafc;
+}
+
+.range-segmented button:active {
+  transform: scale(0.985);
+  opacity: 0.94;
 }
 
 .range-segmented button.is-active {
@@ -1372,12 +1387,12 @@ html.theme-switching .chart {
 }
 
 .range-switch-anim {
-  animation: rangeControlFade 420ms cubic-bezier(0.2, 0.78, 0.24, 1) both;
+  animation: rangeControlFade 220ms cubic-bezier(0.24, 0.8, 0.28, 1) both;
   will-change: opacity, transform, box-shadow;
 }
 
 .range-button-switch-anim {
-  animation: rangeButtonFade 380ms cubic-bezier(0.22, 0.82, 0.24, 1) both;
+  animation: rangeButtonFade 180ms cubic-bezier(0.24, 0.8, 0.28, 1) both;
   will-change: opacity, transform;
 }
 
@@ -1672,14 +1687,14 @@ html.theme-switching .chart {
 
 @keyframes rangeControlFade {
   0% {
-    opacity: 0.82;
-    transform: translateY(0.5px) scale(0.996);
+    opacity: 0.9;
+    transform: translateY(0.5px) scale(0.998);
     box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   }
   58% {
     opacity: 1;
     transform: translateY(0) scale(1);
-    box-shadow: 0 4px 12px rgba(var(--accent-cyan-rgb), 0.05);
+    box-shadow: 0 2px 6px rgba(var(--accent-cyan-rgb), 0.03);
   }
   100% {
     opacity: 1;
@@ -1690,12 +1705,12 @@ html.theme-switching .chart {
 
 @keyframes rangeButtonFade {
   0% {
-    opacity: 0.84;
-    transform: scale(0.985);
+    opacity: 0.92;
+    transform: scale(0.992);
   }
   62% {
     opacity: 1;
-    transform: scale(1.008);
+    transform: scale(1.002);
   }
   100% {
     opacity: 1;
