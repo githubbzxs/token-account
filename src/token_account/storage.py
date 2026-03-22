@@ -207,6 +207,19 @@ def fetch_sources(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
+def fetch_event_bounds(conn: sqlite3.Connection) -> dict[str, str]:
+    row = conn.execute(
+        """
+        SELECT MIN(day) AS start, MAX(day) AS end
+        FROM token_events
+        """
+    ).fetchone()
+    return {
+        "start": str(row["start"] or ""),
+        "end": str(row["end"] or ""),
+    }
+
+
 def fetch_events(
     conn: sqlite3.Connection,
     *,

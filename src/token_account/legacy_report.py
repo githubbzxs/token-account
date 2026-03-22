@@ -1662,7 +1662,6 @@ html.theme-switching .chart {
       <button type="button" data-range="2" data-i18n="last_2">2D</button>
       <button type="button" data-range="7" data-i18n="last_7">1W</button>
       <button type="button" data-range="30" data-i18n="last_30">1M</button>
-      <button type="button" data-range="90" data-i18n="last_90">3M</button>
       <button type="button" data-range="all" data-i18n="all_time">ALL</button>
     </div>
   </div>
@@ -1721,6 +1720,7 @@ let dailyChartInstance = null;
 let chartResizeBound = false;
 let chartWheelZoomBound = false;
 let quickRangeResizeBound = false;
+let quickRangeSelection = "";
 const THEME_STORAGE_KEY = "token-report-theme";
 let themeSwitchTimer = null;
 const calendarState = {
@@ -1935,8 +1935,11 @@ function updateRangeDateButton(startISO, endISO) {
   const trigger = document.getElementById("range-date-trigger");
   const label = document.getElementById("range-date-label");
   const text = formatRangeButtonLabel(startISO, endISO);
-  if (label) setAnimatedText(label, text, { animate: true });
+  const didUpdate = label ? setAnimatedText(label, text, { animate: true }) : false;
   if (trigger) trigger.setAttribute("aria-label", text);
+  if (didUpdate && trigger) {
+    triggerSwapAnimation(trigger, "metric-value-anim");
+  }
 }
 
 function normalizeTheme(value) {
@@ -2027,7 +2030,7 @@ function quickRangePresetFor(startISO, endISO, minISO, maxISO) {
   if (!startISO || !endISO || !minISO || !maxISO) return "";
   if (startISO === minISO && endISO === maxISO) return "all";
   if (endISO !== maxISO) return "";
-  const presetDays = [1, 2, 7, 30, 90];
+  const presetDays = [1, 2, 7, 30];
   for (const days of presetDays) {
     let expectedStart = addDaysISO(maxISO, -(days - 1));
     if (expectedStart < minISO) expectedStart = minISO;
@@ -2036,6 +2039,25 @@ function quickRangePresetFor(startISO, endISO, minISO, maxISO) {
     }
   }
   return "";
+}
+
+function quickRangeBoundsFor(preset, minISO, maxISO) {
+  if (!preset || !minISO || !maxISO) return null;
+  if (preset === "all") {
+    return { start: minISO, end: maxISO };
+  }
+  const days = parseInt(preset, 10);
+  if (!days) return null;
+  let start = addDaysISO(maxISO, -(days - 1));
+  if (start < minISO) start = minISO;
+  return {
+    start,
+    end: maxISO,
+  };
+}
+
+function rememberQuickRangeSelection(preset) {
+  quickRangeSelection = preset || "";
 }
 
 function updateQuickRangeSlider() {
@@ -2068,7 +2090,18 @@ function setQuickRangeActive(preset) {
 function updateQuickRangeState(startISO, endISO) {
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
-  const preset = quickRangePresetFor(startISO, endISO, minISO, maxISO);
+  let preset = "";
+  const preferredBounds = quickRangeBoundsFor(quickRangeSelection, minISO, maxISO);
+  if (
+    preferredBounds &&
+    preferredBounds.start === startISO &&
+    preferredBounds.end === endISO
+  ) {
+    preset = quickRangeSelection;
+  }
+  if (!preset) {
+    preset = quickRangePresetFor(startISO, endISO, minISO, maxISO);
+  }
   setQuickRangeActive(preset);
 }
 
@@ -2169,6 +2202,7 @@ function applyCalendarRange(startISO, endISO) {
   const startInput = document.getElementById("range-start");
   const endInput = document.getElementById("range-end");
   if (!startInput || !endInput) return;
+  rememberQuickRangeSelection("");
   setRangeInputValue(startInput, startISO);
   setRangeInputValue(endInput, endISO);
   applyRange(startISO, endISO);
@@ -3145,6 +3179,7 @@ function setupRangeControls() {
     btn.addEventListener("click", () => {
       const value = btn.dataset.range;
       if (!value) return;
+      rememberQuickRangeSelection(value);
       setQuickRangeActive(value);
       const runApply = (startISO, endISO) => {
         if (window.requestAnimationFrame) {

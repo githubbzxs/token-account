@@ -62,6 +62,10 @@ type ReportData = {
     end: string;
     days: number;
   };
+  available_range: {
+    start: string;
+    end: string;
+  };
   daily: {
     labels: string[];
     total: number[];
@@ -115,12 +119,15 @@ type SourceRecord = {
   last_error: string | null;
 };
 
-type Preset = '7d' | '30d' | '90d' | 'all';
+type Preset = '7d' | '30d' | 'all';
+type DateRange = {
+  start: string;
+  end: string;
+};
 
 const PRESET_LABELS: Record<Preset, string> = {
   '7d': '最近 7 天',
   '30d': '最近 30 天',
-  '90d': '最近 90 天',
   all: '全部',
 };
 
@@ -164,28 +171,61 @@ function parseCacheRate(rateText: string): number {
   return numeric;
 }
 
-function getPresetRange(preset: Preset, data: ReportData | null): { since?: string; until?: string } {
+function shiftIsoDate(value: string, days: number): string {
+  const nextDate = new Date(`${value}T00:00:00Z`);
+  nextDate.setUTCDate(nextDate.getUTCDate() + days);
+  return nextDate.toISOString().slice(0, 10);
+}
+
+function clampIsoDate(value: string, min?: string, max?: string): string {
+  if (min && value < min) {
+    return min;
+  }
+  if (max && value > max) {
+    return max;
+  }
+  return value;
+}
+
+function normalizeAvailableRange(range: DateRange | null | undefined): DateRange | null {
+  if (!range?.start || !range?.end) {
+    return null;
+  }
+  return range;
+}
+
+function normalizeRequestedRange(
+  since?: string,
+  until?: string,
+  availableRange?: DateRange | null,
+): { since?: string; until?: string } {
+  const minDate = availableRange?.start;
+  const maxDate = availableRange?.end;
+  const nextSince = since ? clampIsoDate(since, minDate, maxDate) : undefined;
+  const nextUntil = until ? clampIsoDate(until, minDate, maxDate) : undefined;
+
+  if (nextSince && nextUntil && nextSince > nextUntil) {
+    return {
+      since: nextUntil,
+      until: nextSince,
+    };
+  }
+
+  return {
+    since: nextSince,
+    until: nextUntil,
+  };
+}
+
+function getPresetRange(preset: Preset, availableRange: DateRange | null): { since?: string; until?: string } {
   if (preset === 'all') {
     return {};
   }
 
-  const end = new Date();
-  const start = new Date(end);
-  const days = preset === '7d' ? 6 : preset === '30d' ? 29 : 89;
-  start.setDate(end.getDate() - days);
-
-  const todayText = end.toISOString().slice(0, 10);
-  const startText = start.toISOString().slice(0, 10);
-
-  if (!data) {
-    return { since: startText, until: todayText };
-  }
-
-  const minDate = data.range.start;
-  return {
-    since: startText < minDate ? minDate : startText,
-    until: todayText,
-  };
+  const anchorEnd = availableRange?.end || new Date().toISOString().slice(0, 10);
+  const days = preset === '7d' ? 6 : 29;
+  const startText = shiftIsoDate(anchorEnd, -days);
+  return normalizeRequestedRange(startText, anchorEnd, availableRange);
 }
 
 function buildDailySeries(data: ReportData) {
@@ -213,8 +253,37 @@ function toIsoDate(value: string | null): string | undefined {
   return value;
 }
 
+function getSelectedRangeLabel(
+  preset: Preset,
+  sinceDate: string | null,
+  untilDate: string | null,
+  availableRange: DateRange | null,
+): string {
+  if (!sinceDate && !untilDate) {
+    return PRESET_LABELS[preset];
+  }
+
+  const normalized = normalizeRequestedRange(
+    toIsoDate(sinceDate),
+    toIsoDate(untilDate),
+    availableRange,
+  );
+
+  if (normalized.since && normalized.until) {
+    return `${normalized.since} 至 ${normalized.until}`;
+  }
+  if (normalized.since) {
+    return `${normalized.since} 起`;
+  }
+  if (normalized.until) {
+    return `截至 ${normalized.until}`;
+  }
+  return PRESET_LABELS[preset];
+}
+
 export function App() {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
+  const [availableRange, setAvailableRange] = useState<DateRange | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -223,39 +292,56 @@ export function App() {
   const [untilDate, setUntilDate] = useState<string | null>(null);
 
   const fetchDashboard = useEffectEvent(async (showBusy: boolean) => {
-    const range = sinceDate && untilDate
-      ? {
-          since: toIsoDate(sinceDate),
-          until: toIsoDate(untilDate),
-        }
-      : getPresetRange(preset, dashboard?.data ?? null);
-
-    const params = new URLSearchParams();
-    if (range.since) {
-      params.set('since', range.since);
-    }
-    if (range.until) {
-      params.set('until', range.until);
-    }
+    const isManualRange = Boolean(sinceDate || untilDate);
+    const knownRange = availableRange ?? normalizeAvailableRange(dashboard?.data.available_range);
+    const requestedRange = isManualRange
+      ? normalizeRequestedRange(toIsoDate(sinceDate), toIsoDate(untilDate), knownRange)
+      : getPresetRange(preset, knownRange);
 
     if (showBusy) {
       setRefreshing(true);
     }
 
     try {
-      const response = await fetch(`/api/dashboard?${params.toString()}`, {
-        headers: {
-          Accept: 'application/json',
-        },
-      });
+      const requestDashboard = async (range: { since?: string; until?: string }) => {
+        const params = new URLSearchParams();
+        if (range.since) {
+          params.set('since', range.since);
+        }
+        if (range.until) {
+          params.set('until', range.until);
+        }
 
-      if (!response.ok) {
-        throw new Error(`请求失败：${response.status}`);
+        const query = params.toString();
+        const response = await fetch(query ? `/api/dashboard?${query}` : '/api/dashboard', {
+          headers: {
+            Accept: 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`请求失败：${response.status}`);
+        }
+
+        return (await response.json()) as DashboardResponse;
+      };
+
+      let payload = await requestDashboard(requestedRange);
+      const payloadAvailableRange = normalizeAvailableRange(payload.data.available_range);
+
+      if (!isManualRange && preset !== 'all' && payload.empty && payloadAvailableRange) {
+        const fallbackRange = getPresetRange(preset, payloadAvailableRange);
+        if (
+          fallbackRange.since !== requestedRange.since ||
+          fallbackRange.until !== requestedRange.until
+        ) {
+          payload = await requestDashboard(fallbackRange);
+        }
       }
 
-      const payload = (await response.json()) as DashboardResponse;
       startTransition(() => {
         setDashboard(payload);
+        setAvailableRange(normalizeAvailableRange(payload.data.available_range));
         setError(null);
       });
     } catch (fetchError) {
@@ -283,6 +369,10 @@ export function App() {
   const dailySeries = useMemo(() => (dashboard ? buildDailySeries(dashboard.data) : []), [dashboard]);
   const hourlySeries = useMemo(() => (dashboard ? buildHourlySeries(dashboard.data) : []), [dashboard]);
   const modelRows = useMemo(() => (dashboard ? dashboard.data.models : []), [dashboard]);
+  const selectedRangeLabel = useMemo(
+    () => getSelectedRangeLabel(preset, sinceDate, untilDate, availableRange),
+    [availableRange, preset, sinceDate, untilDate],
+  );
 
   if (loading && !dashboard) {
     return (
@@ -352,35 +442,51 @@ export function App() {
               </Button>
               <Group gap={10} className="hero-meta">
                 <Text fw={600}>最近同步</Text>
-                <Text c="dimmed">{formatDateTime(data.meta.last_synced_at)}</Text>
+                <Text c="dimmed">
+                  <AnimatedText value={formatDateTime(data.meta.last_synced_at)} />
+                </Text>
               </Group>
               <Group gap={10} className="hero-meta">
                 <Text fw={600}>统计范围</Text>
-                <Text c="dimmed">{summary.range_text}</Text>
+                <Text c="dimmed">
+                  <AnimatedText value={summary.range_text} />
+                </Text>
               </Group>
             </Group>
           </div>
           <Paper className="hero-spotlight" radius={32}>
             <Text className="eyebrow">今日质感卡片</Text>
-            <div className="spotlight-value">{summary.total_tokens}</div>
+            <AnimatedText
+              value={summary.total_tokens}
+              className="spotlight-value animated-number"
+              component="div"
+            />
             <Text className="spotlight-caption">总 Token</Text>
             <Divider my="md" color="rgba(138, 155, 180, 0.12)" />
             <SimpleGrid cols={2} spacing="md">
               <div>
                 <Text className="mini-label">会话</Text>
-                <Text fw={600}>{summary.sessions}</Text>
+                <Text fw={600}>
+                  <AnimatedText value={summary.sessions} className="animated-number" />
+                </Text>
               </div>
               <div>
                 <Text className="mini-label">活跃天数</Text>
-                <Text fw={600}>{summary.days_active}</Text>
+                <Text fw={600}>
+                  <AnimatedText value={summary.days_active} className="animated-number" />
+                </Text>
               </div>
               <div>
                 <Text className="mini-label">成本</Text>
-                <Text fw={600}>{summary.total_cost}</Text>
+                <Text fw={600}>
+                  <AnimatedText value={summary.total_cost} className="animated-number" />
+                </Text>
               </div>
               <div>
                 <Text className="mini-label">缓存率</Text>
-                <Text fw={600}>{summary.cache_rate}</Text>
+                <Text fw={600}>
+                  <AnimatedText value={summary.cache_rate} className="animated-number" />
+                </Text>
               </div>
             </SimpleGrid>
           </Paper>
@@ -391,6 +497,9 @@ export function App() {
             <Stack gap={6}>
               <Text className="eyebrow">时间范围</Text>
               <Text fw={600}>快速查看不同统计窗口</Text>
+              <Text size="sm" c="dimmed">
+                <AnimatedText value={`当前选择：${selectedRangeLabel}`} />
+              </Text>
             </Stack>
             <Group gap="sm" wrap="wrap">
               <SegmentedControl
@@ -413,6 +522,7 @@ export function App() {
                 placeholder="开始日期"
                 radius="xl"
                 clearable
+                maxDate={availableRange?.end}
               />
               <DateInput
                 value={untilDate}
@@ -424,6 +534,8 @@ export function App() {
                 placeholder="结束日期"
                 radius="xl"
                 clearable
+                minDate={availableRange?.start}
+                maxDate={availableRange?.end}
               />
             </Group>
           </Group>
@@ -516,7 +628,7 @@ export function App() {
                   label={
                     <Stack gap={0} align="center">
                       <Text fw={700} size="xl">
-                        {summary.cache_rate}
+                        <AnimatedText value={summary.cache_rate} className="animated-number" />
                       </Text>
                       <Text size="sm" c="dimmed">
                         缓存率
@@ -704,6 +816,25 @@ export function App() {
   );
 }
 
+type AnimatedTextProps = {
+  value: string;
+  className?: string;
+  component?: 'span' | 'div';
+};
+
+function AnimatedText({ value, className, component = 'span' }: AnimatedTextProps) {
+  const Component = component;
+  const rootClassName = ['animated-text', className].filter(Boolean).join(' ');
+
+  return (
+    <Component className={rootClassName}>
+      <span key={value} className="animated-text__item">
+        {value}
+      </span>
+    </Component>
+  );
+}
+
 type MetricCardProps = {
   icon: typeof IconSparkles;
   title: string;
@@ -717,8 +848,10 @@ function MetricCard({ icon: Icon, title, value, detail }: MetricCardProps) {
       <Group justify="space-between" align="flex-start">
         <Stack gap={6}>
           <Text className="eyebrow">{title}</Text>
-          <Text className="metric-value">{value}</Text>
-          <Text c="dimmed">{detail}</Text>
+          <AnimatedText value={value} className="metric-value animated-number" />
+          <Text c="dimmed">
+            <AnimatedText value={detail} />
+          </Text>
         </Stack>
         <ThemeIcon size={46} radius="xl" variant="light" color="blue">
           <Icon size={24} />
@@ -739,7 +872,9 @@ function DetailRow({ label, value, progress }: DetailRowProps) {
     <div>
       <Group justify="space-between" mb={6}>
         <Text fw={600}>{label}</Text>
-        <Text c="dimmed">{value}</Text>
+        <Text c="dimmed">
+          <AnimatedText value={value} className="animated-number" />
+        </Text>
       </Group>
       <Progress value={progress} radius="xl" color="blue" size="md" />
     </div>

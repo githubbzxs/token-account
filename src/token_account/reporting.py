@@ -17,7 +17,7 @@ from .legacy_report import (
     render_html,
 )
 from .pricing import cost_for_record, load_pricing, normalize_model_name
-from .storage import fetch_events, fetch_sources
+from .storage import fetch_event_bounds, fetch_events, fetch_sources
 
 
 def collect_usage_from_rows(rows: list[dict[str, Any]]):
@@ -120,6 +120,7 @@ def build_report_document(
     *,
     since: date | None,
     until: date | None,
+    available_range: dict[str, str] | None = None,
     pricing_path: Path | None = None,
     source_label: str = "SQLite",
 ) -> tuple[dict[str, Any], dict[str, Any], bool]:
@@ -193,6 +194,7 @@ def build_report_document(
             "end": range_end.isoformat(),
             "days": range_days,
         },
+        "available_range": available_range or {"start": "", "end": ""},
         "daily": daily_series,
         "daily_models": daily_models_serialized,
         "hourly": {"labels": hour_labels, "total": hourly_values},
@@ -243,6 +245,7 @@ def build_dashboard_payload(data: dict[str, Any], summary: dict[str, Any], empty
     return {
         "data": {
             "range": data["range"],
+            "available_range": data.get("available_range", {"start": "", "end": ""}),
             "daily": data["daily"],
             "hourly": data["hourly"],
             "models": top_models,
@@ -269,7 +272,16 @@ def build_report_from_database(
         raise ValueError("since must be earlier than until")
     rows = fetch_events(conn, since=since.isoformat() if since else None, until=until.isoformat() if until else None)
     sources = fetch_sources(conn)
-    return build_report_document(rows, sources, since=since, until=until, pricing_path=pricing_path, source_label=source_label)
+    available_range = fetch_event_bounds(conn)
+    return build_report_document(
+        rows,
+        sources,
+        since=since,
+        until=until,
+        available_range=available_range,
+        pricing_path=pricing_path,
+        source_label=source_label,
+    )
 
 
 __all__ = [
