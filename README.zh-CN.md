@@ -1,21 +1,58 @@
+<div align="center">
+
 # token-account
 
-[English README](./README.md)
+<p><strong>面向 Codex 会话的常驻 token 统计服务</strong></p>
 
-`token-account` 是一个面向 Codex 会话的常驻 token 统计服务。
+<p>
+  <a href="./README.md">
+    <img src="https://img.shields.io/badge/English-111827?style=flat" alt="English README" />
+  </a>
+  <a href="./README.zh-CN.md">
+    <img src="https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-2563EB?style=flat" alt="简体中文文档" />
+  </a>
+</p>
 
-它把原本一次性生成静态 HTML 的脚本改造成一个基于 FastAPI 和 SQLite 的轻量服务，支持多台设备持续上报增量事件，同时继续保留旧版报表页面作为实时仪表盘。
+<p>
+  将一次性静态报表改造成支持增量同步、多设备汇总和实时 HTML 仪表盘的轻量服务。
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat&logo=python&logoColor=white" alt="Python 3.11+" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Pydantic-E92063?style=flat&logo=pydantic&logoColor=white" alt="Pydantic" />
+  <img src="https://img.shields.io/badge/SQLite-0F80CC?style=flat&logo=sqlite&logoColor=white" alt="SQLite" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Docker_Compose-1D63ED?style=flat&logo=docker&logoColor=white" alt="Docker Compose" />
+</p>
+
+</div>
+
+## 概览
+
+`token-account` 把原本一次性生成静态 HTML 的脚本改造成一个基于 FastAPI 和 SQLite 的常驻服务。
+
+它支持一台或多台设备持续上报增量事件，基于 `event_id` 做幂等去重，记录来源状态，并继续保留旧版报表 UI 作为实时仪表盘页面。
 
 ## 功能
 
 - 以常驻 HTTP 服务方式提供 token 使用统计
 - 从本地 Codex 会话日志增量采集事件
 - 基于 `event_id` 做幂等去重
-- 将多台设备的使用量合并为一份报告
-- 同时提供仪表盘 API 与旧版 HTML 报表页
+- 将多台设备的使用量聚合为一份报告
+- 同时提供仪表盘 API 与服务端渲染的旧版 HTML 报表页
 - 在本地保存同步状态，减少重复上传
 
 ## 技术栈
+
+<p>
+  <img src="https://img.shields.io/badge/FastAPI-API-009688?style=flat&logo=fastapi&logoColor=white" alt="FastAPI API" />
+  <img src="https://img.shields.io/badge/Pydantic-Validation-E92063?style=flat&logo=pydantic&logoColor=white" alt="Pydantic Validation" />
+  <img src="https://img.shields.io/badge/Uvicorn-ASGI-4051B5?style=flat" alt="Uvicorn ASGI" />
+  <img src="https://img.shields.io/badge/SQLite-Storage-0F80CC?style=flat&logo=sqlite&logoColor=white" alt="SQLite Storage" />
+  <img src="https://img.shields.io/badge/urllib.request-%E5%90%8C%E6%AD%A5%E5%AE%A2%E6%88%B7%E7%AB%AF-4B5563?style=flat" alt="urllib.request 同步客户端" />
+  <img src="https://img.shields.io/badge/%E6%9C%8D%E5%8A%A1%E7%AB%AF_HTML-%E6%97%A7%E7%89%88%E6%8A%A5%E8%A1%A8-111827?style=flat" alt="服务端 HTML 旧版报表" />
+</p>
 
 - API：`FastAPI`、`Pydantic`、`Uvicorn`
 - 存储：`SQLite`、`sqlite3`

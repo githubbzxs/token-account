@@ -1,21 +1,58 @@
+<div align="center">
+
 # token-account
 
-[中文文档](./README.zh-CN.md)
+<p><strong>Persistent token usage service for Codex sessions</strong></p>
 
-`token-account` is a persistent token usage service for Codex sessions.
+<p>
+  <a href="./README.md">
+    <img src="https://img.shields.io/badge/English-111827?style=flat" alt="English README" />
+  </a>
+  <a href="./README.zh-CN.md">
+    <img src="https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-2563EB?style=flat" alt="简体中文文档" />
+  </a>
+</p>
 
-It turns the original one-shot static HTML report into a small FastAPI service backed by SQLite, accepts incremental sync uploads from one or more machines, and keeps the legacy report UI available as a live dashboard page.
+<p>
+  Turn one-shot Codex token reports into a small service with incremental sync, multi-device aggregation, and a live HTML dashboard.
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat&logo=python&logoColor=white" alt="Python 3.11+" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Pydantic-E92063?style=flat&logo=pydantic&logoColor=white" alt="Pydantic" />
+  <img src="https://img.shields.io/badge/SQLite-0F80CC?style=flat&logo=sqlite&logoColor=white" alt="SQLite" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Docker_Compose-1D63ED?style=flat&logo=docker&logoColor=white" alt="Docker Compose" />
+</p>
+
+</div>
+
+## Overview
+
+`token-account` converts the original static HTML script into a long-lived FastAPI service backed by SQLite.
+
+It accepts incremental sync uploads from one or more machines, deduplicates events by `event_id`, stores source status, and keeps the legacy report UI available as a live dashboard page.
 
 ## Features
 
-- Run a long-lived HTTP service for token usage reporting
-- Ingest incremental events from local Codex session logs
-- Deduplicate events by `event_id`
-- Merge usage from multiple devices into one report
-- Serve both dashboard APIs and the legacy HTML report
-- Keep sync state locally for efficient repeated uploads
+- Long-lived HTTP service for token usage reporting
+- Incremental sync from local Codex session logs
+- Idempotent event ingestion with `event_id` deduplication
+- Aggregated reporting across multiple devices
+- Dashboard APIs plus server-rendered legacy HTML report
+- Local sync state tracking for efficient repeated uploads
 
 ## tech stack
+
+<p>
+  <img src="https://img.shields.io/badge/FastAPI-API-009688?style=flat&logo=fastapi&logoColor=white" alt="FastAPI API" />
+  <img src="https://img.shields.io/badge/Pydantic-Validation-E92063?style=flat&logo=pydantic&logoColor=white" alt="Pydantic Validation" />
+  <img src="https://img.shields.io/badge/Uvicorn-ASGI-4051B5?style=flat" alt="Uvicorn ASGI" />
+  <img src="https://img.shields.io/badge/SQLite-Storage-0F80CC?style=flat&logo=sqlite&logoColor=white" alt="SQLite Storage" />
+  <img src="https://img.shields.io/badge/urllib.request-Sync_Client-4B5563?style=flat" alt="urllib.request Sync Client" />
+  <img src="https://img.shields.io/badge/Server_Rendered_HTML-Legacy_Report-111827?style=flat" alt="Server Rendered HTML Legacy Report" />
+</p>
 
 - API: `FastAPI`, `Pydantic`, `Uvicorn`
 - Storage: `SQLite`, `sqlite3`
