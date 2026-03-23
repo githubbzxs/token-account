@@ -34,13 +34,13 @@
 
 它支持一台或多台设备持续上报增量事件，基于 `event_id` 做幂等去重，记录来源状态，并继续保留旧版报表 UI 作为实时仪表盘页面。
 
-## 演示截图
+## 演示视频
 
 <p align="center">
-  <img src="./docs/demo-dashboard.png" alt="token-account 仪表盘演示截图" width="100%" />
+  <video src="https://github.com/githubbzxs/token-account/raw/main/docs/demo-ui.mp4" controls autoplay loop muted playsinline width="100%"></video>
 </p>
 
-<p align="center"><sub>该截图基于示例演示数据生成，不包含真实使用数据。</sub></p>
+<p align="center"><sub>该演示视频基于示例数据生成，不包含真实使用数据。如果你当前的 GitHub 客户端不显示内联播放器，可直接打开 <a href="./docs/demo-ui.mp4">docs/demo-ui.mp4</a>。</sub></p>
 
 ## 功能
 

@@ -37,10 +37,10 @@ It accepts incremental sync uploads from one or more machines, deduplicates even
 ## Demo
 
 <p align="center">
-  <img src="./docs/demo-dashboard.png" alt="token-account dashboard demo screenshot" width="100%" />
+  <video src="https://github.com/githubbzxs/token-account/raw/main/docs/demo-ui.mp4" controls autoplay loop muted playsinline width="100%"></video>
 </p>
 
-<p align="center"><sub>Demo screenshot generated with fabricated sample data.</sub></p>
+<p align="center"><sub>Demo video generated with fabricated sample data. If the inline player does not render in your GitHub client, open <a href="./docs/demo-ui.mp4">docs/demo-ui.mp4</a>.</sub></p>
 
 ## Features
 
