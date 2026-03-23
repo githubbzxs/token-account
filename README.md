@@ -1,102 +1,143 @@
-# Codex Token Usage Service
+# token-account
 
-将原本一次性生成静态 HTML 的脚本改为常驻服务：
-- 服务端使用 FastAPI + SQLite 持久化数据
-- 客户端通过 `sync` / `sync-loop` 持续推送本机 Codex 会话增量
-- HTML 报告页继续保留，直接由服务提供，并定时从 API 拉取最新数据
+[中文文档](./README.zh-CN.md)
 
-## 依赖
-- Python 3.11+
-- `pip install -r requirements.txt`
+`token-account` is a persistent token usage service for Codex sessions.
 
-## 快速开始
+It turns the original one-shot static HTML report into a small FastAPI service backed by SQLite, accepts incremental sync uploads from one or more machines, and keeps the legacy report UI available as a live dashboard page.
 
-### 1）启动服务
+## Features
+
+- Run a long-lived HTTP service for token usage reporting
+- Ingest incremental events from local Codex session logs
+- Deduplicate events by `event_id`
+- Merge usage from multiple devices into one report
+- Serve both dashboard APIs and the legacy HTML report
+- Keep sync state locally for efficient repeated uploads
+
+## tech stack
+
+- API: `FastAPI`, `Pydantic`, `Uvicorn`
+- Storage: `SQLite`, `sqlite3`
+- Sync client: `urllib.request`, local JSON state
+- Reporting UI: server-rendered HTML, legacy report renderer
+- Packaging and deployment: `Python 3.11+`, `Docker`, `Docker Compose`
+
+## Project Structure
+
+```text
+src/token_account/
+  cli.py                  CLI entry for serve / sync / sync-loop
+  service.py              FastAPI routes and service wiring
+  syncer.py               Incremental sync client
+  storage.py              SQLite schema and ingestion
+  reporting.py            Report aggregation and payload building
+  legacy_report.py        Legacy HTML report renderer
+src/codex_token_report.py Thin executable entrypoint
+Dockerfile                Container image
+docker-compose.yml        Compose service definition
+pricing.json              Optional pricing overrides
+```
+
+## Quick Start
+
+1. Install dependencies.
+
+```bash
+pip install -r requirements.txt
+```
+
+2. Start the service.
+
 ```bash
 python3 src/codex_token_report.py serve --host 0.0.0.0 --port 8000 --db-file data/token-account.db
 ```
 
-Windows 下也可以直接双击 `open-report.bat`，它会在后台拉起本地服务并自动打开浏览器。
+3. Sync local Codex events once.
 
-启动后可访问：
-- 报告页：`http://127.0.0.1:8000/`
-- 仪表盘接口：`http://127.0.0.1:8000/api/dashboard`
-- 报表接口：`http://127.0.0.1:8000/api/report`
-- 来源列表：`http://127.0.0.1:8000/api/sources`
-- 健康检查：`http://127.0.0.1:8000/api/health`
-
-### 2）执行一次同步
 ```bash
 python3 src/codex_token_report.py sync --service-url http://127.0.0.1:8000
 ```
 
-### 3）后台持续同步
+4. Keep syncing in the background.
+
 ```bash
 python3 src/codex_token_report.py sync-loop --service-url http://127.0.0.1:8000 --interval 60
 ```
 
-## 命令说明
+Default URLs after the service starts:
+
+- Report page: `http://127.0.0.1:8000/`
+- Dashboard API: `http://127.0.0.1:8000/api/dashboard`
+- Report API: `http://127.0.0.1:8000/api/report`
+- Sources API: `http://127.0.0.1:8000/api/sources`
+- Health API: `http://127.0.0.1:8000/api/health`
+
+On Windows, you can also double-click `open-report.bat` to start the local service in the background and open the browser automatically.
+
+## CLI Commands
 
 ### `serve`
-启动常驻服务。
 
-常用参数：
-- `--host`：监听地址，默认 `127.0.0.1`
-- `--port`：监听端口，默认 `8000`
-- `--db-file`：SQLite 文件路径，默认 `data/token-account.db`
-- `--pricing-file`：覆盖定价文件
+Start the FastAPI service.
+
+Common options:
+
+- `--host`: bind address, default `127.0.0.1`
+- `--port`: bind port, default `8000`
+- `--db-file`: SQLite file path, default `data/token-account.db`
+- `--pricing-file`: optional pricing override file
 
 ### `sync`
-扫描本机 `.codex/sessions` 目录，将规范化 token 增量事件推送到服务。
 
-常用参数：
-- `--service-url`：服务地址，默认 `http://127.0.0.1:8000`
-- `--codex-home`：指定 `.codex` 根目录
-- `--sessions-root`：直接指定 `sessions` 目录
-- `--state-file`：本地同步状态文件
-- `--source-id`：来源设备 ID
-- `--hostname`：来源设备主机名
-- `--batch-size`：单批上传事件数，默认 `1000`
-- `--timeout`：HTTP 超时秒数，默认 `30`
+Scan local `.codex/sessions` data and push normalized token events to the service.
+
+Common options:
+
+- `--service-url`: service base URL, default `http://127.0.0.1:8000`
+- `--codex-home`: custom `.codex` root
+- `--sessions-root`: direct path to the `sessions` directory
+- `--state-file`: local sync state file
+- `--source-id`: source device identifier
+- `--hostname`: source host name
+- `--batch-size`: upload batch size, default `1000`
+- `--timeout`: HTTP timeout in seconds, default `30`
 
 ### `sync-loop`
-定时执行同步，适合配合 `systemd`、计划任务或守护进程使用。
 
-额外参数：
-- `--interval`：同步间隔秒数，默认 `60`
+Run `sync` repeatedly for daemon, scheduler, or `systemd` usage.
 
-## 数据模型说明
-- 服务端按事件入库，并通过 `event_id` 幂等去重
-- 多台设备默认合并成一份总报告
-- 服务端仍保留来源设备信息，用于展示最近同步状态
-- 报告页默认每 30 秒轮询一次 `/api/report`
+Extra option:
 
-## 与旧版行为的变化
-- 不再以 `report/index.html` 为主交付物
-- UI 与原版报告保持一致，底层数据来源改为服务同步模式
-- HTML 报告页仍保留，但它现在是服务的一部分，而不是静态文件输出
+- `--interval`: sync interval in seconds, default `60`
 
-## 公网部署提醒
-当前实现按你的要求 **不加鉴权**。
-这意味着任何能访问服务地址的人，都可以：
-- 查看你的使用报告
-- 读取来源设备状态
-- 调用同步接口写入数据
+## Data Model
 
-如果要上公网，至少建议通过反向代理、访问控制或后续补 token 鉴权来收口。
+- Events are stored individually and deduplicated by `event_id`
+- Device metadata is preserved in the `sources` table
+- Sync runs are recorded for troubleshooting and status display
+- The HTML report polls fresh report data periodically from the service
 
 ## Docker Compose
-仓库内包含 `Dockerfile` 与 `docker-compose.yml`，默认服务命令为：
+
+The repository includes `Dockerfile` and `docker-compose.yml`.
+
+Default container command:
+
 ```bash
 python src/codex_token_report.py serve --host 0.0.0.0 --port 8000 --db-file /data/token-account.db
 ```
 
-启动：
+Start it with:
+
 ```bash
 docker compose up -d --build
 ```
 
-默认将本地 `./data` 挂载到容器 `/data`，用于持久化 SQLite 数据。
+The local `./data` directory is mounted to `/data` for SQLite persistence.
 
-## 页面说明
-首页直接返回服务端渲染的旧版报表页面，不再依赖独立前端构建产物。
+## Security Note
+
+The current service does not add authentication.
+
+If you expose it to a public network, anyone who can reach the service can read report data, inspect source status, and submit sync payloads. Put it behind a reverse proxy, access control, or add an auth layer before wider exposure.
