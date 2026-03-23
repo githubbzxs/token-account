@@ -173,6 +173,12 @@ docker compose up -d --build
 
 The local `./data` directory is mounted to `/data` for SQLite persistence.
 
+## Acknowledgements
+
+Thanks to the [Linux.do community](https://linux.do) for the ongoing discussion, sharing, and practical feedback around Codex workflows, self-hosted tooling, and deployment experience.
+
+Projects like this benefit a lot from communities that openly exchange scripts, ideas, and real-world usage patterns.
+
 ## Security Note
 
 The current service does not add authentication.
