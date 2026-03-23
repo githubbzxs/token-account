@@ -34,6 +34,14 @@
 
 It accepts incremental sync uploads from one or more machines, deduplicates events by `event_id`, stores source status, and keeps the legacy report UI available as a live dashboard page.
 
+## Demo
+
+<p align="center">
+  <img src="./docs/demo-dashboard.png" alt="token-account dashboard demo screenshot" width="100%" />
+</p>
+
+<p align="center"><sub>Demo screenshot generated with fabricated sample data.</sub></p>
+
 ## Features
 
 - Long-lived HTTP service for token usage reporting

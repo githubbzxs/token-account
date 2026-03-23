@@ -34,6 +34,14 @@
 
 它支持一台或多台设备持续上报增量事件，基于 `event_id` 做幂等去重，记录来源状态，并继续保留旧版报表 UI 作为实时仪表盘页面。
 
+## 演示截图
+
+<p align="center">
+  <img src="./docs/demo-dashboard.png" alt="token-account 仪表盘演示截图" width="100%" />
+</p>
+
+<p align="center"><sub>该截图基于示例演示数据生成，不包含真实使用数据。</sub></p>
+
 ## 功能
 
 - 以常驻 HTTP 服务方式提供 token 使用统计
