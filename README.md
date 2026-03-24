@@ -28,22 +28,19 @@
 
 </div>
 
+## Demo
+
+<p align="center">
+  <video src="https://raw.githubusercontent.com/githubbzxs/token-account/main/docs/demo-ui.mp4" controls="controls" style="width: 100%; height: auto; max-width: 1200px;" preload="metadata"></video>
+</p>
+
+<p align="center"><sub>Demo video generated with fabricated sample data. If your GitHub client does not render inline playback, open <a href="https://raw.githubusercontent.com/githubbzxs/token-account/main/docs/demo-ui.mp4">demo-ui.mp4</a>.</sub></p>
+
 ## Overview
 
 `token-account` converts the original static HTML script into a long-lived FastAPI service backed by SQLite.
 
 It accepts incremental sync uploads from one or more machines, deduplicates events by `event_id`, stores source status, and keeps the legacy report UI available as a live dashboard page.
-
-## Demo
-
-<p align="center">
-  <video controls autoplay loop muted playsinline width="100%" preload="metadata">
-    <source src="https://cdn.jsdelivr.net/gh/githubbzxs/token-account@main/docs/demo-ui.mp4" type="video/mp4" />
-    <source src="https://raw.githubusercontent.com/githubbzxs/token-account/main/docs/demo-ui.mp4" type="video/mp4" />
-  </video>
-</p>
-
-<p align="center"><sub>Demo video generated with fabricated sample data. If the inline player does not render in your GitHub client, open <a href="./docs/demo-ui.mp4">docs/demo-ui.mp4</a>.</sub></p>
 
 ## Features
 

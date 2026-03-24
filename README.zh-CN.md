@@ -28,22 +28,19 @@
 
 </div>
 
+## 演示视频
+
+<p align="center">
+  <video src="https://raw.githubusercontent.com/githubbzxs/token-account/main/docs/demo-ui.mp4" controls="controls" style="width: 100%; height: auto; max-width: 1200px;" preload="metadata"></video>
+</p>
+
+<p align="center"><sub>该演示视频基于示例数据生成，不包含真实使用数据。如果你当前的 GitHub 客户端不显示内联播放器，可直接打开 <a href="https://raw.githubusercontent.com/githubbzxs/token-account/main/docs/demo-ui.mp4">demo-ui.mp4</a>。</sub></p>
+
 ## 概览
 
 `token-account` 把原本一次性生成静态 HTML 的脚本改造成一个基于 FastAPI 和 SQLite 的常驻服务。
 
 它支持一台或多台设备持续上报增量事件，基于 `event_id` 做幂等去重，记录来源状态，并继续保留旧版报表 UI 作为实时仪表盘页面。
-
-## 演示视频
-
-<p align="center">
-  <video controls autoplay loop muted playsinline width="100%" preload="metadata">
-    <source src="https://cdn.jsdelivr.net/gh/githubbzxs/token-account@main/docs/demo-ui.mp4" type="video/mp4" />
-    <source src="https://raw.githubusercontent.com/githubbzxs/token-account/main/docs/demo-ui.mp4" type="video/mp4" />
-  </video>
-</p>
-
-<p align="center"><sub>该演示视频基于示例数据生成，不包含真实使用数据。如果你当前的 GitHub 客户端不显示内联播放器，可直接打开 <a href="./docs/demo-ui.mp4">docs/demo-ui.mp4</a>。</sub></p>
 
 ## 功能
 
