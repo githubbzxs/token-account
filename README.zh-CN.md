@@ -31,10 +31,12 @@
 ## 演示视频
 
 <p align="center">
-  <video src="https://github.com/githubbzxs/token-account/releases/download/readme-media-assets/demo-ui.mp4" controls="controls" style="width: 100%; height: auto; max-width: 1200px;" preload="metadata"></video>
+  <a href="https://github.com/githubbzxs/token-account/releases/download/readme-media-assets/demo-ui.mp4">
+    <img src="./docs/demo-video-preview.png" alt="token-account 演示视频预览图" width="100%" />
+  </a>
 </p>
 
-<p align="center"><sub>该演示视频基于示例数据生成，不包含真实使用数据。如果你当前的 GitHub 客户端不显示内联播放器，可直接打开 <a href="https://github.com/githubbzxs/token-account/releases/download/readme-media-assets/demo-ui.mp4">demo-ui.mp4</a>。</sub></p>
+<p align="center"><sub>点击预览图即可打开演示视频。该演示基于示例数据生成，不包含真实使用数据。</sub></p>
 
 ## 概览
 

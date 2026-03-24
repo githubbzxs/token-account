@@ -31,10 +31,12 @@
 ## Demo
 
 <p align="center">
-  <video src="https://github.com/githubbzxs/token-account/releases/download/readme-media-assets/demo-ui.mp4" controls="controls" style="width: 100%; height: auto; max-width: 1200px;" preload="metadata"></video>
+  <a href="https://github.com/githubbzxs/token-account/releases/download/readme-media-assets/demo-ui.mp4">
+    <img src="./docs/demo-video-preview.png" alt="token-account demo video preview" width="100%" />
+  </a>
 </p>
 
-<p align="center"><sub>Demo video generated with fabricated sample data. If your GitHub client does not render inline playback, open <a href="https://github.com/githubbzxs/token-account/releases/download/readme-media-assets/demo-ui.mp4">demo-ui.mp4</a>.</sub></p>
+<p align="center"><sub>Click the preview image to open the demo video. The demo uses fabricated sample data.</sub></p>
 
 ## Overview
 
