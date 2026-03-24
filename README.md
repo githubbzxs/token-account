@@ -37,7 +37,10 @@ It accepts incremental sync uploads from one or more machines, deduplicates even
 ## Demo
 
 <p align="center">
-  <video src="https://github.com/githubbzxs/token-account/raw/main/docs/demo-ui.mp4" controls autoplay loop muted playsinline width="100%"></video>
+  <video controls autoplay loop muted playsinline width="100%" preload="metadata">
+    <source src="https://cdn.jsdelivr.net/gh/githubbzxs/token-account@main/docs/demo-ui.mp4" type="video/mp4" />
+    <source src="https://raw.githubusercontent.com/githubbzxs/token-account/main/docs/demo-ui.mp4" type="video/mp4" />
+  </video>
 </p>
 
 <p align="center"><sub>Demo video generated with fabricated sample data. If the inline player does not render in your GitHub client, open <a href="./docs/demo-ui.mp4">docs/demo-ui.mp4</a>.</sub></p>

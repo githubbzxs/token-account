@@ -37,7 +37,10 @@
 ## 演示视频
 
 <p align="center">
-  <video src="https://github.com/githubbzxs/token-account/raw/main/docs/demo-ui.mp4" controls autoplay loop muted playsinline width="100%"></video>
+  <video controls autoplay loop muted playsinline width="100%" preload="metadata">
+    <source src="https://cdn.jsdelivr.net/gh/githubbzxs/token-account@main/docs/demo-ui.mp4" type="video/mp4" />
+    <source src="https://raw.githubusercontent.com/githubbzxs/token-account/main/docs/demo-ui.mp4" type="video/mp4" />
+  </video>
 </p>
 
 <p align="center"><sub>该演示视频基于示例数据生成，不包含真实使用数据。如果你当前的 GitHub 客户端不显示内联播放器，可直接打开 <a href="./docs/demo-ui.mp4">docs/demo-ui.mp4</a>。</sub></p>
