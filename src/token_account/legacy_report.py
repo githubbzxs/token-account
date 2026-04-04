@@ -55,11 +55,10 @@ I18N = {
         "import_failed": "导入失败",
         "daily_chart": "每小时总 token",
         "heatmap_chart": "每日热力图",
+        "heatmap_hint": "最近 53 周，不受上方时间范围筛选影响",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
         "model_mix": "模型占比",
-        "view_trend": "趋势",
-        "view_heatmap": "热力图",
         "heatmap_less": "少",
         "heatmap_more": "多",
         "top_days": "高峰日期",
@@ -124,11 +123,10 @@ I18N = {
         "import_failed": "Import failed",
         "daily_chart": "Hourly total tokens",
         "heatmap_chart": "Daily heatmap",
+        "heatmap_hint": "Last 53 weeks, independent from the range filter above",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
         "model_mix": "Model share",
-        "view_trend": "Trend",
-        "view_heatmap": "Heatmap",
         "heatmap_less": "Less",
         "heatmap_more": "More",
         "top_days": "Top days",
@@ -1523,70 +1521,14 @@ html.theme-switching .chart {
   margin-bottom: 0;
 }
 
+.panel-note {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .panel.wide {
   grid-column: span 2;
-}
-
-.view-switch {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  padding: 2px;
-  min-height: 36px;
-  border-radius: 999px;
-  border: 1px solid var(--stroke);
-  background: rgba(44, 46, 56, 0.92);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-
-.view-switch-slider {
-  position: absolute;
-  top: 2px;
-  bottom: 2px;
-  left: 0;
-  width: 0;
-  border-radius: 999px;
-  background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
-  box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.2),
-    0 1px 0 rgba(255, 255, 255, 0.16) inset;
-  opacity: 0;
-  transform: translate3d(0, 0, 0);
-  transition:
-    transform 680ms cubic-bezier(0.16, 1, 0.3, 1),
-    width 680ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 220ms ease;
-}
-
-.view-switch button {
-  position: relative;
-  z-index: 1;
-  min-width: 92px;
-  min-height: 32px;
-  padding: 0 14px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: #b6bac6;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-  cursor: pointer;
-  transition:
-    color 0.26s ease,
-    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.22s ease;
-}
-
-.view-switch button:hover {
-  color: #f8fafc;
-}
-
-.view-switch button.is-active {
-  color: #ffffff;
-  transform: translateY(-0.5px);
 }
 
 .heatmap-legend {
@@ -1772,13 +1714,6 @@ html.theme-switching .chart {
   }
   .panel-head {
     align-items: stretch;
-  }
-  .view-switch {
-    width: 100%;
-  }
-  .view-switch button {
-    flex: 1 1 0;
-    min-width: 0;
   }
   .heatmap-legend {
     justify-content: flex-start;
@@ -1990,15 +1925,19 @@ html.theme-switching .chart {
   <div class="panel-grid">
     <div class="panel wide" style="--delay:0.25s">
       <div class="panel-head">
-        <h3 id="primary-chart-title" data-i18n="daily_chart">Hourly total tokens</h3>
-        <div class="view-switch" id="primary-view-switch" aria-label="Primary chart view">
-          <span class="view-switch-slider" id="primary-view-slider" aria-hidden="true"></span>
-          <button type="button" data-view="trend" data-i18n="view_trend">Trend</button>
-          <button type="button" data-view="heatmap" data-i18n="view_heatmap">Heatmap</button>
-        </div>
+        <h3 data-i18n="daily_chart">Hourly total tokens</h3>
       </div>
       <div id="chart-daily" class="chart"></div>
-      <div class="heatmap-legend hidden" id="heatmap-legend">
+    </div>
+    <div class="panel wide" style="--delay:0.32s">
+      <div class="panel-head">
+        <div>
+          <h3 data-i18n="heatmap_chart">Daily heatmap</h3>
+          <p class="panel-note" data-i18n="heatmap_hint">Last 53 weeks, independent from the range filter above</p>
+        </div>
+      </div>
+      <div id="chart-heatmap" class="chart"></div>
+      <div class="heatmap-legend" id="heatmap-legend">
         <span data-i18n="heatmap_less">Less</span>
         <div class="heatmap-legend-scale" id="heatmap-legend-scale"></div>
         <span data-i18n="heatmap_more">More</span>
@@ -2024,6 +1963,7 @@ const MONTH_LABELS = [
   "July", "August", "September", "October", "November", "December",
 ];
 let dailyChartInstance = null;
+let contributionHeatmapInstance = null;
 let chartResizeBound = false;
 let chartWheelZoomBound = false;
 let quickRangeResizeBound = false;
@@ -2031,10 +1971,7 @@ let quickRangeSelection = "";
 let quickRangeSliderAnimation = null;
 let quickRangeSliderCleanupTimer = 0;
 const THEME_STORAGE_KEY = "token-report-theme";
-const PRIMARY_VIEW_STORAGE_KEY = "token-report-primary-view";
 let themeSwitchTimer = null;
-let primaryChartView = "trend";
-let primaryViewResizeBound = false;
 const calendarState = {
   open: false,
   minISO: "",
@@ -2366,27 +2303,8 @@ function applyTheme(theme, options) {
     persistTheme(nextTheme);
   }
   if (opts.refreshChart !== false && currentRange.start && currentRange.end) {
+    hasContributionHeatmapRender = false;
     applyRangePreview(currentRange.start, currentRange.end);
-  }
-}
-
-function normalizePrimaryView(value) {
-  return value === "heatmap" ? "heatmap" : "trend";
-}
-
-function readStoredPrimaryView() {
-  try {
-    return normalizePrimaryView(window.localStorage.getItem(PRIMARY_VIEW_STORAGE_KEY) || "");
-  } catch (_) {
-    return "trend";
-  }
-}
-
-function persistPrimaryView(view) {
-  try {
-    window.localStorage.setItem(PRIMARY_VIEW_STORAGE_KEY, normalizePrimaryView(view));
-  } catch (_) {
-    // ignore
   }
 }
 
@@ -2397,66 +2315,6 @@ function updateHeatmapLegendScale() {
   legendScale.innerHTML = palette.heatmapLevels
     .map((color) => `<span class="heatmap-legend-chip" style="background:${color}"></span>`)
     .join("");
-}
-
-function updatePrimaryChartTitle(options) {
-  const title = document.getElementById("primary-chart-title");
-  if (!title) return;
-  const key = primaryChartView === "heatmap" ? "heatmap_chart" : "daily_chart";
-  title.dataset.i18n = key;
-  setAnimatedText(title, labelFor(key), {
-    animate: !options || options.animate !== false,
-    className: "i18n-switch-anim",
-  });
-}
-
-function updatePrimaryViewSlider() {
-  const switcher = document.getElementById("primary-view-switch");
-  const slider = document.getElementById("primary-view-slider");
-  if (!switcher || !slider) return;
-  const activeButton = switcher.querySelector("button.is-active");
-  if (!(activeButton instanceof HTMLElement)) {
-    slider.style.opacity = "0";
-    slider.style.width = "0";
-    slider.style.transform = "translate3d(0,0,0)";
-    return;
-  }
-  slider.style.opacity = "1";
-  slider.style.width = `${activeButton.offsetWidth}px`;
-  slider.style.transform = `translate3d(${activeButton.offsetLeft}px,0,0)`;
-}
-
-function syncPrimaryViewUI(options) {
-  const switcher = document.getElementById("primary-view-switch");
-  const legend = document.getElementById("heatmap-legend");
-  if (switcher) {
-    switcher.querySelectorAll("button[data-view]").forEach((button) => {
-      const isActive = button.dataset.view === primaryChartView;
-      button.classList.toggle("is-active", isActive);
-      button.setAttribute("aria-pressed", isActive ? "true" : "false");
-    });
-  }
-  if (legend) {
-    legend.classList.toggle("hidden", primaryChartView !== "heatmap");
-  }
-  updateHeatmapLegendScale();
-  updatePrimaryChartTitle(options);
-  updatePrimaryViewSlider();
-}
-
-function setPrimaryView(view, options) {
-  const opts = options || {};
-  const nextView = normalizePrimaryView(view);
-  primaryChartView = nextView;
-  syncPrimaryViewUI({ animate: opts.animate !== false });
-  if (opts.persist !== false) {
-    persistPrimaryView(nextView);
-  }
-  if (opts.refresh !== false && currentRange.start && currentRange.end) {
-    applyRangePreview(currentRange.start, currentRange.end, {
-      forceRedraw: opts.forceRedraw === true,
-    });
-  }
 }
 
 function quickRangePresetFor(startISO, endISO, minISO, maxISO) {
@@ -2904,6 +2762,7 @@ function applyLatestData(nextData) {
   DATA.meta = nextData.meta || {};
   rebuildLabelIndex();
   rebuildHourEventMap();
+  hasContributionHeatmapRender = false;
 
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
@@ -2973,6 +2832,9 @@ function lineChart(el, labels, values, options) {
       if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
         dailyChartInstance.resize();
       }
+      if (contributionHeatmapInstance && !contributionHeatmapInstance.isDisposed()) {
+        contributionHeatmapInstance.resize();
+      }
     });
     chartResizeBound = true;
   }
@@ -2981,7 +2843,6 @@ function lineChart(el, labels, values, options) {
       "wheel",
       (event) => {
         if (!dailyChartInstance || dailyChartInstance.isDisposed()) return;
-        if (primaryChartView !== "trend") return;
         event.preventDefault();
         event.stopPropagation();
         const option = dailyChartInstance.getOption();
@@ -3127,22 +2988,25 @@ function heatmapChart(el, labels, values, options) {
     el.innerHTML = "";
     return;
   }
-  if (!dailyChartInstance || dailyChartInstance.isDisposed() || dailyChartInstance.getDom() !== el) {
-    if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
-      dailyChartInstance.dispose();
+  if (!contributionHeatmapInstance || contributionHeatmapInstance.isDisposed() || contributionHeatmapInstance.getDom() !== el) {
+    if (contributionHeatmapInstance && !contributionHeatmapInstance.isDisposed()) {
+      contributionHeatmapInstance.dispose();
     }
-    dailyChartInstance = window.echarts.init(el, null, { renderer: "svg" });
+    contributionHeatmapInstance = window.echarts.init(el, null, { renderer: "svg" });
   }
   if (!chartResizeBound) {
     window.addEventListener("resize", () => {
       if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
         dailyChartInstance.resize();
       }
+      if (contributionHeatmapInstance && !contributionHeatmapInstance.isDisposed()) {
+        contributionHeatmapInstance.resize();
+      }
     });
     chartResizeBound = true;
   }
   if (!chartLabels.length) {
-    dailyChartInstance.clear();
+    contributionHeatmapInstance.clear();
     return;
   }
   const palette = getThemePalette();
@@ -3155,7 +3019,7 @@ function heatmapChart(el, labels, values, options) {
   const monthNameMap = currentLang === "zh"
     ? ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
     : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  dailyChartInstance.setOption(
+  contributionHeatmapInstance.setOption(
     {
       backgroundColor: "transparent",
       animation: !prefersReducedMotion(),
@@ -3316,8 +3180,10 @@ let currentRange = {
   end: (DATA.range && DATA.range.end) || "",
 };
 let hasInitialMetricsRender = false;
+let hasContributionHeatmapRender = false;
 const HOUR_MS = 3_600_000;
 const MAX_CHART_POINTS = 1600;
+const CONTRIBUTION_DAYS = 371;
 let hourEventMap = new Map();
 
 function parseHourMs(ts) {
@@ -3439,14 +3305,30 @@ function buildHourlySeries(startISO, endISO) {
   return { labels, totals };
 }
 
-function renderPrimaryChart(dayLabels, dayTotals, hourlyLabels, hourlyTotals, options) {
-  const chartEl = document.getElementById("chart-daily");
-  if (!chartEl) return;
-  if (primaryChartView === "heatmap") {
-    heatmapChart(chartEl, dayLabels, dayTotals, options);
-    return;
+function buildContributionSeries() {
+  const labels = [];
+  const totals = [];
+  const sourceLabels = (DATA.daily && DATA.daily.labels) || [];
+  if (!sourceLabels.length) {
+    return { labels, totals };
   }
-  lineChart(chartEl, hourlyLabels, hourlyTotals, options);
+  const endISO = sourceLabels[sourceLabels.length - 1];
+  const startISO = addDaysISO(endISO, -(CONTRIBUTION_DAYS - 1));
+  for (let offset = 0; offset < CONTRIBUTION_DAYS; offset += 1) {
+    const dayISO = addDaysISO(startISO, offset);
+    labels.push(dayISO);
+    totals.push(readDailyValue(dayISO, "total"));
+  }
+  return { labels, totals };
+}
+
+function renderContributionHeatmap(options) {
+  const chartEl = document.getElementById("chart-heatmap");
+  if (!chartEl) return;
+  const contribution = buildContributionSeries();
+  updateHeatmapLegendScale();
+  heatmapChart(chartEl, contribution.labels, contribution.totals, options);
+  hasContributionHeatmapRender = true;
 }
 
 function clampISO(iso, minISO, maxISO) {
@@ -3819,8 +3701,6 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   const startIdx = labelIndex.has(startISO) ? labelIndex.get(startISO) : 0;
   const endIdx = labelIndex.has(endISO) ? labelIndex.get(endISO) : (DATA.daily.labels.length - 1);
 
-  const dayLabels = DATA.daily.labels.slice(startIdx, endIdx + 1);
-  const dayTotals = DATA.daily.total.slice(startIdx, endIdx + 1);
   const hourlySeries = buildHourlySeries(startISO, endISO);
   const hourlyLabels = hourlySeries.labels;
   const hourlyTotals = hourlySeries.totals;
@@ -3833,9 +3713,14 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   updateQuickRangeState(startISO, endISO, { animate: false });
   const animateMetrics = true;
   setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
-  renderPrimaryChart(dayLabels, dayTotals, hourlyLabels, hourlyTotals, {
+  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, {
     redraw: rangeChanged || opts.forceRedraw,
   });
+  if (!hasContributionHeatmapRender || opts.refreshHeatmap) {
+    renderContributionHeatmap({
+      redraw: opts.refreshHeatmap === true,
+    });
+  }
 
   if (previewOnly) {
     return;
@@ -3934,29 +3819,6 @@ function setupRangeControls() {
       if (start < minISO) start = minISO;
       runApply(start, end);
     });
-  });
-}
-
-function setupPrimaryViewSwitch() {
-  const switcher = document.getElementById("primary-view-switch");
-  if (!switcher) return;
-  switcher.querySelectorAll("button[data-view]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const nextView = button.dataset.view || "trend";
-      setPrimaryView(nextView, {
-        animate: true,
-        forceRedraw: true,
-      });
-    });
-  });
-  if (!primaryViewResizeBound) {
-    window.addEventListener("resize", updatePrimaryViewSlider);
-    primaryViewResizeBound = true;
-  }
-  setPrimaryView(readStoredPrimaryView(), {
-    animate: false,
-    persist: false,
-    refresh: false,
   });
 }
 
@@ -4087,7 +3949,6 @@ window.addEventListener("load", () => {
   rebuildHourEventMap();
   setupThemeToggle();
   setupRangeControls();
-  setupPrimaryViewSwitch();
   setupCustomDatePicker();
   setupDailyChartZoom();
   setupAutoSync();
