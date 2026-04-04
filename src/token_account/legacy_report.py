@@ -651,6 +651,7 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Codex Token Usage</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.css">
 <style>
 @import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
 
@@ -686,11 +687,11 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --chart-area-start: rgba(176, 38, 255, 0.55);
   --chart-area-mid: rgba(0, 240, 255, 0.22);
   --chart-area-end: rgba(0, 240, 255, 0);
-  --heat-0: rgba(148, 163, 184, 0.12);
-  --heat-1: rgba(0, 240, 255, 0.18);
-  --heat-2: rgba(0, 240, 255, 0.34);
-  --heat-3: rgba(176, 38, 255, 0.46);
-  --heat-4: rgba(176, 38, 255, 0.78);
+  --heat-0: #161b22;
+  --heat-1: #0e4429;
+  --heat-2: #006d32;
+  --heat-3: #26a641;
+  --heat-4: #39d353;
   --tooltip-border: rgba(176, 38, 255, 0.45);
   --axis-pointer: rgba(0, 240, 255, 0.7);
   --gap-sm: 12px;
@@ -744,11 +745,11 @@ html[data-theme="bronze"] {
   --chart-area-start: rgba(184, 156, 122, 0.40);
   --chart-area-mid: rgba(227, 200, 154, 0.18);
   --chart-area-end: rgba(227, 200, 154, 0);
-  --heat-0: rgba(148, 163, 184, 0.12);
-  --heat-1: rgba(163, 133, 92, 0.24);
-  --heat-2: rgba(184, 156, 122, 0.40);
-  --heat-3: rgba(215, 185, 138, 0.58);
-  --heat-4: rgba(239, 221, 190, 0.90);
+  --heat-0: #181512;
+  --heat-1: #4c3b25;
+  --heat-2: #765834;
+  --heat-3: #a27c4a;
+  --heat-4: #d7b98a;
   --tooltip-border: rgba(184, 156, 122, 0.45);
   --axis-pointer: rgba(227, 200, 154, 0.72);
   --ring: rgba(184, 156, 122, 0.26);
@@ -1487,7 +1488,7 @@ html.theme-switching .chart {
 
 .panel-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--gap-md);
 }
 
@@ -1546,6 +1547,7 @@ html.theme-switching .chart {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-height: 12px;
 }
 
 .heatmap-legend-chip {
@@ -1586,6 +1588,87 @@ html.theme-switching .chart {
 
 .chart.zoomable.is-panning {
   cursor: grabbing;
+}
+
+.heatmap-chart {
+  height: auto;
+  min-height: 248px;
+  padding: 16px 0 10px;
+  background:
+    linear-gradient(180deg, rgba(15, 18, 24, 0.88), rgba(10, 12, 18, 0.9)),
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.02), transparent 42%);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.heatmap-chart::-webkit-scrollbar {
+  height: 8px;
+}
+
+.heatmap-chart::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+}
+
+.heatmap-canvas {
+  width: max-content;
+  min-width: 760px;
+  padding: 0 18px 2px;
+}
+
+.heatmap-canvas .ch-container {
+  display: block;
+  color: #94a3b8;
+}
+
+.heatmap-canvas .ch-domain-text,
+.heatmap-canvas .ch-plugin-calendar-label text {
+  fill: #94a3b8;
+  font-size: 11px;
+  font-family: var(--app-font);
+}
+
+.heatmap-canvas .ch-subdomain-bg,
+.heatmap-legend-scale rect {
+  rx: 3px;
+  ry: 3px;
+}
+
+.heatmap-canvas .ch-subdomain-bg {
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 1px;
+  shape-rendering: geometricPrecision;
+}
+
+.heatmap-canvas .ch-subdomain-bg:hover {
+  stroke: rgba(255, 255, 255, 0.16);
+}
+
+.heatmap-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.heatmap-legend-scale svg {
+  display: block;
+}
+
+#ch-tooltip {
+  background: rgba(10, 14, 20, 0.96);
+  border: 1px solid var(--tooltip-border);
+  border-radius: 10px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.36);
+  color: #f8fafc;
+  padding: 8px 10px;
+}
+
+#ch-tooltip[data-theme=dark] {
+  background: rgba(10, 14, 20, 0.96);
+  color: #f8fafc;
 }
 
 .legend {
@@ -1696,6 +1779,13 @@ html.theme-switching .chart {
   }
   .chart.small {
     height: 180px;
+  }
+  .heatmap-chart {
+    min-height: 228px;
+  }
+  .heatmap-canvas {
+    min-width: 640px;
+    padding: 0 14px 2px;
   }
   .range-controls {
     grid-template-columns: 1fr;
@@ -1936,7 +2026,9 @@ html.theme-switching .chart {
           <p class="panel-note" data-i18n="heatmap_hint">Last 53 weeks, independent from the range filter above</p>
         </div>
       </div>
-      <div id="chart-heatmap" class="chart"></div>
+      <div id="chart-heatmap" class="chart heatmap-chart">
+        <div id="chart-heatmap-inner" class="heatmap-canvas"></div>
+      </div>
       <div class="heatmap-legend" id="heatmap-legend">
         <span data-i18n="heatmap_less">Less</span>
         <div class="heatmap-legend-scale" id="heatmap-legend-scale"></div>
@@ -1947,6 +2039,12 @@ html.theme-switching .chart {
 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/Tooltip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/LegendLite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/CalendarLabel.min.js"></script>
 <script>
 const DATA = __DATA_JSON__;
 const I18N = __I18N_JSON__;
@@ -1964,6 +2062,7 @@ const MONTH_LABELS = [
 ];
 let dailyChartInstance = null;
 let contributionHeatmapInstance = null;
+let contributionHeatmapRenderToken = 0;
 let chartResizeBound = false;
 let chartWheelZoomBound = false;
 let quickRangeResizeBound = false;
@@ -2311,6 +2410,10 @@ function applyTheme(theme, options) {
 function updateHeatmapLegendScale() {
   const legendScale = document.getElementById("heatmap-legend-scale");
   if (!legendScale) return;
+  if (window.LegendLite) {
+    legendScale.innerHTML = "";
+    return;
+  }
   const palette = getThemePalette();
   legendScale.innerHTML = palette.heatmapLevels
     .map((color) => `<span class="heatmap-legend-chip" style="background:${color}"></span>`)
@@ -2683,6 +2786,10 @@ function applyI18n(lang, options) {
     }
   });
   updateLangToggleState(lang, shouldAnimate);
+  if (hasContributionHeatmapRender) {
+    hasContributionHeatmapRender = false;
+    renderContributionHeatmap();
+  }
 }
 
 function labelFor(key) {
@@ -2832,9 +2939,6 @@ function lineChart(el, labels, values, options) {
       if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
         dailyChartInstance.resize();
       }
-      if (contributionHeatmapInstance && !contributionHeatmapInstance.isDisposed()) {
-        contributionHeatmapInstance.resize();
-      }
     });
     chartResizeBound = true;
   }
@@ -2977,129 +3081,6 @@ function lineChart(el, labels, values, options) {
   if (shouldRedraw) {
     playChartLineRedraw(el);
   }
-}
-
-function heatmapChart(el, labels, values, options) {
-  if (!el) return;
-  const chartLabels = Array.isArray(labels) ? labels : [];
-  const chartValues = Array.isArray(values) ? values.map((value) => Number(value || 0)) : [];
-  const opts = options || {};
-  if (!window.echarts) {
-    el.innerHTML = "";
-    return;
-  }
-  if (!contributionHeatmapInstance || contributionHeatmapInstance.isDisposed() || contributionHeatmapInstance.getDom() !== el) {
-    if (contributionHeatmapInstance && !contributionHeatmapInstance.isDisposed()) {
-      contributionHeatmapInstance.dispose();
-    }
-    contributionHeatmapInstance = window.echarts.init(el, null, { renderer: "svg" });
-  }
-  if (!chartResizeBound) {
-    window.addEventListener("resize", () => {
-      if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
-        dailyChartInstance.resize();
-      }
-      if (contributionHeatmapInstance && !contributionHeatmapInstance.isDisposed()) {
-        contributionHeatmapInstance.resize();
-      }
-    });
-    chartResizeBound = true;
-  }
-  if (!chartLabels.length) {
-    contributionHeatmapInstance.clear();
-    return;
-  }
-  const palette = getThemePalette();
-  const maxValue = Math.max(...chartValues, 0);
-  const cellHeight = chartLabels.length > 365 ? 10 : chartLabels.length > 180 ? 11 : 13;
-  const heatmapData = chartLabels.map((label, index) => [label, chartValues[index] || 0]);
-  const dayNameMap = currentLang === "zh"
-    ? ["日", "一", "二", "三", "四", "五", "六"]
-    : ["S", "M", "T", "W", "T", "F", "S"];
-  const monthNameMap = currentLang === "zh"
-    ? ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
-    : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  contributionHeatmapInstance.setOption(
-    {
-      backgroundColor: "transparent",
-      animation: !prefersReducedMotion(),
-      animationDuration: opts.redraw ? 520 : 320,
-      animationDurationUpdate: 560,
-      animationEasing: "cubicOut",
-      animationEasingUpdate: "cubicOut",
-      tooltip: {
-        position: "top",
-        backgroundColor: "rgba(10,10,10,0.92)",
-        borderColor: palette.tooltipBorder,
-        borderWidth: 1,
-        textStyle: { color: "#f8fafc" },
-        formatter: (params) => {
-          const value = Array.isArray(params.value) ? Number(params.value[1] || 0) : 0;
-          return `${params.value[0]}<br>${labelFor("card_total")}: ${formatChartNumber(value)}`;
-        },
-      },
-      visualMap: {
-        min: 0,
-        max: Math.max(1, maxValue),
-        show: false,
-        calculable: false,
-        inRange: {
-          color: palette.heatmapLevels,
-        },
-      },
-      calendar: {
-        top: 20,
-        left: 18,
-        right: 18,
-        bottom: 20,
-        range: [chartLabels[0], chartLabels[chartLabels.length - 1]],
-        cellSize: ["auto", cellHeight],
-        splitLine: {
-          show: true,
-          lineStyle: {
-            color: "rgba(255,255,255,0.05)",
-            width: 1,
-          },
-        },
-        itemStyle: {
-          borderWidth: 1,
-          borderColor: "rgba(15, 23, 42, 0.28)",
-          color: palette.heatmapLevels[0],
-        },
-        dayLabel: {
-          firstDay: 1,
-          color: CHART_AXIS_TEXT,
-          margin: 10,
-          nameMap: dayNameMap,
-        },
-        monthLabel: {
-          color: "#cbd5e1",
-          margin: 12,
-          nameMap: monthNameMap,
-        },
-        yearLabel: { show: false },
-      },
-      series: [
-        {
-          type: "heatmap",
-          coordinateSystem: "calendar",
-          data: heatmapData,
-          universalTransition: true,
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 18,
-              shadowColor: palette.tooltipBorder,
-              borderColor: palette.axisPointer,
-            },
-          },
-        },
-      ],
-    },
-    {
-      notMerge: true,
-      lazyUpdate: false,
-    }
-  );
 }
 
 function playChartLineRedraw(el) {
@@ -3310,7 +3291,7 @@ function buildContributionSeries() {
   const totals = [];
   const sourceLabels = (DATA.daily && DATA.daily.labels) || [];
   if (!sourceLabels.length) {
-    return { labels, totals };
+    return { labels, totals, startISO: "", endISO: "" };
   }
   const endISO = sourceLabels[sourceLabels.length - 1];
   const startISO = addDaysISO(endISO, -(CONTRIBUTION_DAYS - 1));
@@ -3319,15 +3300,239 @@ function buildContributionSeries() {
     labels.push(dayISO);
     totals.push(readDailyValue(dayISO, "total"));
   }
-  return { labels, totals };
+  return { labels, totals, startISO, endISO };
+}
+
+function formatContributionMonthLabel(timestamp) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "";
+  if (currentLang === "zh") {
+    return `${date.getUTCMonth() + 1}月`;
+  }
+  return (MONTH_LABELS[date.getUTCMonth()] || "").slice(0, 3);
+}
+
+function formatContributionTooltipDate(dayjsDate, fallbackISO) {
+  let dateObj = null;
+  if (dayjsDate && typeof dayjsDate.toDate === "function") {
+    dateObj = dayjsDate.toDate();
+  } else if (fallbackISO) {
+    dateObj = parseISODate(fallbackISO);
+  }
+  if (!dateObj || Number.isNaN(dateObj.getTime())) {
+    return fallbackISO || "";
+  }
+  const weekdayZh = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  const weekdayEn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  if (currentLang === "zh") {
+    return `${dateObj.getUTCFullYear()}年${dateObj.getUTCMonth() + 1}月${dateObj.getUTCDate()}日 ${weekdayZh[dateObj.getUTCDay()]}`;
+  }
+  return `${(MONTH_LABELS[dateObj.getUTCMonth()] || "").slice(0, 3)} ${dateObj.getUTCDate()}, ${dateObj.getUTCFullYear()} ${weekdayEn[dateObj.getUTCDay()]}`;
+}
+
+function contributionWeekdayLabels() {
+  return currentLang === "zh"
+    ? ["一", "", "三", "", "五", "", ""]
+    : ["Mon", "", "Wed", "", "Fri", "", ""];
+}
+
+function contributionMonthRange(startISO, endISO) {
+  if (!startISO || !endISO) return 1;
+  const [startYear, startMonth] = startISO.split("-").map(Number);
+  const [endYear, endMonth] = endISO.split("-").map(Number);
+  if (!startYear || !startMonth || !endYear || !endMonth) return 1;
+  return Math.max(1, (endYear - startYear) * 12 + (endMonth - startMonth) + 1);
+}
+
+function firstDayOfMonthISO(iso) {
+  if (!iso) return "";
+  const [year, month] = iso.split("-").map(Number);
+  if (!year || !month) return "";
+  return `${year}-${pad2(month)}-01`;
+}
+
+function buildContributionDataset(labels, totals) {
+  return labels.map((label, index) => ({
+    date: parseISODate(label),
+    value: Number(totals[index] || 0),
+    iso: label,
+  }));
+}
+
+function buildContributionThresholds(values) {
+  const positives = values
+    .map((value) => Number(value || 0))
+    .filter((value) => value > 0)
+    .sort((a, b) => a - b);
+  if (!positives.length) {
+    return [1, 2, 3, 4];
+  }
+  const maxValue = positives[positives.length - 1];
+  if (maxValue <= 4) {
+    return [1, 2, 3, 4];
+  }
+  const percentile = (ratio) => {
+    const index = Math.min(positives.length - 1, Math.max(0, Math.floor((positives.length - 1) * ratio)));
+    return positives[index];
+  };
+  const raw = [
+    1,
+    Math.round(percentile(0.35)),
+    Math.round(percentile(0.65)),
+    Math.round(percentile(0.85)),
+  ];
+  const normalized = [];
+  for (let i = 0; i < raw.length; i += 1) {
+    const minValue = i === 0 ? 1 : normalized[i - 1] + 1;
+    const maxAllowed = Math.max(minValue, maxValue - (raw.length - 1 - i));
+    normalized.push(Math.min(Math.max(minValue, raw[i]), maxAllowed));
+  }
+  return normalized;
+}
+
+async function destroyContributionHeatmap(instance) {
+  if (!instance || typeof instance.destroy !== "function") return;
+  try {
+    await instance.destroy();
+  } catch (_) {
+  }
 }
 
 function renderContributionHeatmap(options) {
-  const chartEl = document.getElementById("chart-heatmap");
-  if (!chartEl) return;
+  const chartInner = document.getElementById("chart-heatmap-inner");
+  const legendScale = document.getElementById("heatmap-legend-scale");
+  if (!chartInner) return;
   const contribution = buildContributionSeries();
-  updateHeatmapLegendScale();
-  heatmapChart(chartEl, contribution.labels, contribution.totals, options);
+  const opts = options || {};
+  if (legendScale) {
+    legendScale.innerHTML = "";
+  }
+  if (!contribution.labels.length) {
+    chartInner.innerHTML = `<div class="heatmap-empty">${escapeHTML(labelFor("no_data"))}</div>`;
+    hasContributionHeatmapRender = true;
+    return;
+  }
+  if (!window.CalHeatmap) {
+    updateHeatmapLegendScale();
+    chartInner.innerHTML = `<div class="heatmap-empty">${escapeHTML(labelFor("no_data"))}</div>`;
+    hasContributionHeatmapRender = true;
+    return;
+  }
+  const palette = getThemePalette();
+  const thresholds = buildContributionThresholds(contribution.totals);
+  const dataset = buildContributionDataset(contribution.labels, contribution.totals);
+  const monthStartISO = firstDayOfMonthISO(contribution.startISO) || contribution.startISO;
+  const renderToken = ++contributionHeatmapRenderToken;
+  const previousInstance = contributionHeatmapInstance;
+  contributionHeatmapInstance = null;
+  chartInner.innerHTML = "";
+  const draw = async () => {
+    if (previousInstance) {
+      await destroyContributionHeatmap(previousInstance);
+    }
+    if (renderToken !== contributionHeatmapRenderToken) return;
+    const cal = new window.CalHeatmap();
+    contributionHeatmapInstance = cal;
+    const plugins = [];
+    if (window.Tooltip) {
+      plugins.push([
+        window.Tooltip,
+        {
+          placement: "top",
+          text: (timestamp, value, dayjsDate) => {
+            const numericValue = Number(value || 0);
+            const dateText = formatContributionTooltipDate(dayjsDate, formatISODate(new Date(timestamp)));
+            return `${dateText}<br>${labelFor("card_total")}: ${formatChartNumber(numericValue)}`;
+          },
+        },
+      ]);
+    }
+    if (window.LegendLite && legendScale) {
+      plugins.push([
+        window.LegendLite,
+        {
+          itemSelector: "#heatmap-legend-scale",
+          includeBlank: true,
+          radius: 3,
+          width: 12,
+          height: 12,
+          gutter: 4,
+        },
+      ]);
+    } else {
+      updateHeatmapLegendScale();
+    }
+    if (window.CalendarLabel) {
+      plugins.push([
+        window.CalendarLabel,
+        {
+          key: "weekday",
+          position: "left",
+          width: currentLang === "zh" ? 22 : 34,
+          textAlign: "end",
+          padding: [0, 6, 0, 0],
+          text: () => contributionWeekdayLabels(),
+        },
+      ]);
+    }
+    try {
+      await cal.paint(
+        {
+          itemSelector: "#chart-heatmap-inner",
+          theme: "dark",
+          animationDuration: prefersReducedMotion() ? 0 : (opts.redraw ? 420 : 260),
+          date: {
+            start: parseISODate(monthStartISO),
+            locale: currentLang === "zh" ? "zh-cn" : { weekStart: 1 },
+          },
+          range: contributionMonthRange(contribution.startISO, contribution.endISO),
+          domain: {
+            type: "month",
+            gutter: 6,
+            label: {
+              position: "top",
+              textAlign: "start",
+              offset: { x: 0, y: -6 },
+              text: (timestamp) => formatContributionMonthLabel(timestamp),
+            },
+          },
+          subDomain: {
+            type: "ghDay",
+            width: 10,
+            height: 10,
+            gutter: 3,
+            radius: 3,
+          },
+          data: {
+            source: dataset,
+            x: "date",
+            y: "value",
+          },
+          scale: {
+            color: {
+              type: "threshold",
+              range: palette.heatmapLevels,
+              domain: thresholds,
+            },
+          },
+        },
+        plugins
+      );
+      if (renderToken !== contributionHeatmapRenderToken && contributionHeatmapInstance === cal) {
+        await destroyContributionHeatmap(cal);
+        return;
+      }
+      hasContributionHeatmapRender = true;
+    } catch (_) {
+      if (renderToken === contributionHeatmapRenderToken) {
+        contributionHeatmapInstance = null;
+        updateHeatmapLegendScale();
+        chartInner.innerHTML = `<div class="heatmap-empty">${escapeHTML(labelFor("no_data"))}</div>`;
+        hasContributionHeatmapRender = true;
+      }
+    }
+  };
+  draw();
   hasContributionHeatmapRender = true;
 }
 
