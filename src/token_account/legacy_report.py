@@ -1532,6 +1532,15 @@ html.theme-switching .chart {
   grid-column: span 2;
 }
 
+.chart-panel {
+  padding: 14px;
+}
+
+.chart-panel .chart {
+  height: 228px;
+  border-radius: 14px;
+}
+
 .heatmap-legend {
   margin-top: 14px;
   display: inline-flex;
@@ -1592,8 +1601,8 @@ html.theme-switching .chart {
 
 .heatmap-chart {
   height: auto;
-  min-height: 248px;
-  padding: 16px 0 10px;
+  min-height: 228px;
+  padding: 12px 0 8px;
   background:
     linear-gradient(180deg, rgba(15, 18, 24, 0.88), rgba(10, 12, 18, 0.9)),
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.02), transparent 42%);
@@ -1780,8 +1789,14 @@ html.theme-switching .chart {
   .chart.small {
     height: 180px;
   }
+  .chart-panel {
+    padding: 12px;
+  }
+  .chart-panel .chart {
+    height: 212px;
+  }
   .heatmap-chart {
-    min-height: 228px;
+    min-height: 212px;
   }
   .heatmap-canvas {
     min-width: 640px;
@@ -2013,26 +2028,12 @@ html.theme-switching .chart {
   </div>
 
   <div class="panel-grid">
-    <div class="panel wide" style="--delay:0.25s">
-      <div class="panel-head">
-        <h3 data-i18n="daily_chart">Hourly total tokens</h3>
-      </div>
+    <div class="panel wide chart-panel" style="--delay:0.25s">
       <div id="chart-daily" class="chart"></div>
     </div>
-    <div class="panel wide" style="--delay:0.32s">
-      <div class="panel-head">
-        <div>
-          <h3 data-i18n="heatmap_chart">Daily heatmap</h3>
-          <p class="panel-note" data-i18n="heatmap_hint">Last 53 weeks, independent from the range filter above</p>
-        </div>
-      </div>
+    <div class="panel wide chart-panel" style="--delay:0.32s">
       <div id="chart-heatmap" class="chart heatmap-chart">
         <div id="chart-heatmap-inner" class="heatmap-canvas"></div>
-      </div>
-      <div class="heatmap-legend" id="heatmap-legend">
-        <span data-i18n="heatmap_less">Less</span>
-        <div class="heatmap-legend-scale" id="heatmap-legend-scale"></div>
-        <span data-i18n="heatmap_more">More</span>
       </div>
     </div>
   </div>
