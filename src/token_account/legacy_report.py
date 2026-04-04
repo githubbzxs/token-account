@@ -1541,6 +1541,10 @@ html.theme-switching .chart {
   border-radius: 14px;
 }
 
+.chart-panel .heatmap-chart {
+  height: auto;
+}
+
 .heatmap-legend {
   margin-top: 14px;
   display: inline-flex;
@@ -1600,9 +1604,8 @@ html.theme-switching .chart {
 }
 
 .heatmap-chart {
-  height: auto;
-  min-height: 228px;
-  padding: 12px 0 8px;
+  min-height: 138px;
+  padding: 10px 0 0;
   background:
     linear-gradient(180deg, rgba(15, 18, 24, 0.88), rgba(10, 12, 18, 0.9)),
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.02), transparent 42%);
@@ -1619,10 +1622,30 @@ html.theme-switching .chart {
   border-radius: 999px;
 }
 
+.heatmap-weekdays {
+  position: absolute;
+  left: 12px;
+  top: 0;
+  width: 26px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.heatmap-weekday {
+  position: absolute;
+  right: 0;
+  color: #94a3b8;
+  font-size: 10px;
+  line-height: 1;
+  font-family: var(--app-font);
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
 .heatmap-canvas {
   width: max-content;
   min-width: 760px;
-  padding: 0 18px 2px;
+  padding: 0 12px 0 42px;
 }
 
 .heatmap-canvas .ch-container {
@@ -1630,8 +1653,7 @@ html.theme-switching .chart {
   color: #94a3b8;
 }
 
-.heatmap-canvas .ch-domain-text,
-.heatmap-canvas .ch-plugin-calendar-label text {
+.heatmap-canvas .ch-domain-text {
   fill: #94a3b8;
   font-size: 11px;
   font-family: var(--app-font);
@@ -1657,7 +1679,7 @@ html.theme-switching .chart {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 220px;
+  min-height: 138px;
   color: var(--muted);
   font-size: 13px;
 }
@@ -1795,12 +1817,22 @@ html.theme-switching .chart {
   .chart-panel .chart {
     height: 212px;
   }
+  .chart-panel .heatmap-chart {
+    height: auto;
+  }
   .heatmap-chart {
-    min-height: 212px;
+    min-height: 132px;
+  }
+  .heatmap-weekdays {
+    left: 10px;
+    width: 24px;
+  }
+  .heatmap-weekday {
+    font-size: 9px;
   }
   .heatmap-canvas {
     min-width: 640px;
-    padding: 0 14px 2px;
+    padding: 0 10px 0 38px;
   }
   .range-controls {
     grid-template-columns: 1fr;
@@ -2033,6 +2065,7 @@ html.theme-switching .chart {
     </div>
     <div class="panel wide chart-panel" style="--delay:0.32s">
       <div id="chart-heatmap" class="chart heatmap-chart">
+        <div id="heatmap-weekdays" class="heatmap-weekdays"></div>
         <div id="chart-heatmap-inner" class="heatmap-canvas"></div>
       </div>
     </div>
@@ -2045,7 +2078,6 @@ html.theme-switching .chart {
 <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/Tooltip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/LegendLite.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/CalendarLabel.min.js"></script>
 <script>
 const DATA = __DATA_JSON__;
 const I18N = __I18N_JSON__;
@@ -3333,8 +3365,18 @@ function formatContributionTooltipDate(dayjsDate, fallbackISO) {
 
 function contributionWeekdayLabels() {
   return currentLang === "zh"
-    ? ["一", "", "三", "", "五", "", ""]
-    : ["Mon", "", "Wed", "", "Fri", "", ""];
+    ? ["一", "三", "五"]
+    : ["Mon", "Wed", "Fri"];
+}
+
+function renderContributionWeekdayLabels() {
+  const container = document.getElementById("heatmap-weekdays");
+  if (!container) return;
+  const labels = contributionWeekdayLabels();
+  const positions = [40, 66, 92];
+  container.innerHTML = labels
+    .map((label, index) => `<span class="heatmap-weekday" style="top:${positions[index]}px">${escapeHTML(label)}</span>`)
+    .join("");
 }
 
 function contributionMonthRange(startISO, endISO) {
@@ -3405,6 +3447,7 @@ function renderContributionHeatmap(options) {
   if (!chartInner) return;
   const contribution = buildContributionSeries();
   const opts = options || {};
+  renderContributionWeekdayLabels();
   if (legendScale) {
     legendScale.innerHTML = "";
   }
@@ -3462,19 +3505,6 @@ function renderContributionHeatmap(options) {
       ]);
     } else {
       updateHeatmapLegendScale();
-    }
-    if (window.CalendarLabel) {
-      plugins.push([
-        window.CalendarLabel,
-        {
-          key: "weekday",
-          position: "left",
-          width: currentLang === "zh" ? 22 : 34,
-          textAlign: "end",
-          padding: [0, 6, 0, 0],
-          text: () => contributionWeekdayLabels(),
-        },
-      ]);
     }
     try {
       await cal.paint(
