@@ -54,9 +54,14 @@ I18N = {
         "import_invalid": "导入文件格式不正确",
         "import_failed": "导入失败",
         "daily_chart": "每小时总 token",
+        "heatmap_chart": "每日热力图",
         "mix_chart": "Token 构成",
         "hourly_chart": "小时分布",
         "model_mix": "模型占比",
+        "view_trend": "趋势",
+        "view_heatmap": "热力图",
+        "heatmap_less": "少",
+        "heatmap_more": "多",
         "top_days": "高峰日期",
         "top_spikes": "尖峰时刻",
         "model_table": "模型明细",
@@ -118,9 +123,14 @@ I18N = {
         "import_invalid": "Invalid import file",
         "import_failed": "Import failed",
         "daily_chart": "Hourly total tokens",
+        "heatmap_chart": "Daily heatmap",
         "mix_chart": "Token mix",
         "hourly_chart": "Hourly pattern",
         "model_mix": "Model share",
+        "view_trend": "Trend",
+        "view_heatmap": "Heatmap",
+        "heatmap_less": "Less",
+        "heatmap_more": "More",
         "top_days": "Top days",
         "top_spikes": "Top spikes",
         "model_table": "Model breakdown",
@@ -678,6 +688,11 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --chart-area-start: rgba(176, 38, 255, 0.55);
   --chart-area-mid: rgba(0, 240, 255, 0.22);
   --chart-area-end: rgba(0, 240, 255, 0);
+  --heat-0: rgba(148, 163, 184, 0.12);
+  --heat-1: rgba(0, 240, 255, 0.18);
+  --heat-2: rgba(0, 240, 255, 0.34);
+  --heat-3: rgba(176, 38, 255, 0.46);
+  --heat-4: rgba(176, 38, 255, 0.78);
   --tooltip-border: rgba(176, 38, 255, 0.45);
   --axis-pointer: rgba(0, 240, 255, 0.7);
   --gap-sm: 12px;
@@ -731,6 +746,11 @@ html[data-theme="bronze"] {
   --chart-area-start: rgba(184, 156, 122, 0.40);
   --chart-area-mid: rgba(227, 200, 154, 0.18);
   --chart-area-end: rgba(227, 200, 154, 0);
+  --heat-0: rgba(148, 163, 184, 0.12);
+  --heat-1: rgba(163, 133, 92, 0.24);
+  --heat-2: rgba(184, 156, 122, 0.40);
+  --heat-3: rgba(215, 185, 138, 0.58);
+  --heat-4: rgba(239, 221, 190, 0.90);
   --tooltip-border: rgba(184, 156, 122, 0.45);
   --axis-pointer: rgba(227, 200, 154, 0.72);
   --ring: rgba(184, 156, 122, 0.26);
@@ -1490,8 +1510,107 @@ html.theme-switching .chart {
   letter-spacing: 0.2px;
 }
 
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.panel-head h3 {
+  margin-bottom: 0;
+}
+
 .panel.wide {
   grid-column: span 2;
+}
+
+.view-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px;
+  min-height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(44, 46, 56, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.view-switch-slider {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.2),
+    0 1px 0 rgba(255, 255, 255, 0.16) inset;
+  opacity: 0;
+  transform: translate3d(0, 0, 0);
+  transition:
+    transform 680ms cubic-bezier(0.16, 1, 0.3, 1),
+    width 680ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 220ms ease;
+}
+
+.view-switch button {
+  position: relative;
+  z-index: 1;
+  min-width: 92px;
+  min-height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #b6bac6;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition:
+    color 0.26s ease,
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.22s ease;
+}
+
+.view-switch button:hover {
+  color: #f8fafc;
+}
+
+.view-switch button.is-active {
+  color: #ffffff;
+  transform: translateY(-0.5px);
+}
+
+.heatmap-legend {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.heatmap-legend-scale {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.heatmap-legend-chip {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .chart {
@@ -1650,6 +1769,19 @@ html.theme-switching .chart {
   .range-actions {
     justify-self: start;
     flex-wrap: wrap;
+  }
+  .panel-head {
+    align-items: stretch;
+  }
+  .view-switch {
+    width: 100%;
+  }
+  .view-switch button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .heatmap-legend {
+    justify-content: flex-start;
   }
 }
 
@@ -1857,8 +1989,20 @@ html.theme-switching .chart {
 
   <div class="panel-grid">
     <div class="panel wide" style="--delay:0.25s">
-      <h3 data-i18n="daily_chart">Hourly total tokens</h3>
+      <div class="panel-head">
+        <h3 id="primary-chart-title" data-i18n="daily_chart">Hourly total tokens</h3>
+        <div class="view-switch" id="primary-view-switch" aria-label="Primary chart view">
+          <span class="view-switch-slider" id="primary-view-slider" aria-hidden="true"></span>
+          <button type="button" data-view="trend" data-i18n="view_trend">Trend</button>
+          <button type="button" data-view="heatmap" data-i18n="view_heatmap">Heatmap</button>
+        </div>
+      </div>
       <div id="chart-daily" class="chart"></div>
+      <div class="heatmap-legend hidden" id="heatmap-legend">
+        <span data-i18n="heatmap_less">Less</span>
+        <div class="heatmap-legend-scale" id="heatmap-legend-scale"></div>
+        <span data-i18n="heatmap_more">More</span>
+      </div>
     </div>
   </div>
 
@@ -1887,7 +2031,10 @@ let quickRangeSelection = "";
 let quickRangeSliderAnimation = null;
 let quickRangeSliderCleanupTimer = 0;
 const THEME_STORAGE_KEY = "token-report-theme";
+const PRIMARY_VIEW_STORAGE_KEY = "token-report-primary-view";
 let themeSwitchTimer = null;
+let primaryChartView = "trend";
+let primaryViewResizeBound = false;
 const calendarState = {
   open: false,
   minISO: "",
@@ -2173,6 +2320,13 @@ function getThemePalette() {
     areaStart: read("--chart-area-start", "rgba(176, 38, 255, 0.55)"),
     areaMid: read("--chart-area-mid", "rgba(0, 240, 255, 0.22)"),
     areaEnd: read("--chart-area-end", "rgba(0, 240, 255, 0)"),
+    heatmapLevels: [
+      read("--heat-0", "rgba(148, 163, 184, 0.12)"),
+      read("--heat-1", "rgba(0, 240, 255, 0.18)"),
+      read("--heat-2", "rgba(0, 240, 255, 0.34)"),
+      read("--heat-3", "rgba(176, 38, 255, 0.46)"),
+      read("--heat-4", "rgba(176, 38, 255, 0.78)"),
+    ],
     tooltipBorder: read("--tooltip-border", "rgba(176, 38, 255, 0.45)"),
     axisPointer: read("--axis-pointer", "rgba(0, 240, 255, 0.7)"),
   };
@@ -2213,6 +2367,95 @@ function applyTheme(theme, options) {
   }
   if (opts.refreshChart !== false && currentRange.start && currentRange.end) {
     applyRangePreview(currentRange.start, currentRange.end);
+  }
+}
+
+function normalizePrimaryView(value) {
+  return value === "heatmap" ? "heatmap" : "trend";
+}
+
+function readStoredPrimaryView() {
+  try {
+    return normalizePrimaryView(window.localStorage.getItem(PRIMARY_VIEW_STORAGE_KEY) || "");
+  } catch (_) {
+    return "trend";
+  }
+}
+
+function persistPrimaryView(view) {
+  try {
+    window.localStorage.setItem(PRIMARY_VIEW_STORAGE_KEY, normalizePrimaryView(view));
+  } catch (_) {
+    // ignore
+  }
+}
+
+function updateHeatmapLegendScale() {
+  const legendScale = document.getElementById("heatmap-legend-scale");
+  if (!legendScale) return;
+  const palette = getThemePalette();
+  legendScale.innerHTML = palette.heatmapLevels
+    .map((color) => `<span class="heatmap-legend-chip" style="background:${color}"></span>`)
+    .join("");
+}
+
+function updatePrimaryChartTitle(options) {
+  const title = document.getElementById("primary-chart-title");
+  if (!title) return;
+  const key = primaryChartView === "heatmap" ? "heatmap_chart" : "daily_chart";
+  title.dataset.i18n = key;
+  setAnimatedText(title, labelFor(key), {
+    animate: !options || options.animate !== false,
+    className: "i18n-switch-anim",
+  });
+}
+
+function updatePrimaryViewSlider() {
+  const switcher = document.getElementById("primary-view-switch");
+  const slider = document.getElementById("primary-view-slider");
+  if (!switcher || !slider) return;
+  const activeButton = switcher.querySelector("button.is-active");
+  if (!(activeButton instanceof HTMLElement)) {
+    slider.style.opacity = "0";
+    slider.style.width = "0";
+    slider.style.transform = "translate3d(0,0,0)";
+    return;
+  }
+  slider.style.opacity = "1";
+  slider.style.width = `${activeButton.offsetWidth}px`;
+  slider.style.transform = `translate3d(${activeButton.offsetLeft}px,0,0)`;
+}
+
+function syncPrimaryViewUI(options) {
+  const switcher = document.getElementById("primary-view-switch");
+  const legend = document.getElementById("heatmap-legend");
+  if (switcher) {
+    switcher.querySelectorAll("button[data-view]").forEach((button) => {
+      const isActive = button.dataset.view === primaryChartView;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  }
+  if (legend) {
+    legend.classList.toggle("hidden", primaryChartView !== "heatmap");
+  }
+  updateHeatmapLegendScale();
+  updatePrimaryChartTitle(options);
+  updatePrimaryViewSlider();
+}
+
+function setPrimaryView(view, options) {
+  const opts = options || {};
+  const nextView = normalizePrimaryView(view);
+  primaryChartView = nextView;
+  syncPrimaryViewUI({ animate: opts.animate !== false });
+  if (opts.persist !== false) {
+    persistPrimaryView(nextView);
+  }
+  if (opts.refresh !== false && currentRange.start && currentRange.end) {
+    applyRangePreview(currentRange.start, currentRange.end, {
+      forceRedraw: opts.forceRedraw === true,
+    });
   }
 }
 
@@ -2738,6 +2981,7 @@ function lineChart(el, labels, values, options) {
       "wheel",
       (event) => {
         if (!dailyChartInstance || dailyChartInstance.isDisposed()) return;
+        if (primaryChartView !== "trend") return;
         event.preventDefault();
         event.stopPropagation();
         const option = dailyChartInstance.getOption();
@@ -2872,6 +3116,126 @@ function lineChart(el, labels, values, options) {
   if (shouldRedraw) {
     playChartLineRedraw(el);
   }
+}
+
+function heatmapChart(el, labels, values, options) {
+  if (!el) return;
+  const chartLabels = Array.isArray(labels) ? labels : [];
+  const chartValues = Array.isArray(values) ? values.map((value) => Number(value || 0)) : [];
+  const opts = options || {};
+  if (!window.echarts) {
+    el.innerHTML = "";
+    return;
+  }
+  if (!dailyChartInstance || dailyChartInstance.isDisposed() || dailyChartInstance.getDom() !== el) {
+    if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
+      dailyChartInstance.dispose();
+    }
+    dailyChartInstance = window.echarts.init(el, null, { renderer: "svg" });
+  }
+  if (!chartResizeBound) {
+    window.addEventListener("resize", () => {
+      if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
+        dailyChartInstance.resize();
+      }
+    });
+    chartResizeBound = true;
+  }
+  if (!chartLabels.length) {
+    dailyChartInstance.clear();
+    return;
+  }
+  const palette = getThemePalette();
+  const maxValue = Math.max(...chartValues, 0);
+  const cellHeight = chartLabels.length > 365 ? 10 : chartLabels.length > 180 ? 11 : 13;
+  const heatmapData = chartLabels.map((label, index) => [label, chartValues[index] || 0]);
+  const dayNameMap = currentLang === "zh"
+    ? ["日", "一", "二", "三", "四", "五", "六"]
+    : ["S", "M", "T", "W", "T", "F", "S"];
+  const monthNameMap = currentLang === "zh"
+    ? ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
+    : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  dailyChartInstance.setOption(
+    {
+      backgroundColor: "transparent",
+      animation: !prefersReducedMotion(),
+      animationDuration: opts.redraw ? 520 : 320,
+      animationDurationUpdate: 560,
+      animationEasing: "cubicOut",
+      animationEasingUpdate: "cubicOut",
+      tooltip: {
+        position: "top",
+        backgroundColor: "rgba(10,10,10,0.92)",
+        borderColor: palette.tooltipBorder,
+        borderWidth: 1,
+        textStyle: { color: "#f8fafc" },
+        formatter: (params) => {
+          const value = Array.isArray(params.value) ? Number(params.value[1] || 0) : 0;
+          return `${params.value[0]}<br>${labelFor("card_total")}: ${formatChartNumber(value)}`;
+        },
+      },
+      visualMap: {
+        min: 0,
+        max: Math.max(1, maxValue),
+        show: false,
+        calculable: false,
+        inRange: {
+          color: palette.heatmapLevels,
+        },
+      },
+      calendar: {
+        top: 20,
+        left: 18,
+        right: 18,
+        bottom: 20,
+        range: [chartLabels[0], chartLabels[chartLabels.length - 1]],
+        cellSize: ["auto", cellHeight],
+        splitLine: {
+          show: true,
+          lineStyle: {
+            color: "rgba(255,255,255,0.05)",
+            width: 1,
+          },
+        },
+        itemStyle: {
+          borderWidth: 1,
+          borderColor: "rgba(15, 23, 42, 0.28)",
+          color: palette.heatmapLevels[0],
+        },
+        dayLabel: {
+          firstDay: 1,
+          color: CHART_AXIS_TEXT,
+          margin: 10,
+          nameMap: dayNameMap,
+        },
+        monthLabel: {
+          color: "#cbd5e1",
+          margin: 12,
+          nameMap: monthNameMap,
+        },
+        yearLabel: { show: false },
+      },
+      series: [
+        {
+          type: "heatmap",
+          coordinateSystem: "calendar",
+          data: heatmapData,
+          universalTransition: true,
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 18,
+              shadowColor: palette.tooltipBorder,
+              borderColor: palette.axisPointer,
+            },
+          },
+        },
+      ],
+    },
+    {
+      notMerge: true,
+      lazyUpdate: false,
+    }
+  );
 }
 
 function playChartLineRedraw(el) {
@@ -3073,6 +3437,16 @@ function buildHourlySeries(startISO, endISO) {
     totals.push(Number(hourEventMap.get(endMs) || 0));
   }
   return { labels, totals };
+}
+
+function renderPrimaryChart(dayLabels, dayTotals, hourlyLabels, hourlyTotals, options) {
+  const chartEl = document.getElementById("chart-daily");
+  if (!chartEl) return;
+  if (primaryChartView === "heatmap") {
+    heatmapChart(chartEl, dayLabels, dayTotals, options);
+    return;
+  }
+  lineChart(chartEl, hourlyLabels, hourlyTotals, options);
 }
 
 function clampISO(iso, minISO, maxISO) {
@@ -3446,6 +3820,7 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   const endIdx = labelIndex.has(endISO) ? labelIndex.get(endISO) : (DATA.daily.labels.length - 1);
 
   const dayLabels = DATA.daily.labels.slice(startIdx, endIdx + 1);
+  const dayTotals = DATA.daily.total.slice(startIdx, endIdx + 1);
   const hourlySeries = buildHourlySeries(startISO, endISO);
   const hourlyLabels = hourlySeries.labels;
   const hourlyTotals = hourlySeries.totals;
@@ -3458,8 +3833,8 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   updateQuickRangeState(startISO, endISO, { animate: false });
   const animateMetrics = true;
   setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
-  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, {
-    redraw: (rangeChanged || opts.forceRedraw) && !previewOnly,
+  renderPrimaryChart(dayLabels, dayTotals, hourlyLabels, hourlyTotals, {
+    redraw: rangeChanged || opts.forceRedraw,
   });
 
   if (previewOnly) {
@@ -3559,6 +3934,29 @@ function setupRangeControls() {
       if (start < minISO) start = minISO;
       runApply(start, end);
     });
+  });
+}
+
+function setupPrimaryViewSwitch() {
+  const switcher = document.getElementById("primary-view-switch");
+  if (!switcher) return;
+  switcher.querySelectorAll("button[data-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextView = button.dataset.view || "trend";
+      setPrimaryView(nextView, {
+        animate: true,
+        forceRedraw: true,
+      });
+    });
+  });
+  if (!primaryViewResizeBound) {
+    window.addEventListener("resize", updatePrimaryViewSlider);
+    primaryViewResizeBound = true;
+  }
+  setPrimaryView(readStoredPrimaryView(), {
+    animate: false,
+    persist: false,
+    refresh: false,
   });
 }
 
@@ -3689,6 +4087,7 @@ window.addEventListener("load", () => {
   rebuildHourEventMap();
   setupThemeToggle();
   setupRangeControls();
+  setupPrimaryViewSwitch();
   setupCustomDatePicker();
   setupDailyChartZoom();
   setupAutoSync();
