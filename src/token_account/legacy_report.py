@@ -1622,30 +1622,10 @@ html.theme-switching .chart {
   border-radius: 999px;
 }
 
-.heatmap-weekdays {
-  position: absolute;
-  left: 12px;
-  top: 0;
-  width: 26px;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.heatmap-weekday {
-  position: absolute;
-  right: 0;
-  color: #94a3b8;
-  font-size: 10px;
-  line-height: 1;
-  font-family: var(--app-font);
-  transform: translateY(-50%);
-  white-space: nowrap;
-}
-
 .heatmap-canvas {
   width: max-content;
   min-width: 760px;
-  padding: 0 12px 0 42px;
+  padding: 0 12px 0 12px;
 }
 
 .heatmap-canvas .ch-container {
@@ -1823,16 +1803,9 @@ html.theme-switching .chart {
   .heatmap-chart {
     min-height: 132px;
   }
-  .heatmap-weekdays {
-    left: 10px;
-    width: 24px;
-  }
-  .heatmap-weekday {
-    font-size: 9px;
-  }
   .heatmap-canvas {
     min-width: 640px;
-    padding: 0 10px 0 38px;
+    padding: 0 10px 0 10px;
   }
   .range-controls {
     grid-template-columns: 1fr;
@@ -2065,7 +2038,6 @@ html.theme-switching .chart {
     </div>
     <div class="panel wide chart-panel" style="--delay:0.32s">
       <div id="chart-heatmap" class="chart heatmap-chart">
-        <div id="heatmap-weekdays" class="heatmap-weekdays"></div>
         <div id="chart-heatmap-inner" class="heatmap-canvas"></div>
       </div>
     </div>
@@ -3363,22 +3335,6 @@ function formatContributionTooltipDate(dayjsDate, fallbackISO) {
   return `${(MONTH_LABELS[dateObj.getUTCMonth()] || "").slice(0, 3)} ${dateObj.getUTCDate()}, ${dateObj.getUTCFullYear()} ${weekdayEn[dateObj.getUTCDay()]}`;
 }
 
-function contributionWeekdayLabels() {
-  return currentLang === "zh"
-    ? ["一", "三", "五"]
-    : ["Mon", "Wed", "Fri"];
-}
-
-function renderContributionWeekdayLabels() {
-  const container = document.getElementById("heatmap-weekdays");
-  if (!container) return;
-  const labels = contributionWeekdayLabels();
-  const positions = [40, 66, 92];
-  container.innerHTML = labels
-    .map((label, index) => `<span class="heatmap-weekday" style="top:${positions[index]}px">${escapeHTML(label)}</span>`)
-    .join("");
-}
-
 function contributionMonthRange(startISO, endISO) {
   if (!startISO || !endISO) return 1;
   const [startYear, startMonth] = startISO.split("-").map(Number);
@@ -3447,7 +3403,6 @@ function renderContributionHeatmap(options) {
   if (!chartInner) return;
   const contribution = buildContributionSeries();
   const opts = options || {};
-  renderContributionWeekdayLabels();
   if (legendScale) {
     legendScale.innerHTML = "";
   }
