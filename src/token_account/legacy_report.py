@@ -642,9 +642,39 @@ def fmt_money(value: Decimal | None) -> str:
         return f"${value:.2f}"
     return f"${value:.4f}"
 
+
+def bootstrap_client_data(data: dict) -> dict:
+    return {
+        "range": {"start": "", "end": "", "days": 0},
+        "available_range": data.get("available_range", {"start": "", "end": ""}),
+        "daily": {
+            "labels": [],
+            "total": [],
+            "input": [],
+            "output": [],
+            "reasoning": [],
+            "cached": [],
+        },
+        "daily_models": {},
+        "hourly": {"labels": [], "total": []},
+        "hourly_daily": {},
+        "session_spans": [],
+        "events": [],
+        "pricing": {"prices": {}, "aliases": {}},
+        "sources": [],
+        "meta": {
+            "generated_at": "",
+            "source_path": "",
+            "source_count": 0,
+            "last_synced_at": "",
+            "data_stamp": "",
+        },
+    }
+
+
 def render_html(data: dict, summary: dict, empty: bool) -> str:
     empty_banner = ""
-    data_json = json.dumps(data, separators=(",", ":"))
+    initial_data_json = json.dumps(bootstrap_client_data(data), separators=(",", ":"))
     i18n_json = json.dumps(I18N, ensure_ascii=False, separators=(",", ":"))     
     source_path = html.escape(summary.get("source_path", ""))
     template = """<!doctype html>
@@ -2053,7 +2083,7 @@ html.theme-switching .chart {
 <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/Tooltip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/LegendLite.min.js"></script>
 <script>
-const DATA = __DATA_JSON__;
+const DATA = __INITIAL_DATA_JSON__;
 const I18N = __I18N_JSON__;
 let currentLang = "en";
 const CHART_AXIS_TEXT = "#94a3b8";
@@ -2922,8 +2952,11 @@ async function syncLatestData() {
   }
 }
 
-function setupAutoSync() {
-  syncLatestData();
+function setupAutoSync(options) {
+  const opts = options || {};
+  if (opts.skipInitial !== true) {
+    syncLatestData();
+  }
   window.setInterval(() => {
     syncLatestData();
   }, 15000);
@@ -4162,25 +4195,27 @@ function setupDailyChartZoom() {
   // 已由 ECharts dataZoom 提供滑动与缩放。
 }
 
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
   applyI18n("en", { animate: false, source: "boot" });
   rebuildHourEventMap();
   setupThemeToggle();
-  setupRangeControls();
-  setupCustomDatePicker();
-  setupDailyChartZoom();
-  setupAutoSync();
-  const defaultRange = preferredDashboardRange(
-    (DATA.range && DATA.range.start) || "",
-    (DATA.range && DATA.range.end) || ""
-  );
-  applyRange(
-    defaultRange.start,
-    defaultRange.end
-  );
   window.requestAnimationFrame(() => {
     document.documentElement.classList.add("theme-ready");
   });
+  const initialLoaded = await syncLatestData();
+  setupRangeControls();
+  setupCustomDatePicker();
+  setupDailyChartZoom();
+  setupAutoSync({ skipInitial: true });
+  if (!initialLoaded) {
+    const defaultRange = preferredDashboardRange(
+      (DATA.range && DATA.range.start) || "",
+      (DATA.range && DATA.range.end) || ""
+    );
+    if (defaultRange.start && defaultRange.end) {
+      applyRange(defaultRange.start, defaultRange.end);
+    }
+  }
 });
 </script>
 </body>
@@ -4201,7 +4236,7 @@ window.addEventListener("load", () => {
         "TOTAL_COST": html.escape(summary.get("total_cost", "")),
         "SOURCE_PATH": source_path,
         "EMPTY_BANNER": empty_banner,
-        "DATA_JSON": data_json,
+        "INITIAL_DATA_JSON": initial_data_json,
         "I18N_JSON": i18n_json,
     }
     for key, value in replacements.items():
