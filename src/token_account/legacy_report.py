@@ -2895,6 +2895,12 @@ function readDailyValue(dayISO, key) {
 let latestDataStamp = (DATA.meta && DATA.meta.generated_at) || "";
 let syncInFlight = false;
 
+function contributionRangeKeyFromDaily(daily) {
+  const labels = daily && Array.isArray(daily.labels) ? daily.labels : [];
+  if (!labels.length) return "";
+  return `${labels[labels.length - 1]}:${labels.length}`;
+}
+
 function getDataStamp(doc) {
   if (doc && doc.meta && doc.meta.generated_at) return String(doc.meta.generated_at);
   const start = doc && doc.range ? doc.range.start : "";
@@ -2907,6 +2913,9 @@ function applyLatestData(nextData) {
   if (!nextData || !nextData.range || !nextData.daily || !Array.isArray(nextData.daily.labels)) {
     return false;
   }
+  const previousContributionKey = contributionRangeKeyFromDaily(DATA.daily);
+  const nextContributionKey = contributionRangeKeyFromDaily(nextData.daily);
+  const shouldRefreshHeatmap = previousContributionKey !== nextContributionKey;
   DATA.range = nextData.range;
   DATA.daily = nextData.daily;
   DATA.daily_models = nextData.daily_models || {};
@@ -2921,7 +2930,9 @@ function applyLatestData(nextData) {
   DATA.meta = nextData.meta || {};
   rebuildLabelIndex();
   rebuildHourEventMap();
-  hasContributionHeatmapRender = false;
+  if (shouldRefreshHeatmap) {
+    hasContributionHeatmapRender = false;
+  }
 
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
@@ -2932,7 +2943,7 @@ function applyLatestData(nextData) {
     : null;
   const desiredStart = clampISO((preferredRange && preferredRange.start) || currentRange.start || minISO, minISO, maxISO);
   const desiredEnd = clampISO((preferredRange && preferredRange.end) || currentRange.end || maxISO, minISO, maxISO);
-  applyRange(desiredStart, desiredEnd);
+  applyRange(desiredStart, desiredEnd, { refreshHeatmap: shouldRefreshHeatmap });
   return true;
 }
 
