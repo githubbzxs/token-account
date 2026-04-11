@@ -2105,6 +2105,7 @@ let contributionHeatmapInstance = null;
 let contributionHeatmapRenderToken = 0;
 let chartResizeBound = false;
 let chartWheelZoomBound = false;
+let dailyChartViewportWidth = 0;
 let quickRangeResizeBound = false;
 let quickRangeSelection = "";
 let quickRangeSliderAnimation = null;
@@ -3003,9 +3004,16 @@ function lineChart(el, labels, values, options) {
     }
     dailyChartInstance = window.echarts.init(el, null, { renderer: "svg" });
   }
+  dailyChartViewportWidth = Math.round(el.getBoundingClientRect().width || el.clientWidth || 0);
   if (!chartResizeBound) {
     window.addEventListener("resize", () => {
       if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
+        const chartEl = dailyChartInstance.getDom();
+        const nextWidth = Math.round(chartEl.getBoundingClientRect().width || chartEl.clientWidth || 0);
+        if (nextWidth > 0 && Math.abs(nextWidth - dailyChartViewportWidth) < 1) {
+          return;
+        }
+        dailyChartViewportWidth = nextWidth;
         dailyChartInstance.resize();
       }
     });
