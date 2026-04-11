@@ -3016,6 +3016,7 @@ function lineChart(el, labels, values, options) {
       "wheel",
       (event) => {
         if (!dailyChartInstance || dailyChartInstance.isDisposed()) return;
+        if (!event.ctrlKey && !event.metaKey) return;
         event.preventDefault();
         event.stopPropagation();
         const option = dailyChartInstance.getOption();
