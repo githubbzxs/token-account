@@ -3467,6 +3467,24 @@ async function destroyContributionHeatmap(instance) {
   }
 }
 
+function scrollContributionHeatmapToLatest(options) {
+  const chart = document.getElementById("chart-heatmap");
+  if (!chart) return;
+  const opts = options || {};
+  const target = Math.max(0, chart.scrollWidth - chart.clientWidth);
+  const behavior = prefersReducedMotion() || opts.animate === false ? "auto" : "smooth";
+  const apply = () => {
+    if (typeof chart.scrollTo === "function") {
+      chart.scrollTo({ left: target, behavior });
+      return;
+    }
+    chart.scrollLeft = target;
+  };
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(apply);
+  });
+}
+
 function renderContributionHeatmap(options) {
   const chartInner = document.getElementById("chart-heatmap-inner");
   const legendScale = document.getElementById("heatmap-legend-scale");
@@ -3578,6 +3596,7 @@ function renderContributionHeatmap(options) {
         await destroyContributionHeatmap(cal);
         return;
       }
+      scrollContributionHeatmapToLatest({ animate: opts.redraw === true });
       hasContributionHeatmapRender = true;
     } catch (_) {
       if (renderToken === contributionHeatmapRenderToken) {
