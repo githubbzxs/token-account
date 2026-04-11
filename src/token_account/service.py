@@ -35,6 +35,24 @@ class ServiceConfig(BaseModel):
     pricing_file: str | None = None
 
 
+SHELL_SUMMARY = {
+    "range_text": "--",
+    "sessions": "--",
+    "days_active": "--",
+    "total_tokens": "--",
+    "input_tokens": "--",
+    "output_tokens": "--",
+    "reasoning_tokens": "--",
+    "cached_tokens": "--",
+    "cache_rate": "--",
+    "avg_per_day": "--",
+    "avg_per_session": "--",
+    "total_cost": "--",
+    "generated_at": "",
+    "source_path": "",
+}
+
+
 def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -> FastAPI:
     config = ServiceConfig(
         db_file=str(Path(db_file)),
@@ -45,13 +63,7 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
-        with db_session(app.state.config.db_file) as conn:
-            data, summary, empty = build_report_from_database(
-                conn,
-                pricing_path=Path(app.state.config.pricing_file) if app.state.config.pricing_file else None,
-                source_label=app.state.config.db_file,
-            )
-        return HTMLResponse(render_html(data, summary, empty))
+        return HTMLResponse(render_html({}, SHELL_SUMMARY, False))
 
     @app.get("/api/dashboard")
     def api_dashboard(
