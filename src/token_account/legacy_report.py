@@ -21,6 +21,8 @@ FIELDS = [
     "total_tokens",
 ]
 
+REPORT_TIMEZONE = timezone(timedelta(hours=8))
+
 I18N = {
     "zh": {
         "title": "Codex Token Usage",
@@ -185,7 +187,7 @@ def to_local(dt: datetime | None) -> datetime | None:
         return None
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone()
+    return dt.astimezone(REPORT_TIMEZONE)
 
 
 PAREN_SUFFIX_RE = re.compile(r"\s*[\(\（][^\)\）]*[\)\）]\s*")
@@ -2455,6 +2457,14 @@ function quickRangeBoundsFor(preset, minISO, maxISO) {
   };
 }
 
+function preferredDashboardRange(minISO, maxISO) {
+  return quickRangeBoundsFor(
+    quickRangeSelection || DEFAULT_QUICK_RANGE_PRESET,
+    minISO,
+    maxISO
+  ) || { start: minISO, end: maxISO };
+}
+
 function rememberQuickRangeSelection(preset) {
   quickRangeSelection = preset || "";
 }
@@ -2814,9 +2824,10 @@ function formatI18n(key, vars) {
 
 function toLocalISODate(d) {
   const date = d || new Date();
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const shifted = new Date(date.getTime() + REPORT_TIMEZONE_OFFSET_MINUTES * 60 * 1000);
+  const y = shifted.getUTCFullYear();
+  const m = String(shifted.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(shifted.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
 
@@ -2880,8 +2891,11 @@ function applyLatestData(nextData) {
   const maxISO = (DATA.range && DATA.range.end) || "";
   if (!minISO || !maxISO) return true;
   syncRangeControls(minISO, maxISO);
-  const desiredStart = clampISO(currentRange.start || minISO, minISO, maxISO);
-  const desiredEnd = clampISO(currentRange.end || maxISO, minISO, maxISO);
+  const preferredRange = (!currentRange.start || !currentRange.end)
+    ? preferredDashboardRange(minISO, maxISO)
+    : null;
+  const desiredStart = clampISO((preferredRange && preferredRange.start) || currentRange.start || minISO, minISO, maxISO);
+  const desiredEnd = clampISO((preferredRange && preferredRange.end) || currentRange.end || maxISO, minISO, maxISO);
   applyRange(desiredStart, desiredEnd);
   return true;
 }
@@ -3162,22 +3176,29 @@ function rebuildLabelIndex() {
 }
 
 let currentRange = {
-  start: (DATA.range && DATA.range.start) || "",
-  end: (DATA.range && DATA.range.end) || "",
+  start: "",
+  end: "",
 };
 let hasInitialMetricsRender = false;
 let hasContributionHeatmapRender = false;
 const HOUR_MS = 3_600_000;
+const REPORT_TIMEZONE_OFFSET_MINUTES = 8 * 60;
 const MAX_CHART_POINTS = 1600;
 const CONTRIBUTION_DAYS = 371;
+const DEFAULT_QUICK_RANGE_PRESET = "1";
 let hourEventMap = new Map();
 
 function parseHourMs(ts) {
   if (!ts) return null;
-  const iso = String(ts).replace(" ", "T");
-  const ms = Date.parse(iso);
-  if (!Number.isFinite(ms)) return null;
-  return Math.floor(ms / HOUR_MS) * HOUR_MS;
+  const raw = String(ts).trim();
+  const m = raw.match(/^(\\d{4})-(\\d{2})-(\\d{2})[ T](\\d{2}):(\\d{2})/);
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  const hour = Number(m[4]);
+  const minute = Number(m[5]);
+  return Date.UTC(year, month - 1, day, hour, minute, 0, 0);
 }
 
 function rebuildHourEventMap() {
@@ -3222,7 +3243,7 @@ function pad2(value) {
 }
 
 function formatHourLabel(dateObj) {
-  return `${dateObj.getFullYear()}-${pad2(dateObj.getMonth() + 1)}-${pad2(dateObj.getDate())} ${pad2(dateObj.getHours())}:00`;
+  return `${dateObj.getUTCFullYear()}-${pad2(dateObj.getUTCMonth() + 1)}-${pad2(dateObj.getUTCDate())} ${pad2(dateObj.getUTCHours())}:00`;
 }
 
 function parseHourLabel(label) {
@@ -3234,7 +3255,7 @@ function parseHourLabel(label) {
   const day = Number(m[3]);
   const hour = Number(m[4]);
   const minute = Number(m[5]);
-  const dt = new Date(year, month - 1, day, hour, minute, 0, 0);
+  const dt = new Date(Date.UTC(year, month - 1, day, hour, minute, 0, 0));
   if (Number.isNaN(dt.getTime())) return null;
   return dt;
 }
@@ -3256,17 +3277,19 @@ function formatXAxisLabel(label, mode) {
   const dt = parseHourLabel(label);
   if (!dt) return label;
   if (mode === "day") {
-    return `${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+    return `${pad2(dt.getUTCMonth() + 1)}-${pad2(dt.getUTCDate())}`;
   }
-  return `${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`;
+  return `${pad2(dt.getUTCHours())}:${pad2(dt.getUTCMinutes())}`;
 }
 
 function buildHourlySeries(startISO, endISO) {
   const labels = [];
   const totals = [];
   if (!startISO || !endISO) return { labels, totals };
-  const startMs = new Date(`${startISO}T00:00:00`).getTime();
-  const endMs = new Date(`${endISO}T23:00:00`).getTime();
+  const startDate = parseISODate(startISO);
+  const endDate = parseISODate(endISO);
+  const startMs = startDate.getTime();
+  const endMs = endDate.getTime() + (23 * HOUR_MS);
   if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || startMs > endMs) {
     return { labels, totals };
   }
@@ -3979,8 +4002,12 @@ function setupRangeControls() {
   const maxISO = (DATA.range && DATA.range.end) || "";
   if (!startInput || !endInput || !minISO || !maxISO) return;
   syncRangeControls(minISO, maxISO);
-  updateRangeDateButton(minISO, maxISO, { animate: false });
-  updateQuickRangeState(minISO, maxISO, { animate: false });
+  if (!quickRangeSelection) {
+    rememberQuickRangeSelection(DEFAULT_QUICK_RANGE_PRESET);
+  }
+  const initialRange = preferredDashboardRange(minISO, maxISO);
+  updateRangeDateButton(initialRange.start, initialRange.end, { animate: false });
+  updateQuickRangeState(initialRange.start, initialRange.end, { animate: false });
   if (!quickRangeResizeBound) {
     window.addEventListener("resize", updateQuickRangeSlider);
     quickRangeResizeBound = true;
@@ -4143,11 +4170,13 @@ window.addEventListener("load", () => {
   setupCustomDatePicker();
   setupDailyChartZoom();
   setupAutoSync();
-  const startInput = document.getElementById("range-start");
-  const endInput = document.getElementById("range-end");
+  const defaultRange = preferredDashboardRange(
+    (DATA.range && DATA.range.start) || "",
+    (DATA.range && DATA.range.end) || ""
+  );
   applyRange(
-    getRangeInputValue(startInput) || (DATA.range && DATA.range.start) || "",
-    getRangeInputValue(endInput) || (DATA.range && DATA.range.end) || ""
+    defaultRange.start,
+    defaultRange.end
   );
   window.requestAnimationFrame(() => {
     document.documentElement.classList.add("theme-ready");
@@ -4334,7 +4363,7 @@ def main() -> int:
         "avg_per_day": fmt_int(int(round(avg_per_day))),
         "avg_per_session": fmt_int(int(round(avg_per_session))),
         "total_cost": fmt_money(total_cost),
-        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generated_at": datetime.now(REPORT_TIMEZONE).strftime("%Y-%m-%d %H:%M:%S"),
         "source_path": str(session_root),
     }
     data["meta"] = {

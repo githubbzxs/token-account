@@ -2,13 +2,30 @@ from __future__ import annotations
 
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
 
+REPORT_TIMEZONE = timezone(timedelta(hours=8))
+
+
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def report_day_iso(ts: Any) -> str:
+    value = str(ts or "").strip()
+    if not value:
+        return ""
+    normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
+    try:
+        dt = datetime.fromisoformat(normalized)
+    except ValueError:
+        return value[:10]
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(REPORT_TIMEZONE).date().isoformat()
 
 
 def connect_db(db_path: str | Path) -> sqlite3.Connection:
@@ -128,7 +145,7 @@ def ingest_sync_events(
                         hostname,
                         event["session_id"],
                         event["ts"],
-                        str(event["ts"])[:10],
+                        report_day_iso(event["ts"]),
                         event["model"],
                         int(event.get("input_tokens", 0) or 0),
                         int(event.get("cached_input_tokens", 0) or 0),

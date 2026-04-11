@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -17,10 +17,44 @@ from .legacy_report import (
     render_html,
 )
 from .pricing import cost_for_record, load_pricing, normalize_model_name
-from .storage import fetch_event_bounds, fetch_events, fetch_sources
+from .storage import fetch_events, fetch_sources
 
 
-def collect_usage_from_rows(rows: list[dict[str, Any]]):
+REPORT_TIMEZONE = timezone(timedelta(hours=8))
+
+
+def to_report_timezone(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(REPORT_TIMEZONE)
+
+
+def available_range_from_rows(rows: list[dict[str, Any]]) -> dict[str, str]:
+    start = ""
+    end = ""
+    for row in rows:
+        ts = to_report_timezone(parse_iso(row.get("ts")))
+        if ts is None:
+            continue
+        day = ts.date().isoformat()
+        if not start or day < start:
+            start = day
+        if not end or day > end:
+            end = day
+    return {
+        "start": start,
+        "end": end,
+    }
+
+
+def collect_usage_from_rows(
+    rows: list[dict[str, Any]],
+    *,
+    since: date | None = None,
+    until: date | None = None,
+):
     totals = {field: 0 for field in FIELDS}
     daily = defaultdict(lambda: {field: 0 for field in FIELDS})
     hourly = defaultdict(int)
@@ -33,10 +67,14 @@ def collect_usage_from_rows(rows: list[dict[str, Any]]):
     events: list[dict[str, Any]] = []
 
     for row in rows:
-        ts = parse_iso(row.get("ts"))
+        ts = to_report_timezone(parse_iso(row.get("ts")))
         if ts is None:
             continue
         day = ts.date()
+        if since and day < since:
+            continue
+        if until and day > until:
+            continue
         model = normalize_model_name(row.get("model"))
         delta = {field: int(row.get(field, 0) or 0) for field in FIELDS}
         for field in FIELDS:
@@ -124,12 +162,16 @@ def build_report_document(
     pricing_path: Path | None = None,
     source_label: str = "SQLite",
 ) -> tuple[dict[str, Any], dict[str, Any], bool]:
-    usage = collect_usage_from_rows(rows)
+    usage = collect_usage_from_rows(rows, since=since, until=until)
     active_days = usage["active_days"]
     empty = not active_days
 
-    range_start = since or (min(active_days) if active_days else date.today())
-    range_end = until or (max(active_days) if active_days else date.today())
+    normalized_available_range = available_range or available_range_from_rows(rows)
+    default_start = parse_date(normalized_available_range.get("start")) if normalized_available_range.get("start") else None
+    default_end = parse_date(normalized_available_range.get("end")) if normalized_available_range.get("end") else None
+    today = datetime.now(REPORT_TIMEZONE).date()
+    range_start = since or default_start or today
+    range_end = until or default_end or today
     range_days = (range_end - range_start).days + 1
 
     daily_series = build_day_series(usage["daily"], range_end, max(1, range_days))
@@ -148,6 +190,14 @@ def build_report_document(
     total_cost = Decimal("0")
     event_costs: list[float | None] = []
     for row in rows:
+        ts = to_report_timezone(parse_iso(row.get("ts")))
+        if ts is None:
+            continue
+        day = ts.date()
+        if since and day < since:
+            continue
+        if until and day > until:
+            continue
         cost = cost_for_record(str(row.get("model") or ""), row, prices, aliases)
         if cost is not None:
             total_cost += cost
@@ -186,7 +236,9 @@ def build_report_document(
     if generated_dt is None and rows:
         generated_dt = parse_iso(rows[-1].get("ts"))
     if generated_dt is None:
-        generated_dt = datetime.now()
+        generated_dt = datetime.now(REPORT_TIMEZONE)
+    else:
+        generated_dt = to_report_timezone(generated_dt) or datetime.now(REPORT_TIMEZONE)
     generated_at = generated_dt.strftime("%Y-%m-%d %H:%M:%S")
     data = {
         "range": {
@@ -194,7 +246,7 @@ def build_report_document(
             "end": range_end.isoformat(),
             "days": range_days,
         },
-        "available_range": available_range or {"start": "", "end": ""},
+        "available_range": normalized_available_range,
         "daily": daily_series,
         "daily_models": daily_models_serialized,
         "hourly": {"labels": hour_labels, "total": hourly_values},
@@ -270,15 +322,13 @@ def build_report_from_database(
     until = parse_date(until_text) if until_text else None
     if since and until and since > until:
         raise ValueError("since must be earlier than until")
-    rows = fetch_events(conn, since=since.isoformat() if since else None, until=until.isoformat() if until else None)
+    rows = fetch_events(conn)
     sources = fetch_sources(conn)
-    available_range = fetch_event_bounds(conn)
     return build_report_document(
         rows,
         sources,
         since=since,
         until=until,
-        available_range=available_range,
         pricing_path=pricing_path,
         source_label=source_label,
     )
