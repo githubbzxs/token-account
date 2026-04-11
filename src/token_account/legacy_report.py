@@ -2091,9 +2091,6 @@ const I18N = __I18N_JSON__;
 let currentLang = "en";
 const CHART_AXIS_TEXT = "#94a3b8";
 const CHART_AXIS_LINE = "rgba(148,163,184,0.28)";
-const ZOOM_IN_FACTOR = 0.72;
-const ZOOM_OUT_FACTOR = 1.25;
-const MIN_WINDOW_PERCENT = 0.05;
 const DAY_MS = 86_400_000;
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_LABELS = [
@@ -2104,7 +2101,6 @@ let dailyChartInstance = null;
 let contributionHeatmapInstance = null;
 let contributionHeatmapRenderToken = 0;
 let chartResizeBound = false;
-let chartWheelZoomBound = false;
 let dailyChartViewportWidth = 0;
 let quickRangeResizeBound = false;
 let quickRangeSelection = "";
@@ -3019,46 +3015,6 @@ function lineChart(el, labels, values, options) {
     });
     chartResizeBound = true;
   }
-  if (!chartWheelZoomBound) {
-    el.addEventListener(
-      "wheel",
-      (event) => {
-        if (!dailyChartInstance || dailyChartInstance.isDisposed()) return;
-        if (!event.ctrlKey && !event.metaKey) return;
-        event.preventDefault();
-        event.stopPropagation();
-        const option = dailyChartInstance.getOption();
-        const dz = (option.dataZoom || [])[0] || {};
-        const currentStart = clampPercent(dz.start != null ? dz.start : 0);
-        const currentEnd = clampPercent(dz.end != null ? dz.end : 100);
-        const currentWindow = Math.max(MIN_WINDOW_PERCENT, currentEnd - currentStart);
-        const rect = el.getBoundingClientRect();
-        const ratioRaw = (event.clientX - rect.left) / Math.max(1, rect.width);
-        const anchorRatio = Math.min(1, Math.max(0, ratioRaw));
-        const anchor = currentStart + currentWindow * anchorRatio;
-        const zoomFactor = event.deltaY < 0 ? ZOOM_IN_FACTOR : ZOOM_OUT_FACTOR;
-        const nextWindow = Math.min(100, Math.max(MIN_WINDOW_PERCENT, currentWindow * zoomFactor));
-        let nextStart = anchor - nextWindow / 2;
-        let nextEnd = anchor + nextWindow / 2;
-        if (nextStart < 0) {
-          nextStart = 0;
-          nextEnd = nextWindow;
-        }
-        if (nextEnd > 100) {
-          nextEnd = 100;
-          nextStart = 100 - nextWindow;
-        }
-        dailyChartInstance.dispatchAction({
-          type: "dataZoom",
-          dataZoomIndex: 0,
-          start: clampPercent(nextStart),
-          end: clampPercent(nextEnd),
-        });
-      },
-      { passive: false, capture: true }
-    );
-    chartWheelZoomBound = true;
-  }
   if (!chartValues.length) {
     dailyChartInstance.clear();
     return;
@@ -3066,9 +3022,6 @@ function lineChart(el, labels, values, options) {
   const prefersReduced = prefersReducedMotion();
   const shouldRedraw = Boolean(opts.redraw) && !prefersReduced;
   const animateChartUpdate = false;
-  const windowSize = chartValues.length > 200 ? Math.max(MIN_WINDOW_PERCENT, (200 / chartValues.length) * 100) : 100;
-  const zoomStart = Math.max(0, (100 - windowSize) / 2);
-  const zoomEnd = Math.min(100, zoomStart + windowSize);
   const palette = getThemePalette();
   const chartOption = {
     backgroundColor: "transparent",
@@ -3112,17 +3065,6 @@ function lineChart(el, labels, values, options) {
       },
       splitLine: { lineStyle: { color: "rgba(148,163,184,0.10)" } },
     },
-    dataZoom: [
-      {
-        type: "inside",
-        xAxisIndex: 0,
-        start: zoomStart,
-        end: zoomEnd,
-        zoomOnMouseWheel: false,
-        moveOnMouseMove: true,
-        moveOnMouseWheel: false,
-      },
-    ],
     series: [
       {
         type: "line",
@@ -4255,7 +4197,7 @@ function setupCustomDatePicker() {
 }
 
 function setupDailyChartZoom() {
-  // 已由 ECharts dataZoom 提供滑动与缩放。
+  // 线图缩放已移除，保留空函数避免初始化流程分叉。
 }
 
 window.addEventListener("load", async () => {
