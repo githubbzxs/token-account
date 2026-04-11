@@ -658,8 +658,11 @@ def bootstrap_client_data(data: dict) -> dict:
         "daily_models": {},
         "hourly": {"labels": [], "total": []},
         "hourly_daily": {},
+        "hourly_buckets": {},
         "session_spans": [],
         "events": [],
+        "daily_costs": {},
+        "recent_events": [],
         "pricing": {"prices": {}, "aliases": {}},
         "sources": [],
         "meta": {
@@ -2909,8 +2912,11 @@ function applyLatestData(nextData) {
   DATA.daily_models = nextData.daily_models || {};
   DATA.hourly = nextData.hourly || { labels: [], total: [] };
   DATA.hourly_daily = nextData.hourly_daily || {};
+  DATA.hourly_buckets = nextData.hourly_buckets || {};
   DATA.session_spans = nextData.session_spans || [];
   DATA.events = nextData.events || [];
+  DATA.daily_costs = nextData.daily_costs || {};
+  DATA.recent_events = nextData.recent_events || [];
   DATA.pricing = nextData.pricing || DATA.pricing;
   DATA.meta = nextData.meta || {};
   rebuildLabelIndex();
@@ -3236,13 +3242,21 @@ function parseHourMs(ts) {
 
 function rebuildHourEventMap() {
   const next = new Map();
-  (DATA.events || []).forEach(ev => {
-    if (!ev || !ev.ts) return;
-    const hourMs = parseHourMs(ev.ts);
+  const hourlyBuckets = DATA.hourly_buckets || {};
+  Object.keys(hourlyBuckets).forEach(label => {
+    const hourMs = parseHourMs(label);
     if (hourMs == null) return;
-    const totalValue = ev.total != null ? ev.total : ev.value;
-    next.set(hourMs, (next.get(hourMs) || 0) + Number(totalValue || 0));
+    next.set(hourMs, Number(hourlyBuckets[label] || 0));
   });
+  if (!next.size) {
+    (DATA.events || []).forEach(ev => {
+      if (!ev || !ev.ts) return;
+      const hourMs = parseHourMs(ev.ts);
+      if (hourMs == null) return;
+      const totalValue = ev.total != null ? ev.total : ev.value;
+      next.set(hourMs, (next.get(hourMs) || 0) + Number(totalValue || 0));
+    });
+  }
   hourEventMap = next;
 }
 
@@ -4002,14 +4016,24 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
 
   let totalCost = 0;
   let anyPriced = false;
-  (DATA.events || []).forEach(item => {
-    if (!item || !item.day || item.day < startISO || item.day > endISO) return;
-    const cost = costUSD(item.model, item);
-    if (cost != null) {
-      totalCost += cost;
+  const dailyCosts = DATA.daily_costs || {};
+  const dailyCostKeys = Object.keys(dailyCosts);
+  if (dailyCostKeys.length) {
+    dailyCostKeys.forEach((day) => {
+      if (day < startISO || day > endISO) return;
+      totalCost += Number(dailyCosts[day] || 0);
       anyPriced = true;
-    }
-  });
+    });
+  } else {
+    (DATA.events || []).forEach(item => {
+      if (!item || !item.day || item.day < startISO || item.day > endISO) return;
+      const cost = costUSD(item.model, item);
+      if (cost != null) {
+        totalCost += cost;
+        anyPriced = true;
+      }
+    });
+  }
 
   const shareCost = anyPriced ? formatMoneyUSD(totalCost) : "n/a";
   setDisplayText("value-cost", shareCost, animateMetrics);

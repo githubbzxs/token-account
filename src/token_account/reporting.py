@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -58,13 +58,14 @@ def collect_usage_from_rows(
     totals = {field: 0 for field in FIELDS}
     daily = defaultdict(lambda: {field: 0 for field in FIELDS})
     hourly = defaultdict(int)
+    hourly_buckets = defaultdict(int)
     models = defaultdict(lambda: {field: 0 for field in FIELDS})
     daily_models = defaultdict(lambda: defaultdict(lambda: {field: 0 for field in FIELDS}))
     hourly_daily = defaultdict(lambda: [0] * 24)
     active_days = set()
     session_spans: dict[tuple[str, str], list[date]] = {}
     sessions_in_range = set()
-    events: list[dict[str, Any]] = []
+    recent_events: deque[dict[str, Any]] = deque(maxlen=24)
 
     for row in rows:
         ts = to_report_timezone(parse_iso(row.get("ts")))
@@ -83,6 +84,7 @@ def collect_usage_from_rows(
             models[model][field] += delta[field]
             daily_models[day][model][field] += delta[field]
         hourly[ts.hour] += delta["total_tokens"]
+        hourly_buckets[ts.strftime("%Y-%m-%d %H:00")] += delta["total_tokens"]
         hourly_daily[day][ts.hour] += delta["total_tokens"]
         active_days.add(day)
 
@@ -98,7 +100,7 @@ def collect_usage_from_rows(
                 span[1] = day
 
         if delta["total_tokens"] > 0:
-            events.append(
+            recent_events.append(
                 {
                     "ts": ts.strftime("%Y-%m-%d %H:%M"),
                     "day": day.isoformat(),
@@ -127,8 +129,9 @@ def collect_usage_from_rows(
         "models": models,
         "daily_models": daily_models,
         "hourly_daily": hourly_daily,
+        "hourly_buckets": hourly_buckets,
         "active_days": active_days,
-        "events": events,
+        "recent_events": list(recent_events),
         "session_spans": session_span_list,
         "sessions": len(sessions_in_range),
     }
@@ -188,7 +191,7 @@ def build_report_document(
     cache_rate = cached_tokens / input_tokens if input_tokens else 0
 
     total_cost = Decimal("0")
-    event_costs: list[float | None] = []
+    daily_costs: dict[str, float] = {}
     for row in rows:
         ts = to_report_timezone(parse_iso(row.get("ts")))
         if ts is None:
@@ -201,12 +204,8 @@ def build_report_document(
         cost = cost_for_record(str(row.get("model") or ""), row, prices, aliases)
         if cost is not None:
             total_cost += cost
-        if int(row.get("total_tokens", 0) or 0) > 0:
-            event_costs.append(float(cost) if cost is not None else None)
-
-    for event, cost in zip(usage["events"], event_costs):
-        if cost is not None:
-            event["cost_usd"] = cost
+            day_key = day.isoformat()
+            daily_costs[day_key] = daily_costs.get(day_key, 0.0) + float(cost)
 
     daily_models_serialized: dict[str, Any] = {}
     for day, model_map in usage["daily_models"].items():
@@ -251,8 +250,10 @@ def build_report_document(
         "daily_models": daily_models_serialized,
         "hourly": {"labels": hour_labels, "total": hourly_values},
         "hourly_daily": hourly_daily_serialized,
+        "hourly_buckets": dict(usage["hourly_buckets"]),
         "session_spans": usage["session_spans"],
-        "events": usage["events"],
+        "daily_costs": daily_costs,
+        "recent_events": usage["recent_events"],
         "pricing": _pricing_payload(prices, aliases),
         "sources": sources,
         "meta": {
@@ -301,7 +302,7 @@ def build_dashboard_payload(data: dict[str, Any], summary: dict[str, Any], empty
             "daily": data["daily"],
             "hourly": data["hourly"],
             "models": top_models,
-            "events": data.get("events", [])[-24:],
+            "events": data.get("recent_events", []),
             "sources": data.get("sources", []),
             "meta": data["meta"],
         },
