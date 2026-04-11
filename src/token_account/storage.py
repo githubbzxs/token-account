@@ -237,6 +237,26 @@ def fetch_event_bounds(conn: sqlite3.Connection) -> dict[str, str]:
     }
 
 
+def fetch_default_report_stamp(conn: sqlite3.Connection) -> str:
+    row = conn.execute(
+        """
+        SELECT COUNT(*) AS row_count, MIN(day) AS start, MAX(day) AS end
+        FROM token_events
+        """
+    ).fetchone()
+    today = datetime.now(REPORT_TIMEZONE).date().isoformat()
+    start = str(row["start"] or today)
+    end = str(row["end"] or today)
+    row_count = int(row["row_count"] or 0)
+    sources = fetch_sources(conn)
+    last_synced_at = ""
+    if sources:
+        candidates = [item.get("last_sync_at") or item.get("last_seen_at") for item in sources if item.get("last_sync_at") or item.get("last_seen_at")]
+        if candidates:
+            last_synced_at = max(candidates)
+    return f"{last_synced_at}:{row_count}:{start}:{end}"
+
+
 def fetch_events(
     conn: sqlite3.Connection,
     *,

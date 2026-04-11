@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from threading import Lock, Thread
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
@@ -8,7 +9,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from .reporting import build_dashboard_payload, build_report_from_database, render_html
-from .storage import db_session, fetch_sources, ingest_sync_events
+from .storage import db_session, fetch_default_report_stamp, fetch_sources, ingest_sync_events
 
 
 class SyncEvent(BaseModel):
@@ -53,6 +54,68 @@ SHELL_SUMMARY = {
 }
 
 
+class DefaultReportCache:
+    def __init__(self, config: ServiceConfig) -> None:
+        self._config = config
+        self._lock = Lock()
+        self._default_report: tuple[dict[str, Any], dict[str, Any], bool] | None = None
+        self._default_stamp = ""
+        self._refreshing = False
+
+    def _pricing_path(self) -> Path | None:
+        if not self._config.pricing_file:
+            return None
+        return Path(self._config.pricing_file)
+
+    def _build_default_report(self) -> tuple[tuple[dict[str, Any], dict[str, Any], bool], str]:
+        with db_session(self._config.db_file) as conn:
+            report = build_report_from_database(
+                conn,
+                pricing_path=self._pricing_path(),
+                source_label=self._config.db_file,
+            )
+            stamp = fetch_default_report_stamp(conn)
+        return report, stamp
+
+    def _current_stamp(self) -> str:
+        with db_session(self._config.db_file) as conn:
+            return fetch_default_report_stamp(conn)
+
+    def _store(self, report: tuple[dict[str, Any], dict[str, Any], bool], stamp: str) -> None:
+        with self._lock:
+            self._default_report = report
+            self._default_stamp = stamp
+
+    def _refresh_worker(self) -> None:
+        try:
+            report, stamp = self._build_default_report()
+            self._store(report, stamp)
+        finally:
+            with self._lock:
+                self._refreshing = False
+
+    def schedule_refresh(self) -> bool:
+        with self._lock:
+            if self._refreshing:
+                return False
+            self._refreshing = True
+        Thread(target=self._refresh_worker, daemon=True).start()
+        return True
+
+    def get_default(self) -> tuple[dict[str, Any], dict[str, Any], bool]:
+        current_stamp = self._current_stamp()
+        with self._lock:
+            cached = self._default_report
+            cached_stamp = self._default_stamp
+        if cached is None:
+            report, stamp = self._build_default_report()
+            self._store(report, stamp)
+            return report
+        if cached_stamp != current_stamp:
+            self.schedule_refresh()
+        return cached
+
+
 def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -> FastAPI:
     config = ServiceConfig(
         db_file=str(Path(db_file)),
@@ -60,10 +123,16 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
     )
     app = FastAPI(title="Codex Token Usage Service", version="1.0.0")
     app.state.config = config
+    app.state.default_report_cache = DefaultReportCache(config)
+
+    @app.on_event("startup")
+    def warm_default_report_cache() -> None:
+        app.state.default_report_cache.get_default()
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
-        return HTMLResponse(render_html({}, SHELL_SUMMARY, False))
+        data, summary, empty = app.state.default_report_cache.get_default()
+        return HTMLResponse(render_html(data, summary, empty))
 
     @app.get("/api/dashboard")
     def api_dashboard(
@@ -71,6 +140,9 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
         until: str | None = Query(default=None, description="结束日期，格式 YYYY-MM-DD"),
     ) -> dict[str, Any]:
         try:
+            if since is None and until is None:
+                data, summary, empty = app.state.default_report_cache.get_default()
+                return build_dashboard_payload(data, summary, empty)
             with db_session(app.state.config.db_file) as conn:
                 data, summary, empty = build_report_from_database(
                     conn,
@@ -89,6 +161,9 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
         until: str | None = Query(default=None, description="结束日期，格式 YYYY-MM-DD"),
     ) -> dict[str, Any]:
         try:
+            if since is None and until is None:
+                data, _, _ = app.state.default_report_cache.get_default()
+                return data
             with db_session(app.state.config.db_file) as conn:
                 data, _, _ = build_report_from_database(
                     conn,
@@ -107,6 +182,9 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
         until: str | None = Query(default=None, description="结束日期，格式 YYYY-MM-DD"),
     ) -> dict[str, Any]:
         try:
+            if since is None and until is None:
+                data, _, _ = app.state.default_report_cache.get_default()
+                return data
             with db_session(app.state.config.db_file) as conn:
                 data, _, _ = build_report_from_database(
                     conn,
@@ -149,6 +227,7 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
                 hostname=payload.hostname,
                 events=events,
             )
+        app.state.default_report_cache.schedule_refresh()
         result["sent_at"] = payload.sent_at
         return result
 
