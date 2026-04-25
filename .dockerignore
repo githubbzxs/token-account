@@ -6,6 +6,7 @@ __pycache__/
 # 虚拟环境
 .venv/
 venv/
+node_modules/
 
 # 本地服务数据
 report/

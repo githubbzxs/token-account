@@ -60,6 +60,7 @@ def init_db(conn: sqlite3.Connection) -> None:
             ts TEXT NOT NULL,
             day TEXT NOT NULL,
             model TEXT NOT NULL,
+            project_dir TEXT NOT NULL DEFAULT '',
             input_tokens INTEGER NOT NULL,
             cached_input_tokens INTEGER NOT NULL,
             output_tokens INTEGER NOT NULL,
@@ -88,6 +89,14 @@ def init_db(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_sync_runs_source_id ON sync_runs(source_id, finished_at DESC);
         """
     )
+    columns = {str(row["name"]) for row in conn.execute("PRAGMA table_info(token_events)").fetchall()}
+    if "project_dir" not in columns:
+        try:
+            conn.execute("ALTER TABLE token_events ADD COLUMN project_dir TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError as exc:
+            if "duplicate column name" not in str(exc).lower():
+                raise
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_token_events_project_dir ON token_events(project_dir)")
     conn.commit()
 
 
@@ -131,13 +140,15 @@ def ingest_sync_events(
     try:
         with conn:
             for event in events:
+                project_dir = str(event.get("project_dir") or "").strip()
                 cursor = conn.execute(
                     """
                     INSERT OR IGNORE INTO token_events (
                         event_id, source_id, hostname, session_id, ts, day, model,
+                        project_dir,
                         input_tokens, cached_input_tokens, output_tokens, reasoning_output_tokens,
                         total_tokens, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         event["event_id"],
@@ -147,6 +158,7 @@ def ingest_sync_events(
                         event["ts"],
                         report_day_iso(event["ts"]),
                         event["model"],
+                        project_dir,
                         int(event.get("input_tokens", 0) or 0),
                         int(event.get("cached_input_tokens", 0) or 0),
                         int(event.get("output_tokens", 0) or 0),
@@ -156,6 +168,16 @@ def ingest_sync_events(
                     ),
                 )
                 inserted += cursor.rowcount or 0
+                if (cursor.rowcount or 0) == 0 and project_dir:
+                    conn.execute(
+                        """
+                        UPDATE token_events
+                        SET project_dir = ?
+                        WHERE event_id = ?
+                          AND COALESCE(project_dir, '') = ''
+                        """,
+                        (project_dir, event["event_id"]),
+                    )
             finished_at = utc_now_iso()
             conn.execute(
                 """
@@ -265,6 +287,7 @@ def fetch_events(
 ) -> list[dict[str, Any]]:
     sql = """
         SELECT source_id, hostname, session_id, ts, day, model,
+               project_dir,
                input_tokens, cached_input_tokens, output_tokens,
                reasoning_output_tokens, total_tokens
         FROM token_events

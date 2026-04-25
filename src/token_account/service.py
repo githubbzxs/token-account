@@ -17,6 +17,7 @@ class SyncEvent(BaseModel):
     session_id: str
     ts: str
     model: str
+    project_dir: str = ""
     input_tokens: int = 0
     cached_input_tokens: int = 0
     output_tokens: int = 0

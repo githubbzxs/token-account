@@ -49,6 +49,7 @@ def available_range_from_rows(rows: list[dict[str, Any]]) -> dict[str, str]:
     }
 
 
+
 def collect_usage_from_rows(
     rows: list[dict[str, Any]],
     *,
@@ -224,7 +225,6 @@ def build_report_document(
         day.isoformat(): values
         for day, values in usage["hourly_daily"].items()
     }
-
     last_synced_at = ""
     if sources:
         candidates = [item.get("last_sync_at") or item.get("last_seen_at") for item in sources if item.get("last_sync_at") or item.get("last_seen_at")]

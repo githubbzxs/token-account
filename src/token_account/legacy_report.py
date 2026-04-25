@@ -218,14 +218,32 @@ def default_codex_root() -> Path:
 PRICING_DEFAULT = {
     "tier": "standard",
     "currency": "USD",
-    "source_url": "https://platform.openai.com/pricing",
-    "source_date": "2026-03-13",
+    "source_url": "https://developers.openai.com/api/docs/pricing",
+    "source_date": "2026-04-25",
     "aliases": {
         "gpt-5.2-codex": "gpt-5.2",
         "gpt-5.3-codex": "gpt-5.2",
         "gpt-5.3-codex-latest": "gpt-5.2",
     },
     "prices": {
+        "gpt-5.5": {
+            "input": "5.00",
+            "cached_input": "0.50",
+            "output": "30.00",
+            "long_context_threshold": 272000,
+            "long_context_input": "10.00",
+            "long_context_cached_input": "1.00",
+            "long_context_output": "45.00",
+        },
+        "gpt-5.5-pro": {
+            "input": "30.00",
+            "cached_input": None,
+            "output": "180.00",
+            "long_context_threshold": 272000,
+            "long_context_input": "60.00",
+            "long_context_cached_input": None,
+            "long_context_output": "270.00",
+        },
         "gpt-5.4": {
             "input": "2.50",
             "cached_input": "0.25",
@@ -334,9 +352,13 @@ def resolve_pricing(model: str, prices: dict, aliases: dict) -> dict | None:
     base = model.split(":")[0]
     if base in prices:
         return prices[base]
-    for key in prices.keys():
+    for key in sorted(prices.keys(), key=len, reverse=True):
         if base.startswith(key + "-"):
             return prices[key]
+    if "gpt-5.5" in base:
+        return prices.get("gpt-5.5") or prices.get("gpt-5")
+    if "gpt-5.4" in base:
+        return prices.get("gpt-5.4") or prices.get("gpt-5")
     if "gpt-5.3" in base:
         return prices.get("gpt-5.2") or prices.get("gpt-5")
     if "gpt-5.2" in base:
@@ -698,64 +720,6 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --text: #f8fafc;
   --muted: #a1a1aa;
   --stroke: rgba(148, 163, 184, 0.16);
-  --accent: #B026FF;
-  --accent-cyan: #00F0FF;
-  --accent-rgb: 176, 38, 255;
-  --accent-cyan-rgb: 0, 240, 255;
-  --bg-glow-a: rgba(176, 38, 255, 0.20);
-  --bg-glow-b: rgba(0, 240, 255, 0.16);
-  --bg-glow-c: rgba(176, 38, 255, 0.08);
-  --bg-base-start: #06070d;
-  --bg-base-mid: #090d16;
-  --bg-base-end: #05060a;
-  --page-border: rgba(150, 156, 190, 0.24);
-  --page-bg-start: rgba(14, 14, 24, 0.94);
-  --page-bg-end: rgba(8, 10, 18, 0.96);
-  --page-glow: rgba(176, 38, 255, 0.18);
-  --page-outline: rgba(188, 198, 255, 0.18);
-  --page-inner-glow: rgba(176, 38, 255, 0.08);
-  --page-outer-glow: rgba(0, 240, 255, 0.10);
-  --segment-start: #B026FF;
-  --segment-end: #00F0FF;
-  --chart-line-start: #B026FF;
-  --chart-line-end: #00F0FF;
-  --chart-area-start: rgba(176, 38, 255, 0.55);
-  --chart-area-mid: rgba(0, 240, 255, 0.22);
-  --chart-area-end: rgba(0, 240, 255, 0);
-  --heat-0: #161b22;
-  --heat-1: #0e4429;
-  --heat-2: #006d32;
-  --heat-3: #26a641;
-  --heat-4: #39d353;
-  --tooltip-border: rgba(176, 38, 255, 0.45);
-  --axis-pointer: rgba(0, 240, 255, 0.7);
-  --gap-sm: 12px;
-  --gap-md: 16px;
-  --gap-lg: 24px;
-  --shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
-  --ring: rgba(176, 38, 255, 0.28);
-  --font-zh: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
-  --font-en: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
-  --app-font: var(--font-en);
-  --swift-duration-fast: 900ms;
-  --swift-duration-normal: 2000ms;
-  --swift-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --swift-ease-spring: cubic-bezier(0.22, 0.8, 0.22, 1.02);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html[lang="zh"] {
-  --app-font: var(--font-zh);
-}
-
-html[lang="en"] {
-  --app-font: var(--font-en);
-}
-
-html[data-theme="bronze"] {
   --accent: #B89C7A;
   --accent-cyan: #E3C89A;
   --accent-rgb: 184, 156, 122;
@@ -787,7 +751,30 @@ html[data-theme="bronze"] {
   --heat-4: #d7b98a;
   --tooltip-border: rgba(184, 156, 122, 0.45);
   --axis-pointer: rgba(227, 200, 154, 0.72);
+  --gap-sm: 12px;
+  --gap-md: 16px;
+  --gap-lg: 24px;
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
   --ring: rgba(184, 156, 122, 0.26);
+  --font-zh: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
+  --font-en: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
+  --app-font: var(--font-en);
+  --swift-duration-fast: 900ms;
+  --swift-duration-normal: 2000ms;
+  --swift-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --swift-ease-spring: cubic-bezier(0.22, 0.8, 0.22, 1.02);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html[lang="zh"] {
+  --app-font: var(--font-zh);
+}
+
+html[lang="en"] {
+  --app-font: var(--font-en);
 }
 
 body {
@@ -1562,6 +1549,7 @@ html.theme-switching .chart {
   color: var(--muted);
   font-size: 12px;
 }
+
 
 .panel.wide {
   grid-column: span 2;
@@ -2353,15 +2341,12 @@ function updateRangeDateButton(startISO, endISO, options) {
 }
 
 function normalizeTheme(value) {
-  return value === "bronze" ? "bronze" : "neon";
+  void value;
+  return "bronze";
 }
 
 function readStoredTheme() {
-  try {
-    return normalizeTheme(window.localStorage.getItem(THEME_STORAGE_KEY) || "");
-  } catch (_) {
-    return "neon";
-  }
+  return "bronze";
 }
 
 function persistTheme(theme) {
@@ -2375,10 +2360,8 @@ function persistTheme(theme) {
 function updateThemeDotToggle(theme) {
   const btn = document.getElementById("theme-dot-toggle");
   if (!btn) return;
-  const isBronze = theme === "bronze";
-  btn.classList.toggle("is-bronze", isBronze);
-  const nextThemeLabel = isBronze ? "Neon" : "Bronze";
-  btn.setAttribute("aria-label", `Switch to ${nextThemeLabel} theme`);
+  btn.classList.add("is-bronze");
+  btn.setAttribute("aria-label", "Bronze theme");
 }
 
 function getThemePalette() {
@@ -2388,20 +2371,20 @@ function getThemePalette() {
     return value || fallback;
   };
   return {
-    lineStart: read("--chart-line-start", "#B026FF"),
-    lineEnd: read("--chart-line-end", "#00F0FF"),
-    areaStart: read("--chart-area-start", "rgba(176, 38, 255, 0.55)"),
-    areaMid: read("--chart-area-mid", "rgba(0, 240, 255, 0.22)"),
-    areaEnd: read("--chart-area-end", "rgba(0, 240, 255, 0)"),
+    lineStart: read("--chart-line-start", "#B89C7A"),
+    lineEnd: read("--chart-line-end", "#E3C89A"),
+    areaStart: read("--chart-area-start", "rgba(184, 156, 122, 0.40)"),
+    areaMid: read("--chart-area-mid", "rgba(227, 200, 154, 0.18)"),
+    areaEnd: read("--chart-area-end", "rgba(227, 200, 154, 0)"),
     heatmapLevels: [
       read("--heat-0", "rgba(148, 163, 184, 0.12)"),
-      read("--heat-1", "rgba(0, 240, 255, 0.18)"),
-      read("--heat-2", "rgba(0, 240, 255, 0.34)"),
-      read("--heat-3", "rgba(176, 38, 255, 0.46)"),
-      read("--heat-4", "rgba(176, 38, 255, 0.78)"),
+      read("--heat-1", "rgba(76, 59, 37, 0.55)"),
+      read("--heat-2", "rgba(118, 88, 52, 0.64)"),
+      read("--heat-3", "rgba(162, 124, 74, 0.74)"),
+      read("--heat-4", "rgba(215, 185, 138, 0.88)"),
     ],
-    tooltipBorder: read("--tooltip-border", "rgba(176, 38, 255, 0.45)"),
-    axisPointer: read("--axis-pointer", "rgba(0, 240, 255, 0.7)"),
+    tooltipBorder: read("--tooltip-border", "rgba(184, 156, 122, 0.45)"),
+    axisPointer: read("--axis-pointer", "rgba(227, 200, 154, 0.72)"),
   };
 }
 
@@ -2428,7 +2411,7 @@ function playThemeSwitchMotion() {
 
 function applyTheme(theme, options) {
   const opts = options || {};
-  const currentTheme = normalizeTheme(document.documentElement.dataset.theme || "neon");
+  const currentTheme = normalizeTheme(document.documentElement.dataset.theme || "bronze");
   const nextTheme = normalizeTheme(theme);
   document.documentElement.dataset.theme = nextTheme;
   updateThemeDotToggle(nextTheme);
@@ -3665,10 +3648,12 @@ function resolvePricing(model) {
   const baseName = resolveAlias(base);
   if (pricing[baseName]) return pricing[baseName];
 
-  for (const key of Object.keys(pricing)) {
+  for (const key of Object.keys(pricing).sort((left, right) => right.length - left.length)) {
     if (baseName.startsWith(`${key}-`)) return pricing[key];
   }
 
+  if (baseName.includes("gpt-5.5")) return pricing["gpt-5.5"] || pricing["gpt-5"] || null;
+  if (baseName.includes("gpt-5.4")) return pricing["gpt-5.4"] || pricing["gpt-5"] || null;
   if (baseName.includes("gpt-5.3")) return pricing["gpt-5.2"] || pricing["gpt-5"] || null;
   if (baseName.includes("gpt-5.2")) return pricing["gpt-5.2"] || null;
   if (baseName.includes("gpt-5.1")) return pricing["gpt-5.1"] || null;
@@ -3782,6 +3767,7 @@ function mergeHourlyDailyInto(target, data) {
     }
   });
 }
+
 
 function buildMergedData(datasets) {
   const dayMap = {};
@@ -4078,8 +4064,9 @@ function setupRangeControls() {
   });
 }
 
+
 function setupThemeToggle() {
-  applyTheme("bronze", { persist: false, refreshChart: false, animate: false });
+  applyTheme(readStoredTheme(), { persist: false, refreshChart: false, animate: false });
 }
 
 function setupCustomDatePicker() {

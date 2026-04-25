@@ -8,6 +8,8 @@ from typing import Any
 
 from .legacy_report import FIELDS, default_codex_root, iter_token_deltas, normalize_model_name, to_local
 
+SYNC_STATE_VERSION = 2
+
 
 def default_sessions_root(codex_home: str | Path | None = None) -> Path:
     if codex_home:
@@ -91,8 +93,50 @@ def normalize_delta(delta: dict[str, int]) -> dict[str, int]:
     return out
 
 
+def normalize_project_dir(cwd: str | None) -> str:
+    raw = str(cwd or "").strip()
+    if not raw:
+        return ""
+    path = Path(raw).expanduser()
+    parts = path.parts
+    for index, part in enumerate(parts[:-1]):
+        next_part = parts[index + 1] if index + 1 < len(parts) else ""
+        if next_part != "worktrees":
+            continue
+        if part == ".git" or part.startswith(".codex"):
+            base = Path(parts[0])
+            for item in parts[1:index]:
+                base /= item
+            return base.as_posix()
+    return path.as_posix()
+
+
+def extract_session_project_dir(path: Path) -> str:
+    try:
+        handle = path.open("r", encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    with handle:
+        for line_number, line in enumerate(handle, start=1):
+            if line_number > 64:
+                break
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            payload = obj.get("payload") or {}
+            cwd = payload.get("cwd")
+            if isinstance(cwd, str) and cwd.strip():
+                return normalize_project_dir(cwd)
+    return ""
+
+
 def extract_events_from_file(path: Path, session_root: Path, source_id: str, hostname: str) -> list[dict[str, Any]]:
     session_id = session_id_from_path(path, session_root)
+    project_dir = extract_session_project_dir(path)
     events: list[dict[str, Any]] = []
     for sequence_index, payload in enumerate(iter_token_deltas(path) or [], start=1):
         ts, delta, model = payload
@@ -115,6 +159,7 @@ def extract_events_from_file(path: Path, session_root: Path, source_id: str, hos
                 "output_tokens": normalized["output_tokens"],
                 "reasoning_output_tokens": normalized["reasoning_output_tokens"],
                 "total_tokens": normalized["total_tokens"],
+                "project_dir": project_dir,
                 "hostname": hostname,
             }
         )
@@ -127,7 +172,8 @@ def scan_sync_events(
     hostname: str,
     previous_state: dict[str, Any] | None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, int]]:
-    previous_files = (previous_state or {}).get("files") or {}
+    prior_state = previous_state or {}
+    previous_files = (prior_state.get("files") or {}) if prior_state.get("schema_version") == SYNC_STATE_VERSION else {}
     current_files: dict[str, Any] = {}
     events: list[dict[str, Any]] = []
     scanned = 0
@@ -144,6 +190,7 @@ def scan_sync_events(
         events.extend(extract_events_from_file(path, session_root, source_id, hostname))
 
     next_state = {
+        "schema_version": SYNC_STATE_VERSION,
         "source_id": source_id,
         "hostname": hostname,
         "session_root": str(session_root),
