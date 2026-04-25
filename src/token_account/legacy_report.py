@@ -708,10 +708,16 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Codex Token Usage</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.css">
+<script defer src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/Tooltip.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/LegendLite.min.js"></script>
 <style>
-@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
-
 :root {
   --background: #0a0a0a;
   --surface: #111113;
@@ -1994,11 +2000,6 @@ html.theme-switching .chart {
 </head>
 <body>
 <div class="page">
-  <div class="hero">
-    <div class="title">
-      <h1 data-i18n="title">Codex Token Usage</h1>
-    </div>
-  </div>
   <div class="range-controls">
     <div class="range-fields">
       <button type="button" id="range-date-trigger" class="range-date-trigger" aria-haspopup="dialog" aria-expanded="false">
@@ -2067,12 +2068,6 @@ html.theme-switching .chart {
   </div>
 
 </div>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/Tooltip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/LegendLite.min.js"></script>
 <script>
 const DATA = __INITIAL_DATA_JSON__;
 const I18N = __I18N_JSON__;
@@ -2932,7 +2927,7 @@ async function syncLatestData() {
   if (syncInFlight) return false;
   syncInFlight = true;
   try {
-    const response = await fetch(`data.json?ts=${Date.now()}`, { cache: "no-store" });
+    const response = await fetch("data.json", { cache: "default" });
     if (!response.ok) return false;
     const incoming = await response.json();
     const incomingStamp = getDataStamp(incoming);
