@@ -678,36 +678,7 @@ def fmt_money(value: Decimal | None) -> str:
 
 
 def bootstrap_client_data(data: dict) -> dict:
-    return {
-        "range": {"start": "", "end": "", "days": 0},
-        "available_range": data.get("available_range", {"start": "", "end": ""}),
-        "daily": {
-            "labels": [],
-            "total": [],
-            "input": [],
-            "output": [],
-            "reasoning": [],
-            "cached": [],
-        },
-        "daily_models": {},
-        "hourly": {"labels": [], "total": []},
-        "hourly_daily": {},
-        "hourly_buckets": {},
-        "session_spans": [],
-        "events": [],
-        "daily_costs": {},
-        "daily_directories": {},
-        "recent_events": [],
-        "pricing": {"prices": {}, "aliases": {}},
-        "sources": [],
-        "meta": {
-            "generated_at": "",
-            "source_path": "",
-            "source_count": 0,
-            "last_synced_at": "",
-            "data_stamp": "",
-        },
-    }
+    return data
 
 
 def render_html(data: dict, summary: dict, empty: bool) -> str:
@@ -1366,8 +1337,8 @@ html.theme-switching .chart {
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
-  animation: rise 0.8s ease both;
-  animation-delay: var(--delay, 0s);
+  animation: rise 0.42s var(--swift-ease-standard) both;
+  animation-delay: 0s;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1533,8 +1504,8 @@ html.theme-switching .chart {
   border-radius: 20px;
   padding: 18px;
   box-shadow: var(--shadow);
-  animation: rise 0.9s ease both;
-  animation-delay: var(--delay, 0s);
+  animation: rise 0.46s var(--swift-ease-standard) both;
+  animation-delay: 0s;
 }
 
 .panel h3 {
@@ -4264,7 +4235,7 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   if (endInput) setRangeInputValue(endInput, endISO);
   updateRangeDateButton(startISO, endISO, { animate: rangeChanged });
   updateQuickRangeState(startISO, endISO, { animate: false });
-  const animateMetrics = true;
+  const animateMetrics = hasInitialMetricsRender && opts.animateMetrics !== false;
   setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, {
     redraw: rangeChanged || opts.forceRedraw,
@@ -4532,29 +4503,52 @@ function setupDailyChartZoom() {
   // 线图缩放已移除，保留空函数避免初始化流程分叉。
 }
 
-window.addEventListener("load", async () => {
+function hasInitialDashboardData() {
+  return Boolean(
+    DATA.range &&
+    DATA.range.start &&
+    DATA.range.end &&
+    DATA.daily &&
+    Array.isArray(DATA.daily.labels) &&
+    DATA.daily.labels.length
+  );
+}
+
+function renderInitialDashboard() {
+  const defaultRange = preferredDashboardRange(
+    (DATA.range && DATA.range.start) || "",
+    (DATA.range && DATA.range.end) || ""
+  );
+  if (defaultRange.start && defaultRange.end) {
+    applyRange(defaultRange.start, defaultRange.end, { forceRedraw: true });
+  }
+}
+
+function bootDashboard() {
   applyI18n("en", { animate: false, source: "boot" });
   rebuildHourEventMap();
   setupThemeToggle();
   window.requestAnimationFrame(() => {
     document.documentElement.classList.add("theme-ready");
   });
-  const initialLoaded = await syncLatestData();
   setupRangeControls();
   setupDirectoryPagination();
   setupCustomDatePicker();
   setupDailyChartZoom();
-  setupAutoSync({ skipInitial: true });
-  if (!initialLoaded) {
-    const defaultRange = preferredDashboardRange(
-      (DATA.range && DATA.range.start) || "",
-      (DATA.range && DATA.range.end) || ""
-    );
-    if (defaultRange.start && defaultRange.end) {
-      applyRange(defaultRange.start, defaultRange.end);
-    }
+  if (hasInitialDashboardData()) {
+    renderInitialDashboard();
+    setupAutoSync({ skipInitial: true });
+    window.setTimeout(syncLatestData, 1200);
+  } else {
+    setupAutoSync({ skipInitial: false });
   }
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootDashboard, { once: true });
+} else {
+  bootDashboard();
+}
 </script>
 </body>
 </html>
