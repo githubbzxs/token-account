@@ -3884,7 +3884,7 @@ function formatMoneyUSD(value) {
 function directoryDisplayName(path) {
   const raw = String(path || "").trim();
   if (!raw) return labelFor("directory_unknown");
-  const normalized = raw.replace(/\\/g, "/").replace(/\\/+$/, "");
+  const normalized = raw.replace(/\\\\/g, "/").replace(/\\/+$/, "");
   const segments = normalized.split("/").filter(Boolean);
   return segments[segments.length - 1] || normalized || labelFor("directory_unknown");
 }
