@@ -1201,9 +1201,13 @@ html.theme-switching .chart {
   box-sizing: border-box;
   padding: 2px;
   border-radius: 999px;
-  border: 1px solid var(--stroke);
-  background: rgba(44, 46, 56, 0.92);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(118, 118, 128, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
   width: 100%;
   height: var(--range-selector-height);
   max-width: none;
@@ -1217,19 +1221,22 @@ html.theme-switching .chart {
   left: 0;
   width: 0;
   border-radius: 999px;
-  background: linear-gradient(120deg, var(--segment-start), var(--segment-end));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04)),
+    rgba(var(--accent-rgb), 0.82);
   box-shadow:
-    0 8px 18px rgba(0, 0, 0, 0.18),
-    0 1px 0 rgba(255, 255, 255, 0.16) inset,
-    0 -1px 0 rgba(17, 24, 39, 0.12) inset;
+    0 6px 16px rgba(0, 0, 0, 0.16),
+    0 0 0 0.5px rgba(255, 255, 255, 0.16) inset,
+    0 1px 0 rgba(255, 255, 255, 0.18) inset;
   opacity: 0;
   transform: translate3d(0, 0, 0);
   transform-origin: center center;
-  will-change: transform, opacity, box-shadow;
+  will-change: transform, width, opacity, box-shadow;
   transition:
-    transform 1s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 560ms cubic-bezier(0.25, 1, 0.5, 1),
+    width 560ms cubic-bezier(0.25, 1, 0.5, 1),
     opacity 0.28s ease,
-    box-shadow 1s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow 560ms cubic-bezier(0.25, 1, 0.5, 1);
   z-index: 0;
 }
 
@@ -1244,9 +1251,9 @@ html.theme-switching .chart {
 
 .range-segmented.is-animating .range-segmented-slider {
   box-shadow:
-    0 12px 24px rgba(0, 0, 0, 0.22),
-    0 1px 0 rgba(255, 255, 255, 0.18) inset,
-    0 -1px 0 rgba(17, 24, 39, 0.14) inset;
+    0 8px 20px rgba(0, 0, 0, 0.18),
+    0 0 0 0.5px rgba(255, 255, 255, 0.18) inset,
+    0 1px 0 rgba(255, 255, 255, 0.20) inset;
 }
 
 .range-segmented button {
@@ -1273,9 +1280,9 @@ html.theme-switching .chart {
   overflow: hidden;
   transform: translateY(0);
   transition:
-    color 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.28s cubic-bezier(0.25, 1, 0.5, 1),
     opacity 0.26s ease,
-    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transform 0.34s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .range-segmented button:hover {
@@ -1289,7 +1296,7 @@ html.theme-switching .chart {
 
 .range-segmented button.is-active {
   color: #ffffff;
-  transform: translateY(-0.5px);
+  transform: translateY(0) scale(1.01);
 }
 
 .range-segmented.is-animating button:not(.is-active) {
@@ -1297,7 +1304,7 @@ html.theme-switching .chart {
 }
 
 .range-segmented.is-animating button.is-active {
-  animation: segmentedLabelSettle 1s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: segmentedLabelSettle 520ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .range-actions {
@@ -1429,58 +1436,15 @@ html.theme-switching .chart {
 }
 
 .text-fade-anim,
-.metric-value-anim,
 .i18n-switch-anim {
-  animation: textFadeOnly 360ms ease both;
+  animation: textFadeOnly 300ms ease both;
   will-change: opacity;
 }
 
-.metric-roll {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-  min-height: 1em;
-  line-height: 1;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-}
-
-.metric-roll-static {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: min-content;
-}
-
-.metric-roll-column {
-  display: inline-flex;
-  align-items: flex-start;
-  justify-content: center;
-  width: 0.66em;
-  height: 1em;
-  overflow: hidden;
-  mask-image: none;
-  -webkit-mask-image: none;
-}
-
-.metric-roll-track {
-  display: flex;
-  flex-direction: column;
-  will-change: transform;
-  transform: translateY(calc(var(--roll-from, 0) * -1em));
-}
-
-.metric-roll-track.is-animating {
-  transition: transform 820ms cubic-bezier(0.2, 0.86, 0.22, 1);
-  transform: translateY(calc(var(--roll-to, 0) * -1em));
-}
-
-.metric-roll-cell {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 1em;
+.metric-value-anim {
+  animation: metricValueSettle 520ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  transform-origin: center center;
+  will-change: opacity, transform, filter;
 }
 
 .card .sub {
@@ -2060,6 +2024,24 @@ html.theme-switching .chart {
   }
 }
 
+@keyframes metricValueSettle {
+  0% {
+    opacity: 0.68;
+    transform: translate3d(0, 2px, 0) scale(0.985);
+    filter: blur(0.35px);
+  }
+  56% {
+    opacity: 1;
+    transform: translate3d(0, -0.5px, 0) scale(1.006);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
 @keyframes chartLineDraw {
   0% {
     stroke-dashoffset: var(--line-length);
@@ -2090,19 +2072,15 @@ html.theme-switching .chart {
 
 @keyframes segmentedLabelSettle {
   0% {
-    transform: translateY(1px) scale(0.982);
-    opacity: 0.78;
+    transform: scale(0.985);
+    opacity: 0.82;
   }
-  34% {
-    transform: translateY(0.2px) scale(0.992);
-    opacity: 0.92;
-  }
-  72% {
-    transform: translateY(-0.85px) scale(1.01);
+  52% {
+    transform: scale(1.018);
     opacity: 1;
   }
   100% {
-    transform: translateY(-0.5px) scale(1);
+    transform: scale(1.01);
     opacity: 1;
   }
 }
@@ -2110,7 +2088,6 @@ html.theme-switching .chart {
 @media (prefers-reduced-motion: reduce) {
   .text-fade-anim,
   .metric-value-anim,
-  .metric-roll-track.is-animating,
   .i18n-switch-anim,
   .chart-line-redraw,
   html.theme-switching body,
@@ -2306,7 +2283,6 @@ function setAnimatedText(el, text, options) {
     }
     return false;
   }
-  el.classList.remove("metric-roll");
   el.textContent = nextText;
   el.dataset.animatedText = nextText;
   el.dataset.metricText = nextText;
@@ -2320,110 +2296,14 @@ function setAnimatedText(el, text, options) {
   return true;
 }
 
-function canUseRollingNumber(text) {
-  return /^[0-9.,%$KMB+\\- /:]+$/.test(String(text || ""));
-}
-
-function canRollDigits(prevText, nextText) {
-  const prev = String(prevText || "");
-  const next = String(nextText || "");
-  if (!prev || !next) return false;
-  if (!canUseRollingNumber(prev) || !canUseRollingNumber(next)) return false;
-  return /[0-9]/.test(prev) && /[0-9]/.test(next);
-}
-
-function compareRollDirection(prevText, nextText) {
-  const prevDigits = String(prevText || "").replace(/[^0-9]/g, "").replace(/^0+/, "") || "0";
-  const nextDigits = String(nextText || "").replace(/[^0-9]/g, "").replace(/^0+/, "") || "0";
-  if (prevDigits.length !== nextDigits.length) {
-    return nextDigits.length > prevDigits.length ? 1 : -1;
-  }
-  return nextDigits >= prevDigits ? 1 : -1;
-}
-
-function renderRollingDigits(el, prevText, nextText, syncAriaLabel) {
-  const direction = compareRollDirection(prevText, nextText);
-  const prevDigits = String(prevText || "").match(/[0-9]/g) || [];
-  const nextDigitChars = String(nextText || "").match(/[0-9]/g) || [];
-  let nextDigitIndex = 0;
-  const fragment = document.createDocumentFragment();
-  for (let i = 0; i < nextText.length; i += 1) {
-    const char = nextText[i];
-    if (!/[0-9]/.test(char)) {
-      const staticSpan = document.createElement("span");
-      staticSpan.className = "metric-roll-static";
-      staticSpan.textContent = char === " " ? "\u00A0" : char;
-      fragment.appendChild(staticSpan);
-      continue;
-    }
-
-    const reverseIndex = nextDigitChars.length - nextDigitIndex - 1;
-    const prevDigitChar = prevDigits[prevDigits.length - reverseIndex - 1] || "0";
-    const prevDigit = Number(prevDigitChar || 0);
-    const nextDigit = Number(char);
-    const delta = direction >= 0
-      ? ((nextDigit - prevDigit + 10) % 10)
-      : -((prevDigit - nextDigit + 10) % 10);
-    const fromIndex = 10 + prevDigit;
-    const toIndex = fromIndex + delta;
-    nextDigitIndex += 1;
-
-    const column = document.createElement("span");
-    column.className = "metric-roll-column";
-    const track = document.createElement("span");
-    track.className = "metric-roll-track";
-    track.style.setProperty("--roll-from", String(fromIndex));
-    track.style.setProperty("--roll-to", String(toIndex));
-    track.style.transitionDelay = `${Math.max(0, nextText.length - i - 1) * 8}ms`;
-
-    for (let reelIndex = 0; reelIndex < 30; reelIndex += 1) {
-      const cell = document.createElement("span");
-      cell.className = "metric-roll-cell";
-      cell.textContent = String(reelIndex % 10);
-      track.appendChild(cell);
-    }
-
-    column.appendChild(track);
-    fragment.appendChild(column);
-  }
-
-  el.textContent = "";
-  el.classList.add("metric-roll");
-  el.appendChild(fragment);
-  el.dataset.animatedText = nextText;
-  el.dataset.metricText = nextText;
-  if (syncAriaLabel) {
-    el.setAttribute("aria-label", nextText);
-  }
-  if (prefersReducedMotion()) {
-    return true;
-  }
-  requestAnimationFrame(() => {
-    el.querySelectorAll(".metric-roll-track").forEach((track) => {
-      track.classList.add("is-animating");
-    });
-  });
-  return true;
-}
-
 function setAnimatedNumericText(el, text, options) {
   if (!el) return false;
   const opts = options || {};
   const nextText = String(text ?? "");
-  const prevText = el.dataset.animatedText != null
-    ? el.dataset.animatedText
-    : (el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || ""));
-  const shouldAnimate = opts.animate !== false;
-  if (prevText === nextText) {
-    if (opts.syncAriaLabel) {
-      el.setAttribute("aria-label", nextText);
-    }
-    return false;
-  }
-  if (shouldAnimate && canRollDigits(prevText, nextText)) {
-    return renderRollingDigits(el, prevText, nextText, opts.syncAriaLabel);
-  }
-  return setAnimatedText(el, nextText, opts);
+  return setAnimatedText(el, nextText, {
+    ...opts,
+    className: opts.className || "metric-value-anim",
+  });
 }
 
 function updateLangToggleState() {
@@ -2721,38 +2601,37 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   }
   clearQuickRangeSliderMotion(segmented, slider);
   const movingRight = toState.x >= fromState.x;
-  const overshoot = Math.min(3, Math.max(1.25, travel * 0.024));
-  const midpointX = movingRight
-    ? Math.min(toState.x + overshoot, fromState.x + travel * 0.78)
-    : Math.max(toState.x - overshoot, fromState.x - travel * 0.78);
-  const animatedWidth = Math.max(fromState.width, toState.width);
-  applyQuickRangeSliderState(slider, {
-    x: fromState.x,
-    width: animatedWidth,
-    visible: true,
-  });
-  const duration = 1000;
+  const settleOffset = Math.min(1.6, Math.max(0.4, travel * 0.012));
+  const settleX = toState.x + (movingRight ? settleOffset : -settleOffset);
+  const duration = Math.min(620, Math.max(420, 420 + travel * 1.1));
+  applyQuickRangeSliderState(slider, fromState);
   segmented.classList.add("is-animating");
   segmented.dataset.motionDirection = movingRight ? "right" : "left";
   slider.classList.add("is-animating");
   const animation = slider.animate(
     [
       {
-        transform: `translate3d(${fromState.x.toFixed(2)}px, 0, 0) scaleY(0.988)`,
+        transform: `translate3d(${fromState.x.toFixed(2)}px, 0, 0)`,
+        width: `${fromState.width.toFixed(2)}px`,
+        opacity: 1,
         offset: 0,
       },
       {
-        transform: `translate3d(${midpointX.toFixed(2)}px, 0, 0) scaleY(1.004)`,
-        offset: 0.74,
+        transform: `translate3d(${settleX.toFixed(2)}px, 0, 0)`,
+        width: `${toState.width.toFixed(2)}px`,
+        opacity: 1,
+        offset: 0.82,
       },
       {
-        transform: `translate3d(${toState.x.toFixed(2)}px, 0, 0) scaleY(1)`,
+        transform: `translate3d(${toState.x.toFixed(2)}px, 0, 0)`,
+        width: `${toState.width.toFixed(2)}px`,
+        opacity: 1,
         offset: 1,
       },
     ],
     {
       duration,
-      easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+      easing: "cubic-bezier(0.25, 1, 0.5, 1)",
       fill: "both",
     }
   );
@@ -2764,7 +2643,7 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     clearQuickRangeSliderMotion(segmented, slider);
   };
   animation.finished.then(finish).catch(() => {});
-  quickRangeSliderCleanupTimer = window.setTimeout(finish, duration + 60);
+  quickRangeSliderCleanupTimer = window.setTimeout(finish, duration + 80);
 }
 
 function updateQuickRangeSlider(options) {
