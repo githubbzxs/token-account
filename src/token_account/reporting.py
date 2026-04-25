@@ -3,9 +3,10 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
+from .log_parser import default_sessions_root, extract_session_project_dir
 from .legacy_report import (
     FIELDS,
     build_day_series,
@@ -48,6 +49,29 @@ def available_range_from_rows(rows: list[dict[str, Any]]) -> dict[str, str]:
         "end": end,
     }
 
+
+def directory_label_from_row(
+    row: dict[str, Any],
+    *,
+    session_root: Path | None,
+    session_cache: dict[str, str],
+) -> str:
+    explicit = str(row.get("project_dir") or "").strip()
+    if explicit:
+        return explicit
+    session_id = str(row.get("session_id") or "").strip()
+    if session_id:
+        cached = session_cache.get(session_id)
+        if cached is not None:
+            return cached
+        if session_root is not None:
+            session_path = session_root / PurePosixPath(session_id)
+            if session_path.exists():
+                cached = extract_session_project_dir(session_path)
+                if cached:
+                    session_cache[session_id] = cached
+                    return cached
+    return ""
 
 
 def collect_usage_from_rows(
@@ -169,6 +193,9 @@ def build_report_document(
     usage = collect_usage_from_rows(rows, since=since, until=until)
     active_days = usage["active_days"]
     empty = not active_days
+    session_root = default_sessions_root()
+    session_root = session_root if session_root.exists() else None
+    session_project_cache: dict[str, str] = {}
 
     normalized_available_range = available_range or available_range_from_rows(rows)
     default_start = parse_date(normalized_available_range.get("start")) if normalized_available_range.get("start") else None
@@ -193,6 +220,7 @@ def build_report_document(
 
     total_cost = Decimal("0")
     daily_costs: dict[str, float] = {}
+    daily_directories = defaultdict(lambda: defaultdict(lambda: {"total_tokens": 0, "total_cost": 0.0}))
     for row in rows:
         ts = to_report_timezone(parse_iso(row.get("ts")))
         if ts is None:
@@ -207,6 +235,17 @@ def build_report_document(
             total_cost += cost
             day_key = day.isoformat()
             daily_costs[day_key] = daily_costs.get(day_key, 0.0) + float(cost)
+        directory_label = directory_label_from_row(
+            row,
+            session_root=session_root,
+            session_cache=session_project_cache,
+        )
+        if directory_label:
+            day_key = day.isoformat()
+            record = daily_directories[day_key][directory_label]
+            record["total_tokens"] += int(row.get("total_tokens", 0) or 0)
+            if cost is not None:
+                record["total_cost"] += float(cost)
 
     daily_models_serialized: dict[str, Any] = {}
     for day, model_map in usage["daily_models"].items():
@@ -225,6 +264,17 @@ def build_report_document(
         day.isoformat(): values
         for day, values in usage["hourly_daily"].items()
     }
+    daily_directories_serialized = {
+        day_key: {
+            directory: {
+                "total_tokens": entry["total_tokens"],
+                "total_cost": entry["total_cost"],
+            }
+            for directory, entry in sorted(directory_map.items())
+        }
+        for day_key, directory_map in daily_directories.items()
+    }
+
     last_synced_at = ""
     if sources:
         candidates = [item.get("last_sync_at") or item.get("last_seen_at") for item in sources if item.get("last_sync_at") or item.get("last_seen_at")]
@@ -253,6 +303,7 @@ def build_report_document(
         "hourly_buckets": dict(usage["hourly_buckets"]),
         "session_spans": usage["session_spans"],
         "daily_costs": daily_costs,
+        "daily_directories": daily_directories_serialized,
         "recent_events": usage["recent_events"],
         "pricing": _pricing_payload(prices, aliases),
         "sources": sources,

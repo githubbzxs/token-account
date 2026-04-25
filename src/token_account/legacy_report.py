@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 from __future__ import annotations
 
 import argparse
@@ -66,6 +66,12 @@ I18N = {
         "top_days": "高峰日期",
         "top_spikes": "尖峰时刻",
         "model_table": "模型明细",
+        "directory_tokens": "Token",
+        "directory_cost": "花费",
+        "directory_prev": "上一页",
+        "directory_next": "下一页",
+        "directory_page": "第 {current} / {total} 页",
+        "directory_unknown": "未识别目录",
         "table_model": "模型",
         "table_tokens": "总 token",
         "table_input": "输入",
@@ -134,6 +140,12 @@ I18N = {
         "top_days": "Top days",
         "top_spikes": "Top spikes",
         "model_table": "Model breakdown",
+        "directory_tokens": "Tokens",
+        "directory_cost": "Cost",
+        "directory_prev": "Prev",
+        "directory_next": "Next",
+        "directory_page": "Page {current} / {total}",
+        "directory_unknown": "Unknown directory",
         "table_model": "Model",
         "table_tokens": "Total tokens",
         "table_input": "Input",
@@ -684,6 +696,7 @@ def bootstrap_client_data(data: dict) -> dict:
         "session_spans": [],
         "events": [],
         "daily_costs": {},
+        "daily_directories": {},
         "recent_events": [],
         "pricing": {"prices": {}, "aliases": {}},
         "sources": [],
@@ -708,16 +721,10 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Codex Token Usage</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.css">
-<script defer src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/Tooltip.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/LegendLite.min.js"></script>
 <style>
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
+
 :root {
   --background: #0a0a0a;
   --surface: #111113;
@@ -1556,6 +1563,129 @@ html.theme-switching .chart {
   font-size: 12px;
 }
 
+.directory-panel {
+  margin-top: var(--gap-lg);
+}
+
+.directory-list {
+  display: grid;
+  gap: 10px;
+}
+
+.directory-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) minmax(132px, auto) minmax(108px, auto);
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.03), transparent 56%),
+    rgba(255, 255, 255, 0.02);
+}
+
+.directory-row-empty {
+  min-height: 120px;
+  place-items: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.directory-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.24), rgba(var(--accent-cyan-rgb), 0.18));
+  color: #f8fafc;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.directory-meta {
+  min-width: 0;
+}
+
+.directory-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.directory-path {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.directory-metric {
+  justify-self: end;
+  min-width: 0;
+  text-align: right;
+}
+
+.directory-metric-label {
+  font-size: 11px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.directory-metric-value {
+  margin-top: 5px;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+.directory-pagination {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.directory-page-text {
+  color: var(--muted);
+  font-size: 12px;
+  min-width: 76px;
+  text-align: center;
+}
+
+.directory-page-btn {
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e4e7;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.directory-page-btn:hover:not(:disabled) {
+  border-color: rgba(var(--accent-cyan-rgb), 0.5);
+  background: rgba(var(--accent-cyan-rgb), 0.15);
+}
+
+.directory-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 .panel.wide {
   grid-column: span 2;
@@ -1857,6 +1987,13 @@ html.theme-switching .chart {
   .heatmap-legend {
     justify-content: flex-start;
   }
+  .directory-row {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+  .directory-metric {
+    justify-self: stretch;
+    text-align: left;
+  }
 }
 
 @media (max-width: 1280px) {
@@ -1893,6 +2030,23 @@ html.theme-switching .chart {
   .summary-card-inline {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px 14px;
+  }
+  .directory-row {
+    padding: 14px;
+    gap: 12px;
+  }
+  .directory-rank {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+  .directory-pagination {
+    justify-content: space-between;
+  }
+  .directory-page-text {
+    order: -1;
+    width: 100%;
   }
 }
 
@@ -2000,6 +2154,11 @@ html.theme-switching .chart {
 </head>
 <body>
 <div class="page">
+  <div class="hero">
+    <div class="title">
+      <h1 data-i18n="title">Codex Token Usage</h1>
+    </div>
+  </div>
   <div class="range-controls">
     <div class="range-fields">
       <button type="button" id="range-date-trigger" class="range-date-trigger" aria-haspopup="dialog" aria-expanded="false">
@@ -2066,8 +2225,22 @@ html.theme-switching .chart {
       </div>
     </div>
   </div>
+  <div class="panel directory-panel" style="--delay:0.4s">
+    <div id="directory-list" class="directory-list"></div>
+    <div class="directory-pagination">
+      <button type="button" id="directory-prev" class="directory-page-btn" data-i18n="directory_prev">Prev</button>
+      <div id="directory-page" class="directory-page-text">Page 1 / 1</div>
+      <button type="button" id="directory-next" class="directory-page-btn" data-i18n="directory_next">Next</button>
+    </div>
+  </div>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/Tooltip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/LegendLite.min.js"></script>
 <script>
 const DATA = __INITIAL_DATA_JSON__;
 const I18N = __I18N_JSON__;
@@ -2813,6 +2986,9 @@ function applyI18n(lang, options) {
     hasContributionHeatmapRender = false;
     renderContributionHeatmap();
   }
+  if (currentRange.start && currentRange.end) {
+    renderDirectoryLeaderboard(currentRange.start, currentRange.end);
+  }
 }
 
 function labelFor(key) {
@@ -2900,6 +3076,7 @@ function applyLatestData(nextData) {
   DATA.session_spans = nextData.session_spans || [];
   DATA.events = nextData.events || [];
   DATA.daily_costs = nextData.daily_costs || {};
+  DATA.daily_directories = nextData.daily_directories || {};
   DATA.recent_events = nextData.recent_events || [];
   DATA.pricing = nextData.pricing || DATA.pricing;
   DATA.meta = nextData.meta || {};
@@ -2927,7 +3104,7 @@ async function syncLatestData() {
   if (syncInFlight) return false;
   syncInFlight = true;
   try {
-    const response = await fetch("data.json", { cache: "default" });
+    const response = await fetch(`data.json?ts=${Date.now()}`, { cache: "no-store" });
     if (!response.ok) return false;
     const incoming = await response.json();
     const incomingStamp = getDataStamp(incoming);
@@ -3158,6 +3335,7 @@ let currentRange = {
   start: "",
   end: "",
 };
+let directoryLeaderboardPage = 1;
 let hasInitialMetricsRender = false;
 let hasContributionHeatmapRender = false;
 const HOUR_MS = 3_600_000;
@@ -3165,6 +3343,8 @@ const REPORT_TIMEZONE_OFFSET_MINUTES = 8 * 60;
 const MAX_CHART_POINTS = 1600;
 const CONTRIBUTION_DAYS = 371;
 const DEFAULT_QUICK_RANGE_PRESET = "1";
+const DIRECTORY_PAGE_SIZE = 5;
+const DIRECTORY_LEADERBOARD_LIMIT = 30;
 let hourEventMap = new Map();
 
 function parseHourMs(ts) {
@@ -3701,6 +3881,106 @@ function formatMoneyUSD(value) {
   return `$${value.toFixed(4)}`;
 }
 
+function directoryDisplayName(path) {
+  const raw = String(path || "").trim();
+  if (!raw) return labelFor("directory_unknown");
+  const normalized = raw.replace(/\\/g, "/").replace(/\\/+$/, "");
+  const segments = normalized.split("/").filter(Boolean);
+  return segments[segments.length - 1] || normalized || labelFor("directory_unknown");
+}
+
+function formatDirectoryPageText(current, total) {
+  return formatI18n("directory_page", {
+    current: String(current),
+    total: String(total),
+  });
+}
+
+function collectDirectoryLeaderboard(startISO, endISO) {
+  const aggregates = new Map();
+  const dailyDirectories = DATA.daily_directories || {};
+  Object.keys(dailyDirectories).forEach((day) => {
+    if (!day || day < startISO || day > endISO) return;
+    const directoryMap = dailyDirectories[day] || {};
+    Object.keys(directoryMap).forEach((path) => {
+      const record = directoryMap[path] || {};
+      const key = String(path || "").trim();
+      const entry = aggregates.get(key) || {
+        path: key,
+        total_tokens: 0,
+        total_cost: 0,
+      };
+      entry.total_tokens += Number(record.total_tokens || 0);
+      entry.total_cost += Number(record.total_cost || 0);
+      aggregates.set(key, entry);
+    });
+  });
+  return Array.from(aggregates.values()).sort((left, right) => {
+    if (right.total_tokens !== left.total_tokens) {
+      return right.total_tokens - left.total_tokens;
+    }
+    if (right.total_cost !== left.total_cost) {
+      return right.total_cost - left.total_cost;
+    }
+    return left.path.localeCompare(right.path);
+  }).slice(0, DIRECTORY_LEADERBOARD_LIMIT);
+}
+
+function updateDirectoryPagination(totalItems) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / DIRECTORY_PAGE_SIZE));
+  directoryLeaderboardPage = Math.min(Math.max(1, directoryLeaderboardPage), totalPages);
+  const prevBtn = document.getElementById("directory-prev");
+  const nextBtn = document.getElementById("directory-next");
+  const pageText = document.getElementById("directory-page");
+  if (prevBtn) prevBtn.disabled = directoryLeaderboardPage <= 1;
+  if (nextBtn) nextBtn.disabled = directoryLeaderboardPage >= totalPages;
+  if (pageText) {
+    pageText.textContent = formatDirectoryPageText(directoryLeaderboardPage, totalPages);
+  }
+}
+
+function renderDirectoryLeaderboard(startISO, endISO, options) {
+  const opts = options || {};
+  const list = document.getElementById("directory-list");
+  if (!list) return;
+  if (opts.resetPage) {
+    directoryLeaderboardPage = 1;
+  }
+  const rows = collectDirectoryLeaderboard(startISO, endISO);
+  updateDirectoryPagination(rows.length);
+  if (!rows.length) {
+    list.innerHTML = `<div class="directory-row directory-row-empty">${escapeHTML(labelFor("no_data"))}</div>`;
+    return;
+  }
+  const startIndex = (directoryLeaderboardPage - 1) * DIRECTORY_PAGE_SIZE;
+  const visibleRows = rows.slice(startIndex, startIndex + DIRECTORY_PAGE_SIZE);
+  list.innerHTML = visibleRows.map((item, index) => {
+    const rank = startIndex + index + 1;
+    const rawPath = String(item.path || "").trim();
+    const fullPath = rawPath || labelFor("directory_unknown");
+    const displayName = directoryDisplayName(fullPath);
+    const tokenText = formatNumber(item.total_tokens || 0);
+    const costText = formatMoneyUSD(item.total_cost || 0);
+    return `
+      <div class="directory-row">
+        <div class="directory-rank">#${rank}</div>
+        <div class="directory-meta">
+          <div class="directory-name">${escapeHTML(displayName)}</div>
+          <div class="directory-path" title="${escapeHTML(fullPath)}">${escapeHTML(fullPath)}</div>
+        </div>
+        <div class="directory-metric">
+          <div class="directory-metric-label">${escapeHTML(labelFor("directory_tokens"))}</div>
+          <div class="directory-metric-value">${escapeHTML(tokenText)}</div>
+        </div>
+        <div class="directory-metric">
+          <div class="directory-metric-label">${escapeHTML(labelFor("directory_cost"))}</div>
+          <div class="directory-metric-value">${escapeHTML(costText)}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
 function normalizeImportedData(raw) {
   if (!raw) return null;
   if (raw.data && raw.data.daily && raw.data.daily.labels) return raw.data;
@@ -3763,11 +4043,28 @@ function mergeHourlyDailyInto(target, data) {
   });
 }
 
+function mergeDailyDirectoriesInto(target, data) {
+  const source = data.daily_directories || {};
+  Object.keys(source).forEach(day => {
+    const directoryMap = source[day] || {};
+    const outDay = target[day] || (target[day] = {});
+    Object.keys(directoryMap).forEach(path => {
+      const record = directoryMap[path] || {};
+      const outRecord = outDay[path] || (outDay[path] = {
+        total_tokens: 0,
+        total_cost: 0,
+      });
+      outRecord.total_tokens += Number(record.total_tokens || 0);
+      outRecord.total_cost += Number(record.total_cost || 0);
+    });
+  });
+}
 
 function buildMergedData(datasets) {
   const dayMap = {};
   const dailyModels = {};
   const hourlyDaily = {};
+  const dailyDirectories = {};
   const events = [];
   const spans = [];
 
@@ -3776,6 +4073,7 @@ function buildMergedData(datasets) {
     mergeDailyInto(dayMap, data);
     mergeDailyModelsInto(dailyModels, data);
     mergeHourlyDailyInto(hourlyDaily, data);
+    mergeDailyDirectoriesInto(dailyDirectories, data);
     (data.events || []).forEach(ev => events.push(ev));
     (data.session_spans || []).forEach(span => spans.push(span));
   });
@@ -3802,6 +4100,7 @@ function buildMergedData(datasets) {
     daily,
     daily_models: dailyModels,
     hourly_daily: hourlyDaily,
+    daily_directories: dailyDirectories,
     events,
     session_spans: spans,
     range: {
@@ -3818,6 +4117,7 @@ function mergeImportedData(datasets) {
   DATA.daily = merged.daily;
   DATA.daily_models = merged.daily_models;
   DATA.hourly_daily = merged.hourly_daily;
+  DATA.daily_directories = merged.daily_directories;
   DATA.events = merged.events;
   DATA.session_spans = merged.session_spans;
   DATA.range = merged.range;
@@ -3999,6 +4299,7 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
 
   const shareCost = anyPriced ? formatMoneyUSD(totalCost) : "n/a";
   setDisplayText("value-cost", shareCost, animateMetrics);
+  renderDirectoryLeaderboard(startISO, endISO, { resetPage: rangeChanged });
   hasInitialMetricsRender = true;
 }
 
@@ -4059,6 +4360,25 @@ function setupRangeControls() {
   });
 }
 
+function setupDirectoryPagination() {
+  const prevBtn = document.getElementById("directory-prev");
+  const nextBtn = document.getElementById("directory-next");
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      if (directoryLeaderboardPage <= 1 || !currentRange.start || !currentRange.end) return;
+      directoryLeaderboardPage -= 1;
+      renderDirectoryLeaderboard(currentRange.start, currentRange.end);
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      if (!currentRange.start || !currentRange.end) return;
+      directoryLeaderboardPage += 1;
+      renderDirectoryLeaderboard(currentRange.start, currentRange.end);
+    });
+  }
+  updateDirectoryPagination(0);
+}
 
 function setupThemeToggle() {
   applyTheme(readStoredTheme(), { persist: false, refreshChart: false, animate: false });
@@ -4191,6 +4511,7 @@ window.addEventListener("load", async () => {
   });
   const initialLoaded = await syncLatestData();
   setupRangeControls();
+  setupDirectoryPagination();
   setupCustomDatePicker();
   setupDailyChartZoom();
   setupAutoSync({ skipInitial: true });
