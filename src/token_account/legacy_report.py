@@ -1652,6 +1652,11 @@ html.theme-switching .chart {
   white-space: nowrap;
 }
 
+.directory-cost-value {
+  color: var(--accent-cyan);
+  text-shadow: 0 0 14px rgba(var(--accent-cyan-rgb), 0.18);
+}
+
 .directory-pagination {
   margin-top: 8px;
   display: flex;
@@ -3368,7 +3373,7 @@ const REPORT_TIMEZONE_OFFSET_MINUTES = 8 * 60;
 const MAX_CHART_POINTS = 1600;
 const CONTRIBUTION_DAYS = 371;
 const DEFAULT_QUICK_RANGE_PRESET = "1";
-const DIRECTORY_PAGE_SIZE = 8;
+const DIRECTORY_PAGE_SIZE = 5;
 const DIRECTORY_LEADERBOARD_LIMIT = 30;
 let hourEventMap = new Map();
 
@@ -3999,7 +4004,7 @@ function renderDirectoryLeaderboard(startISO, endISO, options) {
         </div>
         <div class="directory-metric">
           <div class="directory-metric-label">${escapeHTML(labelFor("directory_cost"))}</div>
-          <div class="directory-metric-value">${escapeHTML(costText)}</div>
+          <div class="directory-metric-value directory-cost-value">${escapeHTML(costText)}</div>
         </div>
       </div>
     `;
