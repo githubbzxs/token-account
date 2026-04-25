@@ -1564,21 +1564,21 @@ html.theme-switching .chart {
 }
 
 .directory-panel {
-  margin-top: var(--gap-lg);
+  margin-top: 16px;
 }
 
 .directory-list {
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
 
 .directory-row {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) minmax(132px, auto) minmax(108px, auto);
+  grid-template-columns: 42px minmax(0, 1fr) minmax(96px, auto) minmax(80px, auto);
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  border-radius: 16px;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.03), transparent 56%),
@@ -1586,24 +1586,24 @@ html.theme-switching .chart {
 }
 
 .directory-row-empty {
-  min-height: 120px;
+  min-height: 72px;
   place-items: center;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .directory-rank {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
   background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.24), rgba(var(--accent-cyan-rgb), 0.18));
   color: #f8fafc;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 .directory-meta {
@@ -1611,21 +1611,23 @@ html.theme-switching .chart {
 }
 
 .directory-name {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text);
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  line-height: 1.22;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .directory-path {
-  margin-top: 4px;
+  margin-top: 2px;
   color: var(--muted);
-  font-size: 12px;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  font-size: 11px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .directory-metric {
@@ -1635,15 +1637,15 @@ html.theme-switching .chart {
 }
 
 .directory-metric-label {
-  font-size: 11px;
-  letter-spacing: 0.9px;
+  font-size: 10px;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--muted);
 }
 
 .directory-metric-value {
-  margin-top: 5px;
-  font-size: 18px;
+  margin-top: 2px;
+  font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
@@ -1651,18 +1653,18 @@ html.theme-switching .chart {
 }
 
 .directory-pagination {
-  margin-top: 14px;
+  margin-top: 8px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .directory-page-text {
   color: var(--muted);
-  font-size: 12px;
-  min-width: 76px;
+  font-size: 11px;
+  min-width: 70px;
   text-align: center;
 }
 
@@ -1671,8 +1673,8 @@ html.theme-switching .chart {
   background: rgba(255, 255, 255, 0.04);
   color: #e4e4e7;
   border-radius: 999px;
-  padding: 7px 14px;
-  font-size: 12px;
+  padding: 5px 10px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -1988,11 +1990,20 @@ html.theme-switching .chart {
     justify-content: flex-start;
   }
   .directory-row {
-    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-columns: 32px minmax(0, 1fr) minmax(72px, auto) minmax(64px, auto);
+    gap: 8px;
   }
   .directory-metric {
-    justify-self: stretch;
-    text-align: left;
+    justify-self: end;
+    text-align: right;
+  }
+  .directory-metric-label {
+    font-size: 9px;
+    letter-spacing: 0.4px;
+  }
+  .directory-metric-value {
+    margin-top: 1px;
+    font-size: 13px;
   }
 }
 
@@ -2032,14 +2043,28 @@ html.theme-switching .chart {
     gap: 8px 14px;
   }
   .directory-row {
-    padding: 14px;
-    gap: 12px;
+    grid-template-columns: 30px minmax(0, 1fr) minmax(54px, auto) minmax(50px, auto);
+    padding: 7px 8px;
+    gap: 6px;
   }
   .directory-rank {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    font-size: 14px;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    font-size: 11px;
+  }
+  .directory-name {
+    font-size: 12px;
+  }
+  .directory-path {
+    display: none;
+  }
+  .directory-metric-label {
+    display: none;
+  }
+  .directory-metric-value {
+    margin-top: 0;
+    font-size: 12px;
   }
   .directory-pagination {
     justify-content: space-between;
@@ -3343,7 +3368,7 @@ const REPORT_TIMEZONE_OFFSET_MINUTES = 8 * 60;
 const MAX_CHART_POINTS = 1600;
 const CONTRIBUTION_DAYS = 371;
 const DEFAULT_QUICK_RANGE_PRESET = "1";
-const DIRECTORY_PAGE_SIZE = 5;
+const DIRECTORY_PAGE_SIZE = 8;
 const DIRECTORY_LEADERBOARD_LIMIT = 30;
 let hourEventMap = new Map();
 
