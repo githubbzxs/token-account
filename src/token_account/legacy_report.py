@@ -1809,8 +1809,8 @@ html.theme-switching .chart {
   transform-origin: center;
 }
 
-.heatmap-canvas .ch-subdomain-bg.heatmap-cell-reveal {
-  animation: heatmapCellReveal 320ms var(--swift-ease-standard) both;
+.heatmap-canvas.is-heatmap-revealing .ch-subdomain-bg {
+  animation: heatmapCellReveal 260ms var(--swift-ease-standard) both;
   animation-delay: var(--heatmap-cell-delay, 0ms);
   will-change: opacity;
 }
@@ -3732,38 +3732,38 @@ function scrollContributionHeatmapToLatest(options) {
   });
 }
 
-function animateContributionHeatmapCells(chartInner, options) {
+function prepareContributionHeatmapRevealCells(chartInner, options) {
   if (!chartInner || prefersReducedMotion()) return;
   const opts = options || {};
   const cells = Array.from(chartInner.querySelectorAll(".ch-subdomain-bg"));
   if (!cells.length) return;
+  const step = opts.redraw ? 3.2 : 4;
+  const lastDelay = Math.max(0, (cells.length - 1) * step);
+  cells.forEach((cell, index) => {
+    cell.style.setProperty("--heatmap-cell-delay", `${(index * step).toFixed(1)}ms`);
+  });
+  chartInner.dataset.heatmapRevealDuration = String(Math.ceil(lastDelay + 320));
+}
+
+function replayContributionHeatmapReveal(chartInner) {
+  if (!chartInner || prefersReducedMotion()) return;
   const revealToken = ++contributionHeatmapRevealToken;
   if (contributionHeatmapRevealTimer != null) {
     window.clearTimeout(contributionHeatmapRevealTimer);
     contributionHeatmapRevealTimer = null;
   }
-  const step = opts.redraw ? 3.8 : 4.8;
-  const lastDelay = Math.max(0, (cells.length - 1) * step);
-  cells.forEach((cell, index) => {
-    cell.classList.remove("heatmap-cell-reveal");
-    cell.style.opacity = "0.12";
-    cell.style.setProperty("--heatmap-cell-delay", `${(index * step).toFixed(1)}ms`);
-  });
+  chartInner.classList.remove("is-heatmap-revealing");
+  void chartInner.offsetWidth;
   window.requestAnimationFrame(() => {
     if (revealToken !== contributionHeatmapRevealToken) return;
-    cells.forEach((cell) => {
-      cell.classList.add("heatmap-cell-reveal");
-    });
+    chartInner.classList.add("is-heatmap-revealing");
   });
+  const duration = Number(chartInner.dataset.heatmapRevealDuration || 1100);
   contributionHeatmapRevealTimer = window.setTimeout(() => {
     if (revealToken !== contributionHeatmapRevealToken) return;
-    cells.forEach((cell) => {
-      cell.classList.remove("heatmap-cell-reveal");
-      cell.style.removeProperty("--heatmap-cell-delay");
-      cell.style.opacity = "";
-    });
+    chartInner.classList.remove("is-heatmap-revealing");
     contributionHeatmapRevealTimer = null;
-  }, lastDelay + 420);
+  }, Math.max(360, duration));
 }
 
 function scheduleContributionHeatmapReveal(chartInner, options) {
@@ -3778,7 +3778,7 @@ function scheduleContributionHeatmapReveal(chartInner, options) {
     contributionHeatmapRevealScheduleTimer = null;
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        animateContributionHeatmapCells(chartInner, opts);
+        replayContributionHeatmapReveal(chartInner);
       });
     });
   }, Math.max(0, delay));
@@ -3895,7 +3895,8 @@ function renderContributionHeatmap(options) {
         await destroyContributionHeatmap(cal);
         return;
       }
-      scheduleContributionHeatmapReveal(chartInner, { redraw: opts.redraw === true, delay: 40 });
+      prepareContributionHeatmapRevealCells(chartInner, { redraw: opts.redraw === true });
+      scheduleContributionHeatmapReveal(chartInner, { delay: 40 });
       scrollContributionHeatmapToLatest({ animate: opts.redraw === true });
       hasContributionHeatmapRender = true;
     } catch (_) {
@@ -4425,7 +4426,6 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
     });
   } else if (rangeChanged || opts.forceRedraw || opts.replayHeatmap) {
     scheduleContributionHeatmapReveal(document.getElementById("chart-heatmap-inner"), {
-      redraw: true,
       delay: 120,
     });
   }
