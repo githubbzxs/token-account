@@ -1236,16 +1236,8 @@ html.theme-switching .chart {
   will-change: transform, width, opacity, box-shadow;
   pointer-events: none;
   backface-visibility: hidden;
-  transition:
-    transform 560ms cubic-bezier(0.25, 1, 0.5, 1),
-    width 560ms cubic-bezier(0.25, 1, 0.5, 1),
-    opacity 0.28s ease,
-    box-shadow 560ms cubic-bezier(0.25, 1, 0.5, 1);
+  transition: box-shadow 180ms cubic-bezier(0.25, 1, 0.5, 1);
   z-index: 0;
-}
-
-.range-segmented-slider.is-animating {
-  transition: none;
 }
 
 .range-segmented-slider::after {
@@ -2818,11 +2810,18 @@ function writeQuickRangeSliderState(slider, state) {
 }
 
 function applyQuickRangeSliderState(slider, state) {
+  if (!slider) return;
   slider.style.opacity = state.visible ? "1" : "0";
   slider.style.width = state.visible ? `${state.width.toFixed(2)}px` : "0";
   slider.style.transform = state.visible
     ? `translate3d(${state.x.toFixed(2)}px, 0, 0)`
     : "translate3d(0, 0, 0)";
+}
+
+function commitQuickRangeSliderState(segmented, slider, state) {
+  applyQuickRangeSliderState(slider, state);
+  writeQuickRangeSliderState(slider, state);
+  clearQuickRangeSliderMotion(segmented, slider);
 }
 
 function scheduleQuickRangeApply(startISO, endISO) {
@@ -2835,12 +2834,10 @@ function scheduleQuickRangeApply(startISO, endISO) {
     });
   };
   if (window.requestAnimationFrame) {
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(run);
-    });
+    window.requestAnimationFrame(run);
     return;
   }
-  window.setTimeout(run, 34);
+  window.setTimeout(run, 16);
 }
 
 function animateQuickRangeSlider(segmented, slider, fromState, toState) {
@@ -2852,16 +2849,14 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   const travel = Math.abs(toState.x - fromState.x);
   const widthDelta = Math.abs(toState.width - fromState.width);
   if (!canAnimate || (travel < 0.5 && widthDelta < 0.5)) {
-    clearQuickRangeSliderMotion(segmented, slider);
-    applyQuickRangeSliderState(slider, toState);
-    writeQuickRangeSliderState(slider, toState);
+    commitQuickRangeSliderState(segmented, slider, toState);
     return;
   }
   clearQuickRangeSliderMotion(segmented, slider);
   const movingRight = toState.x >= fromState.x;
-  const settleOffset = Math.min(1.2, Math.max(0.24, travel * 0.006));
+  const settleOffset = Math.min(0.6, Math.max(0.12, travel * 0.003));
   const settleX = toState.x + (movingRight ? settleOffset : -settleOffset);
-  const duration = Math.min(380, Math.max(240, 240 + travel * 0.46));
+  const duration = Math.min(320, Math.max(210, 210 + travel * 0.34));
   applyQuickRangeSliderState(slider, fromState);
   segmented.classList.add("is-animating");
   segmented.dataset.motionDirection = movingRight ? "right" : "left";
@@ -2896,9 +2891,7 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   quickRangeSliderAnimation = animation;
   const finish = () => {
     if (quickRangeSliderAnimation !== animation) return;
-    applyQuickRangeSliderState(slider, toState);
-    writeQuickRangeSliderState(slider, toState);
-    clearQuickRangeSliderMotion(segmented, slider);
+    commitQuickRangeSliderState(segmented, slider, toState);
   };
   animation.finished.then(finish).catch(() => {});
   quickRangeSliderCleanupTimer = window.setTimeout(finish, duration + 80);
