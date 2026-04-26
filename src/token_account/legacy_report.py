@@ -1805,13 +1805,10 @@ html.theme-switching .chart {
   stroke: rgba(255, 255, 255, 0.05);
   stroke-width: 1px;
   shape-rendering: geometricPrecision;
-  transform-box: fill-box;
-  transform-origin: center;
 }
 
-.heatmap-canvas.is-heatmap-revealing .ch-subdomain-bg {
-  animation: heatmapCellReveal 260ms var(--swift-ease-standard) both;
-  animation-delay: var(--heatmap-cell-delay, 0ms);
+.heatmap-canvas.is-heatmap-glowing .ch-container {
+  animation: heatmapPanelGlow 420ms var(--swift-ease-standard) both;
   will-change: opacity;
 }
 
@@ -2087,6 +2084,15 @@ html.theme-switching .chart {
   }
 }
 
+@keyframes heatmapPanelGlow {
+  0% {
+    opacity: 0.38;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 @keyframes metricValueSettle {
   0% {
     opacity: 0;
@@ -2101,15 +2107,6 @@ html.theme-switching .chart {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
     filter: blur(0);
-  }
-}
-
-@keyframes heatmapCellReveal {
-  0% {
-    opacity: 0.12;
-  }
-  100% {
-    opacity: 1;
   }
 }
 
@@ -3462,9 +3459,9 @@ let currentRange = {
 let directoryLeaderboardPage = 1;
 let hasInitialMetricsRender = false;
 let hasContributionHeatmapRender = false;
-let contributionHeatmapRevealToken = 0;
-let contributionHeatmapRevealTimer = null;
-let contributionHeatmapRevealScheduleTimer = null;
+let contributionHeatmapGlowToken = 0;
+let contributionHeatmapGlowTimer = null;
+let contributionHeatmapGlowScheduleTimer = null;
 const HOUR_MS = 3_600_000;
 const REPORT_TIMEZONE_OFFSET_MINUTES = 8 * 60;
 const MAX_CHART_POINTS = 1600;
@@ -3732,55 +3729,37 @@ function scrollContributionHeatmapToLatest(options) {
   });
 }
 
-function prepareContributionHeatmapRevealCells(chartInner, options) {
+function replayContributionHeatmapGlow(chartInner) {
   if (!chartInner || prefersReducedMotion()) return;
-  const opts = options || {};
-  const cells = Array.from(chartInner.querySelectorAll(".ch-subdomain-bg"));
-  if (!cells.length) return;
-  const step = opts.redraw ? 3.2 : 4;
-  const lastDelay = Math.max(0, (cells.length - 1) * step);
-  cells.forEach((cell, index) => {
-    cell.style.setProperty("--heatmap-cell-delay", `${(index * step).toFixed(1)}ms`);
-  });
-  chartInner.dataset.heatmapRevealDuration = String(Math.ceil(lastDelay + 320));
-}
-
-function replayContributionHeatmapReveal(chartInner) {
-  if (!chartInner || prefersReducedMotion()) return;
-  const revealToken = ++contributionHeatmapRevealToken;
-  if (contributionHeatmapRevealTimer != null) {
-    window.clearTimeout(contributionHeatmapRevealTimer);
-    contributionHeatmapRevealTimer = null;
+  const token = ++contributionHeatmapGlowToken;
+  if (contributionHeatmapGlowTimer != null) {
+    window.clearTimeout(contributionHeatmapGlowTimer);
+    contributionHeatmapGlowTimer = null;
   }
-  chartInner.classList.remove("is-heatmap-revealing");
+  chartInner.classList.remove("is-heatmap-glowing");
   void chartInner.offsetWidth;
   window.requestAnimationFrame(() => {
-    if (revealToken !== contributionHeatmapRevealToken) return;
-    chartInner.classList.add("is-heatmap-revealing");
+    if (token !== contributionHeatmapGlowToken) return;
+    chartInner.classList.add("is-heatmap-glowing");
   });
-  const duration = Number(chartInner.dataset.heatmapRevealDuration || 1100);
-  contributionHeatmapRevealTimer = window.setTimeout(() => {
-    if (revealToken !== contributionHeatmapRevealToken) return;
-    chartInner.classList.remove("is-heatmap-revealing");
-    contributionHeatmapRevealTimer = null;
-  }, Math.max(360, duration));
+  contributionHeatmapGlowTimer = window.setTimeout(() => {
+    if (token !== contributionHeatmapGlowToken) return;
+    chartInner.classList.remove("is-heatmap-glowing");
+    contributionHeatmapGlowTimer = null;
+  }, 520);
 }
 
-function scheduleContributionHeatmapReveal(chartInner, options) {
+function scheduleContributionHeatmapGlow(chartInner, options) {
   if (!chartInner || prefersReducedMotion()) return;
   const opts = options || {};
-  if (contributionHeatmapRevealScheduleTimer != null) {
-    window.clearTimeout(contributionHeatmapRevealScheduleTimer);
-    contributionHeatmapRevealScheduleTimer = null;
+  if (contributionHeatmapGlowScheduleTimer != null) {
+    window.clearTimeout(contributionHeatmapGlowScheduleTimer);
+    contributionHeatmapGlowScheduleTimer = null;
   }
-  const delay = Number.isFinite(Number(opts.delay)) ? Number(opts.delay) : 90;
-  contributionHeatmapRevealScheduleTimer = window.setTimeout(() => {
-    contributionHeatmapRevealScheduleTimer = null;
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        replayContributionHeatmapReveal(chartInner);
-      });
-    });
+  const delay = Number.isFinite(Number(opts.delay)) ? Number(opts.delay) : 80;
+  contributionHeatmapGlowScheduleTimer = window.setTimeout(() => {
+    contributionHeatmapGlowScheduleTimer = null;
+    replayContributionHeatmapGlow(chartInner);
   }, Math.max(0, delay));
 }
 
@@ -3895,8 +3874,7 @@ function renderContributionHeatmap(options) {
         await destroyContributionHeatmap(cal);
         return;
       }
-      prepareContributionHeatmapRevealCells(chartInner, { redraw: opts.redraw === true });
-      scheduleContributionHeatmapReveal(chartInner, { delay: 40 });
+      scheduleContributionHeatmapGlow(chartInner, { delay: 40 });
       scrollContributionHeatmapToLatest({ animate: opts.redraw === true });
       hasContributionHeatmapRender = true;
     } catch (_) {
@@ -4418,15 +4396,15 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   const animateMetrics = hasInitialMetricsRender && opts.animateMetrics !== false;
   setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, {
-    redraw: !hasInitialMetricsRender || opts.refreshHeatmap === true,
+    redraw: rangeChanged || opts.forceRedraw,
   });
   if (!hasContributionHeatmapRender || opts.refreshHeatmap) {
     renderContributionHeatmap({
-      redraw: opts.refreshHeatmap === true || rangeChanged || opts.forceRedraw === true,
+      redraw: opts.refreshHeatmap === true,
     });
   } else if (rangeChanged || opts.forceRedraw || opts.replayHeatmap) {
-    scheduleContributionHeatmapReveal(document.getElementById("chart-heatmap-inner"), {
-      delay: 120,
+    scheduleContributionHeatmapGlow(document.getElementById("chart-heatmap-inner"), {
+      delay: 80,
     });
   }
 
