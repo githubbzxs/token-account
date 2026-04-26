@@ -1805,6 +1805,14 @@ html.theme-switching .chart {
   stroke: rgba(255, 255, 255, 0.05);
   stroke-width: 1px;
   shape-rendering: geometricPrecision;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.heatmap-canvas .ch-subdomain-bg.heatmap-cell-reveal {
+  animation: heatmapCellReveal 680ms var(--swift-ease-standard) both;
+  animation-delay: var(--heatmap-cell-delay, 0ms);
+  will-change: opacity, transform, filter;
 }
 
 .heatmap-canvas .ch-subdomain-bg:hover {
@@ -2093,6 +2101,24 @@ html.theme-switching .chart {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
     filter: blur(0);
+  }
+}
+
+@keyframes heatmapCellReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.42);
+    filter: brightness(0.72) saturate(0.78);
+  }
+  58% {
+    opacity: 1;
+    transform: scale(1.12);
+    filter: brightness(1.22) saturate(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
   }
 }
 
@@ -2421,20 +2447,11 @@ function canUseRollingNumber(text) {
   return /^[0-9.,%$KMB+\\- /:]+$/.test(String(text || ""));
 }
 
-function metricTextShape(text) {
-  return String(text || "").replace(/[0-9]/g, "0");
-}
-
-function hasMetricShapeShift(prevText, nextText) {
-  return metricTextShape(prevText) !== metricTextShape(nextText);
-}
-
 function canRollDigits(prevText, nextText) {
   const prev = String(prevText || "");
   const next = String(nextText || "");
   if (!prev || !next) return false;
   if (!canUseRollingNumber(prev) || !canUseRollingNumber(next)) return false;
-  if (hasMetricShapeShift(prev, next)) return false;
   return /[0-9]/.test(prev) && /[0-9]/.test(next);
 }
 
@@ -3721,6 +3738,57 @@ function scrollContributionHeatmapToLatest(options) {
   });
 }
 
+function contributionCellSortValue(cell) {
+  const rect = typeof cell.getBoundingClientRect === "function" ? cell.getBoundingClientRect() : null;
+  if (rect && Number.isFinite(rect.left) && Number.isFinite(rect.top) && (rect.width || rect.height)) {
+    return {
+      x: rect.left,
+      y: rect.top,
+    };
+  }
+  const x = Number(cell.getAttribute("x") || 0);
+  const y = Number(cell.getAttribute("y") || 0);
+  return {
+    x: Number.isFinite(x) ? x : 0,
+    y: Number.isFinite(y) ? y : 0,
+  };
+}
+
+function animateContributionHeatmapCells(chartInner, options) {
+  if (!chartInner || prefersReducedMotion()) return;
+  const opts = options || {};
+  const cells = Array.from(chartInner.querySelectorAll(".ch-subdomain-bg"));
+  if (!cells.length) return;
+  const sortedCells = cells
+    .map((cell) => ({ cell, ...contributionCellSortValue(cell) }))
+    .sort((left, right) => {
+      if (Math.abs(left.x - right.x) > 0.5) return left.x - right.x;
+      return left.y - right.y;
+    })
+    .map((item) => item.cell);
+  const step = opts.redraw ? 3.6 : 4.4;
+  const maxDelay = opts.redraw ? 760 : 980;
+  sortedCells.forEach((cell, index) => {
+    cell.classList.remove("heatmap-cell-reveal");
+    cell.style.opacity = "0";
+    cell.style.transform = "scale(0.42)";
+    cell.style.setProperty("--heatmap-cell-delay", `${Math.min(index * step, maxDelay).toFixed(1)}ms`);
+  });
+  window.requestAnimationFrame(() => {
+    sortedCells.forEach((cell) => {
+      cell.classList.add("heatmap-cell-reveal");
+    });
+  });
+  window.setTimeout(() => {
+    sortedCells.forEach((cell) => {
+      cell.classList.remove("heatmap-cell-reveal");
+      cell.style.removeProperty("--heatmap-cell-delay");
+      cell.style.opacity = "";
+      cell.style.transform = "";
+    });
+  }, maxDelay + 860);
+}
+
 function renderContributionHeatmap(options) {
   const chartInner = document.getElementById("chart-heatmap-inner");
   const legendScale = document.getElementById("heatmap-legend-scale");
@@ -3832,6 +3900,7 @@ function renderContributionHeatmap(options) {
         await destroyContributionHeatmap(cal);
         return;
       }
+      animateContributionHeatmapCells(chartInner, { redraw: opts.redraw === true });
       scrollContributionHeatmapToLatest({ animate: opts.redraw === true });
       hasContributionHeatmapRender = true;
     } catch (_) {
