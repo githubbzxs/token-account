@@ -3471,6 +3471,8 @@ let currentRange = {
 let directoryLeaderboardPage = 1;
 let hasInitialMetricsRender = false;
 let hasContributionHeatmapRender = false;
+let contributionHeatmapRevealToken = 0;
+let contributionHeatmapRevealTimer = null;
 const HOUR_MS = 3_600_000;
 const REPORT_TIMEZONE_OFFSET_MINUTES = 8 * 60;
 const MAX_CHART_POINTS = 1600;
@@ -3766,27 +3768,37 @@ function animateContributionHeatmapCells(chartInner, options) {
       return left.y - right.y;
     })
     .map((item) => item.cell);
-  const step = opts.redraw ? 3.6 : 4.4;
-  const maxDelay = opts.redraw ? 760 : 980;
+  const revealToken = ++contributionHeatmapRevealToken;
+  if (contributionHeatmapRevealTimer != null) {
+    window.clearTimeout(contributionHeatmapRevealTimer);
+    contributionHeatmapRevealTimer = null;
+  }
+  const step = opts.redraw ? 4.2 : 5.2;
+  const lastDelay = Math.max(0, (sortedCells.length - 1) * step);
   sortedCells.forEach((cell, index) => {
     cell.classList.remove("heatmap-cell-reveal");
     cell.style.opacity = "0";
     cell.style.transform = "scale(0.42)";
-    cell.style.setProperty("--heatmap-cell-delay", `${Math.min(index * step, maxDelay).toFixed(1)}ms`);
+    cell.style.filter = "brightness(0.72) saturate(0.78)";
+    cell.style.setProperty("--heatmap-cell-delay", `${(index * step).toFixed(1)}ms`);
   });
   window.requestAnimationFrame(() => {
+    if (revealToken !== contributionHeatmapRevealToken) return;
     sortedCells.forEach((cell) => {
       cell.classList.add("heatmap-cell-reveal");
     });
   });
-  window.setTimeout(() => {
+  contributionHeatmapRevealTimer = window.setTimeout(() => {
+    if (revealToken !== contributionHeatmapRevealToken) return;
     sortedCells.forEach((cell) => {
       cell.classList.remove("heatmap-cell-reveal");
       cell.style.removeProperty("--heatmap-cell-delay");
       cell.style.opacity = "";
       cell.style.transform = "";
+      cell.style.filter = "";
     });
-  }, maxDelay + 860);
+    contributionHeatmapRevealTimer = null;
+  }, lastDelay + 920);
 }
 
 function renderContributionHeatmap(options) {
@@ -4426,7 +4438,11 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   });
   if (!hasContributionHeatmapRender || opts.refreshHeatmap) {
     renderContributionHeatmap({
-      redraw: opts.refreshHeatmap === true,
+      redraw: opts.refreshHeatmap === true || rangeChanged || opts.forceRedraw === true,
+    });
+  } else if (rangeChanged || opts.forceRedraw || opts.replayHeatmap) {
+    animateContributionHeatmapCells(document.getElementById("chart-heatmap-inner"), {
+      redraw: true,
     });
   }
 
