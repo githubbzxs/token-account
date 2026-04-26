@@ -1630,6 +1630,7 @@ html.theme-switching .chart {
   white-space: nowrap;
 }
 
+.cost-value,
 .directory-cost-value {
   color: var(--accent-cyan);
   text-shadow: 0 0 14px rgba(var(--accent-cyan-rgb), 0.18);
@@ -2214,7 +2215,7 @@ html.theme-switching .chart {
       <div class="summary-card-divider" aria-hidden="true"></div>
       <div class="summary-card-side">
         <div class="label" data-i18n="card_cost">Estimated cost</div>
-        <div class="value" id="value-cost">__TOTAL_COST__</div>
+        <div class="value cost-value" id="value-cost">__TOTAL_COST__</div>
       </div>
     </div>
   </div>
