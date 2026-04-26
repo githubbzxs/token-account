@@ -97,16 +97,6 @@ I18N = {
         "share_copied_image": "图片已复制，可直接粘贴发送",
         "calendar_clear": "清除",
         "calendar_today": "今天",
-        "eyebrow": "使用监控",
-        "status_last_sync": "最后同步",
-        "status_window": "数据窗口",
-        "status_refresh": "自动刷新",
-        "refresh_interval": "15 秒",
-        "trend_note": "当前范围按小时汇总，保留真实尖峰形态。",
-        "chart_unit": "单位：Token",
-        "directory_title": "目录消耗榜单",
-        "directory_hint": "按当前时间范围汇总，最多展示前 30 个目录。",
-        "updated_unknown": "等待同步",
     },
     "en": {
         "title": "Codex Token Usage",
@@ -181,16 +171,6 @@ I18N = {
         "share_copied_image": "Image copied, paste to share",
         "calendar_clear": "Clear",
         "calendar_today": "Today",
-        "eyebrow": "Usage monitor",
-        "status_last_sync": "Last sync",
-        "status_window": "Data window",
-        "status_refresh": "Auto refresh",
-        "refresh_interval": "15 sec",
-        "trend_note": "Hourly totals for the selected range, with spikes preserved.",
-        "chart_unit": "Unit: tokens",
-        "directory_title": "Directory usage",
-        "directory_hint": "Aggregated for the selected range, showing the top 30 directories.",
-        "updated_unknown": "Waiting for sync",
     },
 }
 
@@ -714,7 +694,7 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 <title>Codex Token Usage</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
 
 :root {
   --background: #0a0a0a;
@@ -758,12 +738,10 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --gap-sm: 12px;
   --gap-md: 16px;
   --gap-lg: 24px;
-  --shadow: 0 18px 44px rgba(0, 0, 0, 0.30);
-  --soft-shadow: 0 20px 70px rgba(0, 0, 0, 0.32);
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
   --ring: rgba(184, 156, 122, 0.26);
-  --font-zh: "Geist", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
-  --font-en: "Geist", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --mono-font: "Geist Mono", "SFMono-Regular", "Cascadia Code", "Roboto Mono", monospace;
+  --font-zh: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
+  --font-en: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
   --app-font: var(--font-en);
   --swift-duration-fast: 900ms;
   --swift-duration-normal: 2000ms;
@@ -783,14 +761,9 @@ html[lang="en"] {
   --app-font: var(--font-en);
 }
 
-html {
-  min-height: 100%;
-  background: var(--bg-base-end);
-}
-
 body {
   margin: 0;
-  min-height: 100dvh;
+  min-height: 100vh;
   padding: 0 0 28px;
   background:
     radial-gradient(1200px 720px at 12% 2%, var(--bg-glow-a), transparent 62%),
@@ -801,20 +774,19 @@ body {
   line-height: 1.45;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "cv02" 1, "cv03" 1, "cv04" 1;
 }
 
 .page {
   position: relative;
   max-width: 1280px;
   margin: 24px auto 0;
-  padding: 28px clamp(18px, 2.2vw, 38px) 40px;
-  border-radius: 28px;
+  padding: 24px clamp(18px, 2vw, 36px) 38px;
+  border-radius: 24px;
   border: none;
   background: linear-gradient(170deg, var(--page-bg-start), var(--page-bg-end));
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.055),
-    var(--soft-shadow);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 24px rgba(0, 0, 0, 0.30);
   overflow: hidden;
 }
 
@@ -841,79 +813,89 @@ body {
 }
 
 .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 24px;
-  margin-bottom: 22px;
-}
-
-.hero-status {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(120px, 1fr));
-  gap: 8px;
-  align-self: stretch;
-  min-width: min(520px, 100%);
-}
-
-.status-chip {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: var(--gap-sm);
+}
+
+.hero-tools {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.theme-dot-toggle {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(var(--accent-rgb), 0.88);
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  min-height: 58px;
-  padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.055);
-  border-radius: 16px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)),
-    rgba(10, 11, 14, 0.56);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
-.status-chip-label {
-  color: var(--muted);
-  font-family: var(--mono-font);
-  font-size: 10px;
-  line-height: 1;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+.theme-dot-toggle::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb), 0.9);
 }
 
-.status-chip-value {
-  margin-top: 8px;
-  color: var(--text);
-  font-family: var(--mono-font);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.theme-dot-toggle:hover {
+  transform: scale(1.03);
+  border-color: rgba(var(--accent-cyan-rgb), 0.78);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.3);
 }
 
-.eyebrow {
-  margin: 0 0 12px;
-  color: var(--accent-cyan);
-  font-family: var(--mono-font);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+.theme-dot-toggle:focus-visible {
+  outline: none;
+  border-color: rgba(var(--accent-rgb), 0.95);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
+}
+
+.theme-dot-toggle.is-bronze {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.2);
 }
 
 .title h1 {
-  margin: 0;
-  font-size: clamp(34px, 5vw, 58px);
-  letter-spacing: -0.058em;
+  margin: 0 0 8px;
+  font-size: clamp(30px, 5vw, 42px);
+  letter-spacing: 0.8px;
   font-family: var(--app-font);
-  font-weight: 650;
-  line-height: 0.96;
+  font-weight: 600;
   text-wrap: balance;
 }
 
 .title p {
-  margin: 12px 0 0;
+  margin: 0;
   color: var(--muted);
-  max-width: 760px;
+  max-width: 900px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill {
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #d4d4d8;
+  backdrop-filter: blur(6px);
 }
 
 .banner {
@@ -936,6 +918,9 @@ html.theme-ready .page::after,
 html.theme-ready .range-controls,
 html.theme-ready .range-date-trigger,
 html.theme-ready .range-segmented,
+html.theme-ready .range-action-btn,
+html.theme-ready .file-button,
+html.theme-ready .theme-dot-toggle,
 html.theme-ready .card,
 html.theme-ready .panel,
 html.theme-ready .chart {
@@ -954,6 +939,9 @@ html.theme-switching .page::after,
 html.theme-switching .range-controls,
 html.theme-switching .range-date-trigger,
 html.theme-switching .range-segmented,
+html.theme-switching .range-action-btn,
+html.theme-switching .file-button,
+html.theme-switching .theme-dot-toggle,
 html.theme-switching .card,
 html.theme-switching .panel,
 html.theme-switching .chart {
@@ -963,13 +951,13 @@ html.theme-switching .chart {
 .range-controls {
   --range-selector-width: 260px;
   --range-selector-height: 36px;
-  margin: 0 0 18px;
-  padding: 7px 12px;
+  margin: 16px 0 8px;
+  padding: 6px 12px;
   border: 1px solid rgba(255, 255, 255, 0.04);
   background: linear-gradient(140deg, rgba(26, 27, 32, 0.9), rgba(17, 17, 19, 0.88));
   border-radius: 14px;
   display: grid;
-  grid-template-columns: var(--range-selector-width) var(--range-selector-width) minmax(0, 1fr);
+  grid-template-columns: var(--range-selector-width) var(--range-selector-width) auto;
   align-items: center;
   column-gap: 10px;
   row-gap: 10px;
@@ -991,7 +979,6 @@ html.theme-switching .chart {
 
 .range-date-trigger {
   display: inline-flex;
-  font-family: var(--mono-font);
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
@@ -999,9 +986,9 @@ html.theme-switching .chart {
   background: linear-gradient(140deg, rgba(36, 38, 46, 0.94), rgba(24, 26, 33, 0.94));
   color: #eef2ff;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.2px;
   cursor: pointer;
   width: 100%;
   height: var(--range-selector-height);
@@ -1178,6 +1165,24 @@ html.theme-switching .chart {
   background: rgba(var(--accent-cyan-rgb), 0.15);
 }
 
+.range-action-btn,
+.file-button {
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e4e7;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.range-action-btn:hover,
+.file-button:hover {
+  border-color: rgba(var(--accent-cyan-rgb), 0.5);
+  background: rgba(var(--accent-cyan-rgb), 0.15);
+}
+
 .range-buttons {
   display: flex;
   flex: 0 0 var(--range-selector-width);
@@ -1265,11 +1270,10 @@ html.theme-switching .chart {
   justify-content: center;
   padding: 0 8px;
   border-radius: 999px;
-  font-family: var(--mono-font);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
-  font-weight: 650;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  letter-spacing: 0.2px;
   cursor: pointer;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1303,6 +1307,27 @@ html.theme-switching .chart {
   animation: segmentedLabelSettle 520ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
+.range-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: center;
+  justify-self: end;
+}
+
+.file-button {
+  color: var(--text);
+}
+
+.file-button input {
+  display: none;
+}
+
+.import-status {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1312,12 +1337,10 @@ html.theme-switching .chart {
 }
 
 .card {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.046), rgba(255, 255, 255, 0.012) 44%, rgba(0, 0, 0, 0.10)),
-    rgba(18, 19, 23, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.075);
-  border-radius: 24px;
-  padding: 22px 24px;
+  background: linear-gradient(145deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
+  border: 1px solid var(--stroke);
+  border-radius: 20px;
+  padding: 18px 20px;
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
@@ -1329,7 +1352,7 @@ html.theme-switching .chart {
 }
 
 .metric-card {
-  min-height: 154px;
+  min-height: 148px;
   justify-content: flex-start;
 }
 
@@ -1372,9 +1395,8 @@ html.theme-switching .chart {
 }
 
 .summary-card-inline-label {
-  font-family: var(--mono-font);
   font-size: 10px;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.9px;
   text-transform: uppercase;
   color: var(--muted);
   white-space: nowrap;
@@ -1382,9 +1404,8 @@ html.theme-switching .chart {
 
 .summary-card-inline-value {
   margin-top: 0;
-  font-family: var(--mono-font);
-  font-size: clamp(14px, 2vw, 18px);
-  font-weight: 650;
+  font-size: clamp(14px, 2vw, 17px);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
   white-space: nowrap;
@@ -1399,33 +1420,74 @@ html.theme-switching .chart {
 }
 
 .card .label {
-  font-family: var(--mono-font);
-  font-size: 11px;
+  font-size: 13px;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 1px;
   color: var(--muted);
 }
 
 .card .value {
-  margin-top: 12px;
-  font-family: var(--app-font);
-  font-size: clamp(29px, 4vw, 42px);
-  font-weight: 720;
-  letter-spacing: -0.055em;
+  margin-top: 10px;
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 700;
+  letter-spacing: 0.2px;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
 }
 
 .text-fade-anim,
+.metric-value-anim,
 .i18n-switch-anim {
-  animation: textFadeOnly 300ms ease both;
+  animation: textFadeOnly 360ms ease both;
   will-change: opacity;
 }
 
-.metric-value-anim {
-  animation: metricValueSettle 520ms cubic-bezier(0.25, 1, 0.5, 1) both;
-  transform-origin: center center;
-  will-change: opacity, transform, filter;
+.metric-roll {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  min-height: 1em;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.metric-roll-static {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: min-content;
+}
+
+.metric-roll-column {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 0.66em;
+  height: 1em;
+  overflow: hidden;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.metric-roll-track {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  transform: translateY(calc(var(--roll-from, 0) * -1em));
+}
+
+.metric-roll-track.is-animating {
+  transition: transform 820ms cubic-bezier(0.2, 0.86, 0.22, 1);
+  transform: translateY(calc(var(--roll-to, 0) * -1em));
+}
+
+.metric-roll-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1em;
 }
 
 .card .sub {
@@ -1444,11 +1506,9 @@ html.theme-switching .chart {
 }
 
 .panel {
-  background:
-    linear-gradient(150deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.008)),
-    rgba(15, 16, 20, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.068);
-  border-radius: 24px;
+  background: linear-gradient(150deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
+  border: 1px solid var(--stroke);
+  border-radius: 20px;
   padding: 18px;
   box-shadow: var(--shadow);
   animation: rise 0.46s var(--swift-ease-standard) both;
@@ -1457,9 +1517,9 @@ html.theme-switching .chart {
 
 .panel h3 {
   margin: 0 0 12px;
-  font-size: 16px;
-  font-weight: 650;
-  letter-spacing: -0.025em;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
 .panel-head {
@@ -1479,35 +1539,15 @@ html.theme-switching .chart {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 12px;
-  overflow-wrap: anywhere;
-}
-
-.panel-kicker {
-  color: var(--accent-cyan);
-  font-family: var(--mono-font);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.panel-title-block {
-  min-width: 0;
 }
 
 .directory-panel {
   margin-top: 16px;
-  padding: 18px;
 }
 
 .directory-list {
   display: grid;
-  gap: 1px;
-  margin-top: 14px;
-  overflow: hidden;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.055);
-  background: rgba(255, 255, 255, 0.035);
+  gap: 6px;
 }
 
 .directory-row {
@@ -1515,10 +1555,12 @@ html.theme-switching .chart {
   grid-template-columns: 42px minmax(0, 1fr) minmax(96px, auto) minmax(80px, auto);
   align-items: center;
   gap: 10px;
-  padding: 11px 13px;
-  border-radius: 0;
-  border: none;
-  background: rgba(17, 18, 22, 0.86);
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.03), transparent 56%),
+    rgba(255, 255, 255, 0.02);
 }
 
 .directory-row-empty {
@@ -1535,9 +1577,8 @@ html.theme-switching .chart {
   width: 30px;
   height: 30px;
   border-radius: 10px;
-  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.26), rgba(var(--accent-cyan-rgb), 0.18));
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.24), rgba(var(--accent-cyan-rgb), 0.18));
   color: #f8fafc;
-  font-family: var(--mono-font);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.2px;
@@ -1574,18 +1615,16 @@ html.theme-switching .chart {
 }
 
 .directory-metric-label {
-  font-family: var(--mono-font);
   font-size: 10px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--muted);
 }
 
 .directory-metric-value {
   margin-top: 2px;
-  font-family: var(--mono-font);
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
   white-space: nowrap;
@@ -1618,10 +1657,9 @@ html.theme-switching .chart {
   color: #e4e4e7;
   border-radius: 999px;
   padding: 5px 10px;
-  font-family: var(--mono-font);
   font-size: 11px;
   cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .directory-page-btn:hover:not(:disabled) {
@@ -1639,12 +1677,12 @@ html.theme-switching .chart {
 }
 
 .chart-panel {
-  padding: 16px;
+  padding: 14px;
 }
 
 .chart-panel .chart {
-  height: 244px;
-  border-radius: 18px;
+  height: 228px;
+  border-radius: 14px;
 }
 
 .chart-panel .heatmap-chart {
@@ -1652,14 +1690,14 @@ html.theme-switching .chart {
 }
 
 .heatmap-legend {
+  margin-top: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
+  width: 100%;
   color: var(--muted);
-  font-family: var(--mono-font);
-  font-size: 11px;
-  white-space: nowrap;
+  font-size: 12px;
 }
 
 .heatmap-legend-scale {
@@ -1680,11 +1718,9 @@ html.theme-switching .chart {
   position: relative;
   width: 100%;
   height: 240px;
-  border: 1px solid rgba(255, 255, 255, 0.035);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(15, 18, 24, 0.74), rgba(10, 12, 18, 0.86)),
-    rgba(17, 17, 19, 0.82);
+  border: none;
+  border-radius: 12px;
+  background: rgba(17, 17, 19, 0.82);
   overflow: hidden;
   isolation: isolate;
 }
@@ -1712,14 +1748,13 @@ html.theme-switching .chart {
 }
 
 .heatmap-chart {
-  min-height: 142px;
-  padding: 12px 0 0;
+  min-height: 138px;
+  padding: 10px 0 0;
   background:
     linear-gradient(180deg, rgba(15, 18, 24, 0.88), rgba(10, 12, 18, 0.9)),
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.02), transparent 42%);
   overflow-x: auto;
   overflow-y: hidden;
-  scroll-snap-type: x proximity;
 }
 
 .heatmap-chart::-webkit-scrollbar {
@@ -1889,16 +1924,7 @@ html.theme-switching .chart {
     padding: 24px 14px 42px;
   }
   .hero {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
-  }
-  .hero-status {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    min-width: 0;
-  }
-  .status-chip {
-    min-height: 54px;
-    padding: 9px 10px;
+    gap: 12px;
   }
   .panel.wide {
     grid-column: span 1;
@@ -1922,7 +1948,7 @@ html.theme-switching .chart {
     min-height: 132px;
   }
   .heatmap-canvas {
-    min-width: 560px;
+    min-width: 640px;
     padding: 0 10px 0 10px;
   }
   .range-controls {
@@ -1936,8 +1962,12 @@ html.theme-switching .chart {
     width: 100%;
     flex-basis: auto;
   }
+  .range-actions {
+    justify-self: start;
+    flex-wrap: wrap;
+  }
   .panel-head {
-    align-items: flex-start;
+    align-items: stretch;
   }
   .heatmap-legend {
     justify-content: flex-start;
@@ -1969,7 +1999,7 @@ html.theme-switching .chart {
 @media (max-width: 1180px) and (min-width: 901px) {
   .range-controls {
     --range-selector-width: 236px;
-    grid-template-columns: var(--range-selector-width) var(--range-selector-width) minmax(0, 1fr);
+    grid-template-columns: var(--range-selector-width) var(--range-selector-width) auto;
   }
   .range-fields {
     width: var(--range-selector-width);
@@ -1977,63 +2007,6 @@ html.theme-switching .chart {
 }
 
 @media (max-width: 760px) {
-  body {
-    overflow-x: hidden;
-  }
-  html,
-  body {
-    width: 100%;
-    max-width: 100%;
-  }
-  .page {
-    inline-size: 100vw;
-    max-inline-size: 100vw;
-    margin-top: 0;
-    border-radius: 22px;
-    padding-inline: 14px;
-  }
-  .range-controls,
-  .cards,
-  .panel-grid,
-  .directory-panel {
-    inline-size: calc(100vw - 28px);
-    max-inline-size: calc(100vw - 28px);
-  }
-  .title h1 {
-    max-width: 12ch;
-    font-size: clamp(32px, 10vw, 40px);
-    line-height: 0.98;
-  }
-  .range-controls {
-    min-width: 0;
-    padding: 7px 10px;
-    overflow: hidden;
-  }
-  .range-buttons,
-  .range-segmented {
-    inline-size: 100%;
-    max-inline-size: 100%;
-    min-inline-size: 0;
-  }
-  .range-segmented {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-  .range-segmented button {
-    width: auto;
-    padding: 0 2px;
-    font-size: 10px;
-  }
-  .card,
-  .panel {
-    max-width: 100%;
-  }
-  .hero-status {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .status-chip {
-    min-height: 46px;
-  }
   .cards {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2053,33 +2026,9 @@ html.theme-switching .chart {
     gap: 8px 14px;
   }
   .directory-row {
-    grid-template-columns: 30px minmax(0, 1fr);
-    grid-template-rows: auto auto;
-    padding: 10px 9px;
-    gap: 8px 7px;
-  }
-  .directory-meta {
-    grid-column: 2;
-  }
-  .directory-row .directory-metric:nth-child(3),
-  .directory-row .directory-metric:nth-child(4) {
-    grid-column: 2;
-    grid-row: 2;
-    display: inline-flex;
-    align-items: baseline;
+    grid-template-columns: 30px minmax(0, 1fr) minmax(54px, auto) minmax(50px, auto);
+    padding: 7px 8px;
     gap: 6px;
-    width: max-content;
-    max-width: 100%;
-    padding: 4px 7px;
-    border: 1px solid rgba(255, 255, 255, 0.055);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.035);
-  }
-  .directory-row .directory-metric:nth-child(3) {
-    justify-self: start;
-  }
-  .directory-row .directory-metric:nth-child(4) {
-    justify-self: end;
   }
   .directory-rank {
     width: 26px;
@@ -2094,8 +2043,7 @@ html.theme-switching .chart {
     display: none;
   }
   .directory-metric-label {
-    display: block;
-    font-size: 9px;
+    display: none;
   }
   .directory-metric-value {
     margin-top: 0;
@@ -2116,24 +2064,6 @@ html.theme-switching .chart {
   }
   100% {
     opacity: 1;
-  }
-}
-
-@keyframes metricValueSettle {
-  0% {
-    opacity: 0.68;
-    transform: translate3d(0, 2px, 0) scale(0.985);
-    filter: blur(0.35px);
-  }
-  56% {
-    opacity: 1;
-    transform: translate3d(0, -0.5px, 0) scale(1.006);
-    filter: blur(0);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0);
   }
 }
 
@@ -2183,6 +2113,7 @@ html.theme-switching .chart {
 @media (prefers-reduced-motion: reduce) {
   .text-fade-anim,
   .metric-value-anim,
+  .metric-roll-track.is-animating,
   .i18n-switch-anim,
   .chart-line-redraw,
   html.theme-switching body,
@@ -2192,6 +2123,9 @@ html.theme-switching .chart {
   html.theme-switching .range-controls,
   html.theme-switching .range-date-trigger,
   html.theme-switching .range-segmented,
+  html.theme-switching .range-action-btn,
+  html.theme-switching .file-button,
+  html.theme-switching .theme-dot-toggle,
   html.theme-switching .card,
   html.theme-switching .panel,
   html.theme-switching .chart {
@@ -2211,6 +2145,9 @@ html.theme-switching .chart {
   html.theme-ready .range-controls,
   html.theme-ready .range-date-trigger,
   html.theme-ready .range-segmented,
+  html.theme-ready .range-action-btn,
+  html.theme-ready .file-button,
+  html.theme-ready .theme-dot-toggle,
   html.theme-ready .card,
   html.theme-ready .panel,
   html.theme-ready .chart {
@@ -2223,22 +2160,7 @@ html.theme-switching .chart {
 <div class="page">
   <div class="hero">
     <div class="title">
-      <div class="eyebrow" data-i18n="eyebrow">Usage monitor</div>
       <h1 data-i18n="title">Codex Token Usage</h1>
-    </div>
-    <div class="hero-status" aria-label="Dashboard status">
-      <div class="status-chip">
-        <div class="status-chip-label" data-i18n="status_last_sync">Last sync</div>
-        <div class="status-chip-value" id="status-last-sync">__GENERATED_AT__</div>
-      </div>
-      <div class="status-chip">
-        <div class="status-chip-label" data-i18n="status_window">Data window</div>
-        <div class="status-chip-value" id="status-data-window">__RANGE_TEXT__</div>
-      </div>
-      <div class="status-chip">
-        <div class="status-chip-label" data-i18n="status_refresh">Auto refresh</div>
-        <div class="status-chip-value" data-i18n="refresh_interval">15 sec</div>
-      </div>
     </div>
   </div>
   <div class="range-controls">
@@ -2298,49 +2220,23 @@ html.theme-switching .chart {
   </div>
 
   <div class="panel-grid">
-    <section class="panel wide chart-panel" style="--delay:0.25s" aria-labelledby="trend-title">
-      <div class="panel-head">
-        <div class="panel-title-block">
-          <div class="panel-kicker" data-i18n="chart_unit">Unit: tokens</div>
-          <h3 id="trend-title" data-i18n="daily_chart">Hourly total tokens</h3>
-          <p class="panel-note" data-i18n="trend_note">Hourly totals for the selected range, with spikes preserved.</p>
-        </div>
-      </div>
+    <div class="panel wide chart-panel" style="--delay:0.25s">
       <div id="chart-daily" class="chart"></div>
-    </section>
-    <section class="panel wide chart-panel" style="--delay:0.32s" aria-labelledby="heatmap-title">
-      <div class="panel-head">
-        <div class="panel-title-block">
-          <div class="panel-kicker" data-i18n="chart_unit">Unit: tokens</div>
-          <h3 id="heatmap-title" data-i18n="heatmap_chart">Daily heatmap</h3>
-          <p class="panel-note" data-i18n="heatmap_hint">Last 53 weeks, independent from the range filter above</p>
-        </div>
-        <div class="heatmap-legend" aria-label="Heatmap legend">
-          <span data-i18n="heatmap_less">Less</span>
-          <span id="heatmap-legend-scale" class="heatmap-legend-scale"></span>
-          <span data-i18n="heatmap_more">More</span>
-        </div>
-      </div>
+    </div>
+    <div class="panel wide chart-panel" style="--delay:0.32s">
       <div id="chart-heatmap" class="chart heatmap-chart">
         <div id="chart-heatmap-inner" class="heatmap-canvas"></div>
       </div>
-    </section>
-  </div>
-  <section class="panel directory-panel" style="--delay:0.4s" aria-labelledby="directory-title">
-    <div class="panel-head">
-      <div class="panel-title-block">
-        <div class="panel-kicker" data-i18n="chart_unit">Unit: tokens</div>
-        <h3 id="directory-title" data-i18n="directory_title">Directory usage</h3>
-        <p class="panel-note" data-i18n="directory_hint">Aggregated for the selected range, showing the top 30 directories.</p>
-      </div>
     </div>
+  </div>
+  <div class="panel directory-panel" style="--delay:0.4s">
     <div id="directory-list" class="directory-list"></div>
     <div class="directory-pagination">
       <button type="button" id="directory-prev" class="directory-page-btn" data-i18n="directory_prev">Prev</button>
       <div id="directory-page" class="directory-page-text">Page 1 / 1</div>
       <button type="button" id="directory-next" class="directory-page-btn" data-i18n="directory_next">Next</button>
     </div>
-  </section>
+  </div>
 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
@@ -2413,6 +2309,7 @@ function setAnimatedText(el, text, options) {
     }
     return false;
   }
+  el.classList.remove("metric-roll");
   el.textContent = nextText;
   el.dataset.animatedText = nextText;
   el.dataset.metricText = nextText;
@@ -2426,10 +2323,109 @@ function setAnimatedText(el, text, options) {
   return true;
 }
 
+function canUseRollingNumber(text) {
+  return /^[0-9.,%$KMB+\\- /:]+$/.test(String(text || ""));
+}
+
+function canRollDigits(prevText, nextText) {
+  const prev = String(prevText || "");
+  const next = String(nextText || "");
+  if (!prev || !next) return false;
+  if (!canUseRollingNumber(prev) || !canUseRollingNumber(next)) return false;
+  return /[0-9]/.test(prev) && /[0-9]/.test(next);
+}
+
+function compareRollDirection(prevText, nextText) {
+  const prevDigits = String(prevText || "").replace(/[^0-9]/g, "").replace(/^0+/, "") || "0";
+  const nextDigits = String(nextText || "").replace(/[^0-9]/g, "").replace(/^0+/, "") || "0";
+  if (prevDigits.length !== nextDigits.length) {
+    return nextDigits.length > prevDigits.length ? 1 : -1;
+  }
+  return nextDigits >= prevDigits ? 1 : -1;
+}
+
+function renderRollingDigits(el, prevText, nextText, syncAriaLabel) {
+  const direction = compareRollDirection(prevText, nextText);
+  const prevDigits = String(prevText || "").match(/[0-9]/g) || [];
+  const nextDigitChars = String(nextText || "").match(/[0-9]/g) || [];
+  let nextDigitIndex = 0;
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < nextText.length; i += 1) {
+    const char = nextText[i];
+    if (!/[0-9]/.test(char)) {
+      const staticSpan = document.createElement("span");
+      staticSpan.className = "metric-roll-static";
+      staticSpan.textContent = char === " " ? " " : char;
+      fragment.appendChild(staticSpan);
+      continue;
+    }
+
+    const reverseIndex = nextDigitChars.length - nextDigitIndex - 1;
+    const prevDigitChar = prevDigits[prevDigits.length - reverseIndex - 1] || "0";
+    const prevDigit = Number(prevDigitChar || 0);
+    const nextDigit = Number(char);
+    const delta = direction >= 0
+      ? ((nextDigit - prevDigit + 10) % 10)
+      : -((prevDigit - nextDigit + 10) % 10);
+    const fromIndex = 10 + prevDigit;
+    const toIndex = fromIndex + delta;
+    nextDigitIndex += 1;
+
+    const column = document.createElement("span");
+    column.className = "metric-roll-column";
+    const track = document.createElement("span");
+    track.className = "metric-roll-track";
+    track.style.setProperty("--roll-from", String(fromIndex));
+    track.style.setProperty("--roll-to", String(toIndex));
+    track.style.transitionDelay = `${Math.max(0, nextText.length - i - 1) * 8}ms`;
+
+    for (let reelIndex = 0; reelIndex < 30; reelIndex += 1) {
+      const cell = document.createElement("span");
+      cell.className = "metric-roll-cell";
+      cell.textContent = String(reelIndex % 10);
+      track.appendChild(cell);
+    }
+
+    column.appendChild(track);
+    fragment.appendChild(column);
+  }
+
+  el.textContent = "";
+  el.classList.add("metric-roll");
+  el.appendChild(fragment);
+  el.dataset.animatedText = nextText;
+  el.dataset.metricText = nextText;
+  if (syncAriaLabel) {
+    el.setAttribute("aria-label", nextText);
+  }
+  if (prefersReducedMotion()) {
+    return true;
+  }
+  requestAnimationFrame(() => {
+    el.querySelectorAll(".metric-roll-track").forEach((track) => {
+      track.classList.add("is-animating");
+    });
+  });
+  return true;
+}
+
 function setAnimatedNumericText(el, text, options) {
   if (!el) return false;
   const opts = options || {};
   const nextText = String(text ?? "");
+  const prevText = el.dataset.animatedText != null
+    ? el.dataset.animatedText
+    : (el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || ""));
+  const shouldAnimate = opts.animate !== false;
+  if (prevText === nextText) {
+    if (opts.syncAriaLabel) {
+      el.setAttribute("aria-label", nextText);
+    }
+    return false;
+  }
+  if (shouldAnimate && canRollDigits(prevText, nextText)) {
+    return renderRollingDigits(el, prevText, nextText, opts.syncAriaLabel);
+  }
   return setAnimatedText(el, nextText, {
     ...opts,
     className: opts.className || "metric-value-anim",
@@ -2517,6 +2513,30 @@ function updateRangeDateButton(startISO, endISO, options) {
   }) : false;
   if (trigger) trigger.setAttribute("aria-label", text);
   void didUpdate;
+}
+
+function normalizeTheme(value) {
+  void value;
+  return "bronze";
+}
+
+function readStoredTheme() {
+  return "bronze";
+}
+
+function persistTheme(theme) {
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (_) {
+    // ignore
+  }
+}
+
+function updateThemeDotToggle(theme) {
+  const btn = document.getElementById("theme-dot-toggle");
+  if (!btn) return;
+  btn.classList.add("is-bronze");
+  btn.setAttribute("aria-label", "Bronze theme");
 }
 
 function getThemePalette() {
@@ -2973,7 +2993,6 @@ function applyI18n(lang, options) {
     renderContributionHeatmap();
   }
   if (currentRange.start && currentRange.end) {
-    updateDashboardStatus(currentRange.start, currentRange.end, false);
     renderDirectoryLeaderboard(currentRange.start, currentRange.end);
   }
 }
@@ -3047,21 +3066,6 @@ function getDataStamp(doc) {
   return `${start}:${end}:${count}`;
 }
 
-function formatStatusTimestamp(value) {
-  const raw = String(value || "").trim();
-  if (!raw) return labelFor("updated_unknown");
-  return raw.replace("T", " ").replace(/\\.\\d+(?:Z)?$/, "").slice(0, 19);
-}
-
-function updateDashboardStatus(startISO, endISO, animate) {
-  const meta = DATA.meta || {};
-  const updatedAt = meta.generated_at || meta.last_synced_at || "";
-  setDisplayText("status-last-sync", formatStatusTimestamp(updatedAt), animate);
-  if (startISO && endISO) {
-    setDisplayText("status-data-window", `${startISO} to ${endISO}`, animate);
-  }
-}
-
 function applyLatestData(nextData) {
   if (!nextData || !nextData.range || !nextData.daily || !Array.isArray(nextData.daily.labels)) {
     return false;
@@ -3082,7 +3086,6 @@ function applyLatestData(nextData) {
   DATA.recent_events = nextData.recent_events || [];
   DATA.pricing = nextData.pricing || DATA.pricing;
   DATA.meta = nextData.meta || {};
-  updateDashboardStatus(currentRange.start, currentRange.end, true);
   rebuildLabelIndex();
   rebuildHourEventMap();
   if (shouldRefreshHeatmap) {
@@ -3193,7 +3196,7 @@ function lineChart(el, labels, values, options) {
       duration: animateChartUpdate ? 280 : 0,
       easing: "cubicOut",
     },
-    grid: { left: isCompactChart ? 38 : 50, right: isCompactChart ? 12 : 24, top: 18, bottom: isCompactChart ? 44 : 54 },
+    grid: { left: isCompactChart ? 38 : 48, right: isCompactChart ? 12 : 26, top: 16, bottom: isCompactChart ? 44 : 56 },
     tooltip: {
       trigger: "axis",
       backgroundColor: "rgba(10,10,10,0.92)",
@@ -3206,7 +3209,7 @@ function lineChart(el, labels, values, options) {
     },
     xAxis: {
       type: "category",
-      boundaryGap: true,
+      boundaryGap: false,
       data: chartLabels,
       axisLabel: {
         color: CHART_AXIS_TEXT,
@@ -3226,30 +3229,15 @@ function lineChart(el, labels, values, options) {
     },
     series: [
       {
-        type: "bar",
-        id: "hourly-total-bars",
-        data: chartValues,
-        barWidth: isCompactChart ? "46%" : "54%",
-        itemStyle: {
-          borderRadius: [4, 4, 0, 0],
-          color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: palette.areaStart },
-            { offset: 1, color: "rgba(184, 156, 122, 0.02)" },
-          ]),
-        },
-        emphasis: { disabled: true },
-        silent: true,
-      },
-      {
         type: "line",
         id: "hourly-total-line",
         data: chartValues,
         showSymbol: false,
-        smooth: 0.18,
+        smooth: 0.58,
         sampling: "lttb",
         universalTransition: false,
         lineStyle: {
-          width: 2,
+          width: 1.8,
           color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
             { offset: 0, color: palette.lineStart },
             { offset: 1, color: palette.lineEnd },
@@ -3659,9 +3647,6 @@ function renderContributionHeatmap(options) {
     if (renderToken !== contributionHeatmapRenderToken) return;
     const cal = new window.CalHeatmap();
     contributionHeatmapInstance = cal;
-    const compactHeatmap = window.matchMedia && window.matchMedia("(max-width: 760px)").matches;
-    const heatmapCell = compactHeatmap ? 8 : 10;
-    const heatmapGutter = compactHeatmap ? 2 : 3;
     const plugins = [];
     if (window.Tooltip) {
       plugins.push([
@@ -3704,7 +3689,7 @@ function renderContributionHeatmap(options) {
           range: contributionMonthRange(contribution.startISO, contribution.endISO),
           domain: {
             type: "month",
-            gutter: compactHeatmap ? 4 : 6,
+            gutter: 6,
             label: {
               position: "top",
               textAlign: "start",
@@ -3714,10 +3699,10 @@ function renderContributionHeatmap(options) {
           },
           subDomain: {
             type: "ghDay",
-            width: heatmapCell,
-            height: heatmapCell,
-            gutter: heatmapGutter,
-            radius: compactHeatmap ? 2.5 : 3,
+            width: 10,
+            height: 10,
+            gutter: 3,
+            radius: 3,
           },
           data: {
             source: dataset,
@@ -4003,6 +3988,222 @@ function renderDirectoryLeaderboard(startISO, endISO, options) {
   }).join("");
 }
 
+function normalizeImportedData(raw) {
+  if (!raw) return null;
+  if (raw.data && raw.data.daily && raw.data.daily.labels) return raw.data;
+  if (raw.daily && raw.daily.labels) return raw;
+  return null;
+}
+
+function mergeDailyInto(dayMap, data) {
+  const daily = data.daily || {};
+  const labels = daily.labels || [];
+  const totals = daily.total || [];
+  const inputs = daily.input || [];
+  const outputs = daily.output || [];
+  const reasoning = daily.reasoning || [];
+  const cached = daily.cached || [];
+  labels.forEach((day, idx) => {
+    if (!dayMap[day]) {
+      dayMap[day] = { total: 0, input: 0, output: 0, reasoning: 0, cached: 0 };
+    }
+    dayMap[day].total += totals[idx] || 0;
+    dayMap[day].input += inputs[idx] || 0;
+    dayMap[day].output += outputs[idx] || 0;
+    dayMap[day].reasoning += reasoning[idx] || 0;
+    dayMap[day].cached += cached[idx] || 0;
+  });
+}
+
+function mergeDailyModelsInto(target, data) {
+  const source = data.daily_models || {};
+  Object.keys(source).forEach(day => {
+    const dayMap = source[day] || {};
+    const outDay = target[day] || (target[day] = {});
+    Object.keys(dayMap).forEach(model => {
+      const rec = dayMap[model] || {};
+      const modelKey = normalizeModelName(model);
+      const outRec = outDay[modelKey] || (outDay[modelKey] = {
+        input_tokens: 0,
+        cached_input_tokens: 0,
+        output_tokens: 0,
+        reasoning_output_tokens: 0,
+        total_tokens: 0,
+      });
+      outRec.input_tokens += rec.input_tokens || 0;
+      outRec.cached_input_tokens += rec.cached_input_tokens || 0;
+      outRec.output_tokens += rec.output_tokens || 0;
+      outRec.reasoning_output_tokens += rec.reasoning_output_tokens || 0;
+      outRec.total_tokens += rec.total_tokens || 0;
+    });
+  });
+}
+
+function mergeHourlyDailyInto(target, data) {
+  const source = data.hourly_daily || {};
+  Object.keys(source).forEach(day => {
+    const hours = source[day] || [];
+    const out = target[day] || (target[day] = new Array(24).fill(0));
+    for (let i = 0; i < 24; i++) {
+      out[i] += hours[i] || 0;
+    }
+  });
+}
+
+function mergeDailyDirectoriesInto(target, data) {
+  const source = data.daily_directories || {};
+  Object.keys(source).forEach(day => {
+    const directoryMap = source[day] || {};
+    const outDay = target[day] || (target[day] = {});
+    Object.keys(directoryMap).forEach(path => {
+      const record = directoryMap[path] || {};
+      const outRecord = outDay[path] || (outDay[path] = {
+        total_tokens: 0,
+        total_cost: 0,
+      });
+      outRecord.total_tokens += Number(record.total_tokens || 0);
+      outRecord.total_cost += Number(record.total_cost || 0);
+    });
+  });
+}
+
+function buildMergedData(datasets) {
+  const dayMap = {};
+  const dailyModels = {};
+  const hourlyDaily = {};
+  const dailyDirectories = {};
+  const events = [];
+  const spans = [];
+
+  datasets.forEach(data => {
+    if (!data || !data.daily || !data.daily.labels) return;
+    mergeDailyInto(dayMap, data);
+    mergeDailyModelsInto(dailyModels, data);
+    mergeHourlyDailyInto(hourlyDaily, data);
+    mergeDailyDirectoriesInto(dailyDirectories, data);
+    (data.events || []).forEach(ev => events.push(ev));
+    (data.session_spans || []).forEach(span => spans.push(span));
+  });
+
+  const labels = Object.keys(dayMap).sort();
+  const daily = {
+    labels,
+    total: [],
+    input: [],
+    output: [],
+    reasoning: [],
+    cached: [],
+  };
+  labels.forEach(day => {
+    const rec = dayMap[day];
+    daily.total.push(rec.total);
+    daily.input.push(rec.input);
+    daily.output.push(rec.output);
+    daily.reasoning.push(rec.reasoning);
+    daily.cached.push(rec.cached);
+  });
+
+  return {
+    daily,
+    daily_models: dailyModels,
+    hourly_daily: hourlyDaily,
+    daily_directories: dailyDirectories,
+    events,
+    session_spans: spans,
+    range: {
+      start: labels[0] || "",
+      end: labels[labels.length - 1] || "",
+      days: labels.length,
+    },
+  };
+}
+
+function mergeImportedData(datasets) {
+  const merged = buildMergedData(datasets);
+  if (!merged.daily.labels.length) return false;
+  DATA.daily = merged.daily;
+  DATA.daily_models = merged.daily_models;
+  DATA.hourly_daily = merged.hourly_daily;
+  DATA.daily_directories = merged.daily_directories;
+  DATA.events = merged.events;
+  DATA.session_spans = merged.session_spans;
+  DATA.range = merged.range;
+  rebuildLabelIndex();
+  rebuildHourEventMap();
+  syncRangeControls(DATA.range.start, DATA.range.end);
+  applyRange(DATA.range.start, DATA.range.end);
+  return true;
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error("read failed"));
+    reader.readAsText(file);
+  });
+}
+
+function setupImportExport() {
+  const exportBtn = document.getElementById("export-data");
+  const importInput = document.getElementById("import-data");
+  const statusEl = document.getElementById("import-status");
+
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      const payload = {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        data: DATA,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      const day = new Date().toISOString().slice(0, 10);
+      link.download = `codex-token-export-${day}.json`;
+      link.href = URL.createObjectURL(blob);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    });
+  }
+
+  if (importInput) {
+    importInput.addEventListener("change", async () => {
+      const files = Array.from(importInput.files || []);
+      if (!files.length) return;
+      if (statusEl) setAnimatedText(statusEl, "", { animate: false });
+      const imported = [];
+      let invalidCount = 0;
+      for (const file of files) {
+        try {
+          const text = await readFileAsText(file);
+          const raw = JSON.parse(text);
+          const data = normalizeImportedData(raw);
+          if (data) {
+            imported.push(data);
+          } else {
+            invalidCount += 1;
+          }
+        } catch (err) {
+          invalidCount += 1;
+        }
+      }
+      importInput.value = "";
+      if (!imported.length) {
+        if (statusEl) setAnimatedText(statusEl, formatI18n("import_invalid"), { animate: true });
+        return;
+      }
+      const mergedOk = mergeImportedData([DATA, ...imported]);
+      if (!mergedOk) {
+        if (statusEl) setAnimatedText(statusEl, formatI18n("import_failed"), { animate: true });
+        return;
+      }
+      if (statusEl) setAnimatedText(statusEl, formatI18n("import_done", { count: imported.length }), { animate: true });
+    });
+  }
+}
+
 function applyRange(startISO, endISO, options) {
   return applyRangeInternal(startISO, endISO, false, options);
 }
@@ -4041,7 +4242,7 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   updateRangeDateButton(startISO, endISO, { animate: rangeChanged });
   updateQuickRangeState(startISO, endISO, { animate: false });
   const animateMetrics = hasInitialMetricsRender && opts.animateMetrics !== false;
-  updateDashboardStatus(startISO, endISO, animateMetrics);
+  setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, {
     redraw: rangeChanged || opts.forceRedraw,
   });
@@ -4332,6 +4533,7 @@ function renderInitialDashboard() {
 function bootDashboard() {
   applyI18n("en", { animate: false, source: "boot" });
   rebuildHourEventMap();
+  setupThemeToggle();
   window.requestAnimationFrame(() => {
     document.documentElement.classList.add("theme-ready");
   });
@@ -4370,7 +4572,6 @@ if (document.readyState === "loading") {
         "AVG_PER_DAY": html.escape(summary.get("avg_per_day", "")),
         "AVG_PER_SESSION": html.escape(summary.get("avg_per_session", "")),
         "TOTAL_COST": html.escape(summary.get("total_cost", "")),
-        "GENERATED_AT": html.escape(summary.get("generated_at", I18N["en"]["updated_unknown"])),
         "SOURCE_PATH": source_path,
         "EMPTY_BANNER": empty_banner,
         "INITIAL_DATA_JSON": initial_data_json,
