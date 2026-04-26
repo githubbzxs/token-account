@@ -1810,9 +1810,9 @@ html.theme-switching .chart {
 }
 
 .heatmap-canvas .ch-subdomain-bg.heatmap-cell-reveal {
-  animation: heatmapCellReveal 680ms var(--swift-ease-standard) both;
+  animation: heatmapCellReveal 320ms var(--swift-ease-standard) both;
   animation-delay: var(--heatmap-cell-delay, 0ms);
-  will-change: opacity, transform, filter;
+  will-change: opacity;
 }
 
 .heatmap-canvas .ch-subdomain-bg:hover {
@@ -2106,19 +2106,10 @@ html.theme-switching .chart {
 
 @keyframes heatmapCellReveal {
   0% {
-    opacity: 0;
-    transform: scale(0.42);
-    filter: brightness(0.72) saturate(0.78);
-  }
-  58% {
-    opacity: 1;
-    transform: scale(1.12);
-    filter: brightness(1.22) saturate(1.12);
+    opacity: 0.12;
   }
   100% {
     opacity: 1;
-    transform: scale(1);
-    filter: brightness(1) saturate(1);
   }
 }
 
@@ -3473,6 +3464,7 @@ let hasInitialMetricsRender = false;
 let hasContributionHeatmapRender = false;
 let contributionHeatmapRevealToken = 0;
 let contributionHeatmapRevealTimer = null;
+let contributionHeatmapRevealScheduleTimer = null;
 const HOUR_MS = 3_600_000;
 const REPORT_TIMEZONE_OFFSET_MINUTES = 8 * 60;
 const MAX_CHART_POINTS = 1600;
@@ -3740,65 +3732,56 @@ function scrollContributionHeatmapToLatest(options) {
   });
 }
 
-function contributionCellSortValue(cell) {
-  const rect = typeof cell.getBoundingClientRect === "function" ? cell.getBoundingClientRect() : null;
-  if (rect && Number.isFinite(rect.left) && Number.isFinite(rect.top) && (rect.width || rect.height)) {
-    return {
-      x: rect.left,
-      y: rect.top,
-    };
-  }
-  const x = Number(cell.getAttribute("x") || 0);
-  const y = Number(cell.getAttribute("y") || 0);
-  return {
-    x: Number.isFinite(x) ? x : 0,
-    y: Number.isFinite(y) ? y : 0,
-  };
-}
-
 function animateContributionHeatmapCells(chartInner, options) {
   if (!chartInner || prefersReducedMotion()) return;
   const opts = options || {};
   const cells = Array.from(chartInner.querySelectorAll(".ch-subdomain-bg"));
   if (!cells.length) return;
-  const sortedCells = cells
-    .map((cell) => ({ cell, ...contributionCellSortValue(cell) }))
-    .sort((left, right) => {
-      if (Math.abs(left.x - right.x) > 0.5) return left.x - right.x;
-      return left.y - right.y;
-    })
-    .map((item) => item.cell);
   const revealToken = ++contributionHeatmapRevealToken;
   if (contributionHeatmapRevealTimer != null) {
     window.clearTimeout(contributionHeatmapRevealTimer);
     contributionHeatmapRevealTimer = null;
   }
-  const step = opts.redraw ? 4.2 : 5.2;
-  const lastDelay = Math.max(0, (sortedCells.length - 1) * step);
-  sortedCells.forEach((cell, index) => {
+  const step = opts.redraw ? 3.8 : 4.8;
+  const lastDelay = Math.max(0, (cells.length - 1) * step);
+  cells.forEach((cell, index) => {
     cell.classList.remove("heatmap-cell-reveal");
-    cell.style.opacity = "0";
-    cell.style.transform = "scale(0.42)";
-    cell.style.filter = "brightness(0.72) saturate(0.78)";
+    cell.style.opacity = "0.12";
     cell.style.setProperty("--heatmap-cell-delay", `${(index * step).toFixed(1)}ms`);
   });
   window.requestAnimationFrame(() => {
     if (revealToken !== contributionHeatmapRevealToken) return;
-    sortedCells.forEach((cell) => {
+    cells.forEach((cell) => {
       cell.classList.add("heatmap-cell-reveal");
     });
   });
   contributionHeatmapRevealTimer = window.setTimeout(() => {
     if (revealToken !== contributionHeatmapRevealToken) return;
-    sortedCells.forEach((cell) => {
+    cells.forEach((cell) => {
       cell.classList.remove("heatmap-cell-reveal");
       cell.style.removeProperty("--heatmap-cell-delay");
       cell.style.opacity = "";
-      cell.style.transform = "";
-      cell.style.filter = "";
     });
     contributionHeatmapRevealTimer = null;
-  }, lastDelay + 920);
+  }, lastDelay + 420);
+}
+
+function scheduleContributionHeatmapReveal(chartInner, options) {
+  if (!chartInner || prefersReducedMotion()) return;
+  const opts = options || {};
+  if (contributionHeatmapRevealScheduleTimer != null) {
+    window.clearTimeout(contributionHeatmapRevealScheduleTimer);
+    contributionHeatmapRevealScheduleTimer = null;
+  }
+  const delay = Number.isFinite(Number(opts.delay)) ? Number(opts.delay) : 90;
+  contributionHeatmapRevealScheduleTimer = window.setTimeout(() => {
+    contributionHeatmapRevealScheduleTimer = null;
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        animateContributionHeatmapCells(chartInner, opts);
+      });
+    });
+  }, Math.max(0, delay));
 }
 
 function renderContributionHeatmap(options) {
@@ -3912,7 +3895,7 @@ function renderContributionHeatmap(options) {
         await destroyContributionHeatmap(cal);
         return;
       }
-      animateContributionHeatmapCells(chartInner, { redraw: opts.redraw === true });
+      scheduleContributionHeatmapReveal(chartInner, { redraw: opts.redraw === true, delay: 40 });
       scrollContributionHeatmapToLatest({ animate: opts.redraw === true });
       hasContributionHeatmapRender = true;
     } catch (_) {
@@ -4434,15 +4417,16 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   const animateMetrics = hasInitialMetricsRender && opts.animateMetrics !== false;
   setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, {
-    redraw: rangeChanged || opts.forceRedraw,
+    redraw: !hasInitialMetricsRender || opts.refreshHeatmap === true,
   });
   if (!hasContributionHeatmapRender || opts.refreshHeatmap) {
     renderContributionHeatmap({
       redraw: opts.refreshHeatmap === true || rangeChanged || opts.forceRedraw === true,
     });
   } else if (rangeChanged || opts.forceRedraw || opts.replayHeatmap) {
-    animateContributionHeatmapCells(document.getElementById("chart-heatmap-inner"), {
+    scheduleContributionHeatmapReveal(document.getElementById("chart-heatmap-inner"), {
       redraw: true,
+      delay: 120,
     });
   }
 
