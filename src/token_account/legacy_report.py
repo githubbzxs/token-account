@@ -1436,10 +1436,21 @@ html.theme-switching .chart {
 }
 
 .text-fade-anim,
-.metric-value-anim,
 .i18n-switch-anim {
   animation: textFadeOnly 360ms ease both;
   will-change: opacity;
+}
+
+.metric-value-anim {
+  animation: metricValueSettle 520ms var(--swift-ease-standard) both;
+  will-change: opacity, transform, filter;
+}
+
+.metric-width-animating {
+  overflow: hidden;
+  vertical-align: top;
+  transition: width 520ms var(--swift-ease-standard);
+  will-change: width;
 }
 
 .metric-roll {
@@ -2068,6 +2079,23 @@ html.theme-switching .chart {
   }
 }
 
+@keyframes metricValueSettle {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0) scale(0.985);
+    filter: blur(5px);
+  }
+  62% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
 @keyframes chartLineDraw {
   0% {
     stroke-dashoffset: var(--line-length);
@@ -2297,6 +2325,71 @@ function triggerSwapAnimation(el, className) {
   setTimeout(applyClass, 0);
 }
 
+function measureMetricContentWidth(el) {
+  if (!el) return 0;
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const rect = range.getBoundingClientRect();
+  if (typeof range.detach === "function") {
+    range.detach();
+  }
+  if (Number.isFinite(rect.width) && rect.width > 0) {
+    return rect.width;
+  }
+  const fallbackRect = el.getBoundingClientRect();
+  return Number.isFinite(fallbackRect.width) ? fallbackRect.width : 0;
+}
+
+function cancelMetricWidthAnimation(el) {
+  if (!el || typeof el._metricWidthCleanup !== "function") return;
+  el._metricWidthCleanup();
+}
+
+function animateMetricWidthChange(el, previousWidth) {
+  if (!el || prefersReducedMotion()) return;
+  const nextWidth = measureMetricContentWidth(el);
+  if (!Number.isFinite(previousWidth) || !Number.isFinite(nextWidth)) return;
+  if (Math.abs(previousWidth - nextWidth) < 1.5) return;
+
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  el.dataset.metricWidthToken = token;
+  el.classList.add("metric-width-animating");
+  el.style.width = `${Math.ceil(previousWidth)}px`;
+  void el.offsetWidth;
+
+  const cleanup = () => {
+    if (el.dataset.metricWidthToken !== token) return;
+    if (el._metricWidthTimer) {
+      window.clearTimeout(el._metricWidthTimer);
+      delete el._metricWidthTimer;
+    }
+    el.classList.remove("metric-width-animating");
+    el.style.width = "";
+    delete el.dataset.metricWidthToken;
+    delete el._metricWidthCleanup;
+  };
+  const handleTransitionEnd = (event) => {
+    if (event.target !== el || event.propertyName !== "width") return;
+    el.removeEventListener("transitionend", handleTransitionEnd);
+    cleanup();
+  };
+
+  el._metricWidthCleanup = () => {
+    el.removeEventListener("transitionend", handleTransitionEnd);
+    cleanup();
+  };
+  el.addEventListener("transitionend", handleTransitionEnd);
+  window.requestAnimationFrame(() => {
+    if (el.dataset.metricWidthToken === token) {
+      el.style.width = `${Math.ceil(nextWidth)}px`;
+    }
+  });
+  el._metricWidthTimer = window.setTimeout(() => {
+    el.removeEventListener("transitionend", handleTransitionEnd);
+    cleanup();
+  }, 780);
+}
+
 function setAnimatedText(el, text, options) {
   if (!el) return false;
   const opts = options || {};
@@ -2328,11 +2421,20 @@ function canUseRollingNumber(text) {
   return /^[0-9.,%$KMB+\\- /:]+$/.test(String(text || ""));
 }
 
+function metricTextShape(text) {
+  return String(text || "").replace(/[0-9]/g, "0");
+}
+
+function hasMetricShapeShift(prevText, nextText) {
+  return metricTextShape(prevText) !== metricTextShape(nextText);
+}
+
 function canRollDigits(prevText, nextText) {
   const prev = String(prevText || "");
   const next = String(nextText || "");
   if (!prev || !next) return false;
   if (!canUseRollingNumber(prev) || !canUseRollingNumber(next)) return false;
+  if (hasMetricShapeShift(prev, next)) return false;
   return /[0-9]/.test(prev) && /[0-9]/.test(next);
 }
 
@@ -2424,13 +2526,19 @@ function setAnimatedNumericText(el, text, options) {
     }
     return false;
   }
-  if (shouldAnimate && canRollDigits(prevText, nextText)) {
-    return renderRollingDigits(el, prevText, nextText, opts.syncAriaLabel);
+
+  cancelMetricWidthAnimation(el);
+  const previousWidth = shouldAnimate ? measureMetricContentWidth(el) : 0;
+  const didUpdate = shouldAnimate && canRollDigits(prevText, nextText)
+    ? renderRollingDigits(el, prevText, nextText, opts.syncAriaLabel)
+    : setAnimatedText(el, nextText, {
+      ...opts,
+      className: opts.className || "metric-value-anim",
+    });
+  if (didUpdate && shouldAnimate) {
+    animateMetricWidthChange(el, previousWidth);
   }
-  return setAnimatedText(el, nextText, {
-    ...opts,
-    className: opts.className || "metric-value-anim",
-  });
+  return didUpdate;
 }
 
 function updateLangToggleState() {
