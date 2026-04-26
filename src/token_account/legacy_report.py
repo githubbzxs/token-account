@@ -1212,6 +1212,8 @@ html.theme-switching .chart {
   height: var(--range-selector-height);
   max-width: none;
   overflow: hidden;
+  contain: paint;
+  transform: translateZ(0);
 }
 
 .range-segmented-slider {
@@ -1232,12 +1234,18 @@ html.theme-switching .chart {
   transform: translate3d(0, 0, 0);
   transform-origin: center center;
   will-change: transform, width, opacity, box-shadow;
+  pointer-events: none;
+  backface-visibility: hidden;
   transition:
     transform 560ms cubic-bezier(0.25, 1, 0.5, 1),
     width 560ms cubic-bezier(0.25, 1, 0.5, 1),
     opacity 0.28s ease,
     box-shadow 560ms cubic-bezier(0.25, 1, 0.5, 1);
   z-index: 0;
+}
+
+.range-segmented-slider.is-animating {
+  transition: none;
 }
 
 .range-segmented-slider::after {
@@ -1275,14 +1283,17 @@ html.theme-switching .chart {
   font-weight: 600;
   letter-spacing: 0.2px;
   cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
   transform: translateY(0);
   transition:
-    color 0.28s cubic-bezier(0.25, 1, 0.5, 1),
-    opacity 0.26s ease,
-    transform 0.34s cubic-bezier(0.25, 1, 0.5, 1);
+    color 0.20s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.18s ease,
+    transform 0.24s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .range-segmented button:hover {
@@ -1304,7 +1315,7 @@ html.theme-switching .chart {
 }
 
 .range-segmented.is-animating button.is-active {
-  animation: segmentedLabelSettle 520ms cubic-bezier(0.25, 1, 0.5, 1);
+  animation: segmentedLabelSettle 320ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .range-actions {
@@ -2297,6 +2308,7 @@ let quickRangeResizeBound = false;
 let quickRangeSelection = "";
 let quickRangeSliderAnimation = null;
 let quickRangeSliderCleanupTimer = 0;
+let quickRangeApplyToken = 0;
 const THEME_STORAGE_KEY = "token-report-theme";
 let themeSwitchTimer = null;
 const calendarState = {
@@ -2813,6 +2825,24 @@ function applyQuickRangeSliderState(slider, state) {
     : "translate3d(0, 0, 0)";
 }
 
+function scheduleQuickRangeApply(startISO, endISO) {
+  const token = ++quickRangeApplyToken;
+  const run = () => {
+    if (token !== quickRangeApplyToken) return;
+    applyRange(startISO, endISO, {
+      forceRedraw: true,
+      preserveQuickRangeMotion: true,
+    });
+  };
+  if (window.requestAnimationFrame) {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(run);
+    });
+    return;
+  }
+  window.setTimeout(run, 34);
+}
+
 function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   const canAnimate =
     !prefersReducedMotion() &&
@@ -2829,9 +2859,9 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   }
   clearQuickRangeSliderMotion(segmented, slider);
   const movingRight = toState.x >= fromState.x;
-  const settleOffset = Math.min(1.6, Math.max(0.4, travel * 0.012));
+  const settleOffset = Math.min(1.2, Math.max(0.24, travel * 0.006));
   const settleX = toState.x + (movingRight ? settleOffset : -settleOffset);
-  const duration = Math.min(620, Math.max(420, 420 + travel * 1.1));
+  const duration = Math.min(380, Math.max(240, 240 + travel * 0.46));
   applyQuickRangeSliderState(slider, fromState);
   segmented.classList.add("is-animating");
   segmented.dataset.motionDirection = movingRight ? "right" : "left";
@@ -2859,7 +2889,7 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     ],
     {
       duration,
-      easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+      easing: "cubic-bezier(0.2, 0.9, 0.2, 1)",
       fill: "both",
     }
   );
@@ -2931,6 +2961,13 @@ function updateQuickRangeState(startISO, endISO, options) {
   }
   if (!preset) {
     preset = quickRangePresetFor(startISO, endISO, minISO, maxISO);
+  }
+  if (options && options.preserveQuickRangeMotion) {
+    const segmented = document.getElementById("quick-range-segmented");
+    const activeRange = segmented ? (segmented.dataset.activeRange || "") : "";
+    if (activeRange === (preset || "")) {
+      return;
+    }
   }
   setQuickRangeActive(preset, options);
 }
@@ -4343,7 +4380,10 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   if (startInput) setRangeInputValue(startInput, startISO);
   if (endInput) setRangeInputValue(endInput, endISO);
   updateRangeDateButton(startISO, endISO, { animate: rangeChanged });
-  updateQuickRangeState(startISO, endISO, { animate: false });
+  updateQuickRangeState(startISO, endISO, {
+    animate: false,
+    preserveQuickRangeMotion: opts.preserveQuickRangeMotion === true,
+  });
   const animateMetrics = hasInitialMetricsRender && opts.animateMetrics !== false;
   setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
   lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, {
@@ -4449,15 +4489,8 @@ function setupRangeControls() {
       if (!value) return;
       rememberQuickRangeSelection(value);
       setQuickRangeActive(value, { animate: true });
-      const runApply = (startISO, endISO) => {
-        if (window.requestAnimationFrame) {
-          window.requestAnimationFrame(() => applyRange(startISO, endISO, { forceRedraw: true }));
-        } else {
-          applyRange(startISO, endISO, { forceRedraw: true });
-        }
-      };
       if (value === "all") {
-        runApply(minISO, maxISO);
+        scheduleQuickRangeApply(minISO, maxISO);
         return;
       }
       const days = parseInt(value, 10);
@@ -4465,7 +4498,7 @@ function setupRangeControls() {
       const end = maxISO;
       let start = addDaysISO(end, -(days - 1));
       if (start < minISO) start = minISO;
-      runApply(start, end);
+      scheduleQuickRangeApply(start, end);
     });
   });
 }
