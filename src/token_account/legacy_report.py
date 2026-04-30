@@ -1460,11 +1460,65 @@ html.theme-switching .chart {
   display: inline-flex;
   align-items: center;
   gap: 0;
+  position: relative;
   min-height: 1em;
   line-height: 1;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
+}
+
+.metric-roll-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  min-height: 1em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.metric-roll-shrinking .metric-roll-content {
+  opacity: 0;
+  transform: translate3d(0, 5px, 0) scale(0.985);
+  filter: blur(4px);
+  transition:
+    opacity 460ms var(--swift-ease-standard),
+    transform 520ms var(--swift-ease-standard),
+    filter 520ms var(--swift-ease-standard);
+  will-change: opacity, transform, filter;
+}
+
+.metric-roll-shrinking .metric-roll-content.is-animating {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  filter: blur(0);
+}
+
+.metric-roll-ghost {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 1em;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  filter: blur(0);
+  transition:
+    opacity 420ms var(--swift-ease-standard),
+    transform 520ms var(--swift-ease-standard),
+    filter 520ms var(--swift-ease-standard);
+  will-change: opacity, transform, filter;
+}
+
+.metric-roll-ghost.is-animating {
+  opacity: 0;
+  transform: translate3d(0, -5px, 0) scale(0.985);
+  filter: blur(4px);
 }
 
 .metric-roll-static {
@@ -2333,8 +2387,10 @@ function triggerSwapAnimation(el, className) {
 
 function measureMetricContentWidth(el) {
   if (!el) return 0;
+  const content = Array.from(el.children || []).find((child) => child.classList && child.classList.contains("metric-roll-content"));
+  const measureTarget = content || el;
   const range = document.createRange();
-  range.selectNodeContents(el);
+  range.selectNodeContents(measureTarget);
   const rect = range.getBoundingClientRect();
   if (typeof range.detach === "function") {
     range.detach();
@@ -2349,6 +2405,11 @@ function measureMetricContentWidth(el) {
 function cancelMetricWidthAnimation(el) {
   if (!el || typeof el._metricWidthCleanup !== "function") return;
   el._metricWidthCleanup();
+}
+
+function cancelMetricRollAnimation(el) {
+  if (!el || typeof el._metricRollCleanup !== "function") return;
+  el._metricRollCleanup();
 }
 
 function animateMetricWidthChange(el, previousWidth) {
@@ -2398,6 +2459,7 @@ function animateMetricWidthChange(el, previousWidth) {
 
 function setAnimatedText(el, text, options) {
   if (!el) return false;
+  cancelMetricRollAnimation(el);
   const opts = options || {};
   const nextText = String(text ?? "");
   const prevText = el.dataset.animatedText != null
@@ -2409,7 +2471,7 @@ function setAnimatedText(el, text, options) {
     }
     return false;
   }
-  el.classList.remove("metric-roll");
+  el.classList.remove("metric-roll", "metric-roll-shrinking");
   el.textContent = nextText;
   el.dataset.animatedText = nextText;
   el.dataset.metricText = nextText;
@@ -2444,7 +2506,10 @@ function compareRollDirection(prevText, nextText) {
   return nextDigits >= prevDigits ? 1 : -1;
 }
 
-function renderRollingDigits(el, prevText, nextText, syncAriaLabel) {
+function renderRollingDigits(el, prevText, nextText, syncAriaLabel, options) {
+  const opts = options || {};
+  const shouldReduceMotion = prefersReducedMotion();
+  const preservePrevious = opts.preservePrevious && !shouldReduceMotion;
   const direction = compareRollDirection(prevText, nextText);
   const prevDigits = String(prevText || "").match(/[0-9]/g) || [];
   const nextDigitChars = String(nextText || "").match(/[0-9]/g) || [];
@@ -2490,22 +2555,58 @@ function renderRollingDigits(el, prevText, nextText, syncAriaLabel) {
     fragment.appendChild(column);
   }
 
+  const content = document.createElement("span");
+  content.className = "metric-roll-content";
+  content.appendChild(fragment);
+
+  if (typeof el._metricRollCleanup === "function") {
+    el._metricRollCleanup();
+  }
   el.textContent = "";
+  el.classList.remove("metric-roll-shrinking");
   el.classList.add("metric-roll");
-  el.appendChild(fragment);
+  if (preservePrevious) {
+    const ghost = document.createElement("span");
+    ghost.className = "metric-roll-ghost";
+    ghost.textContent = String(prevText || "");
+    el.classList.add("metric-roll-shrinking");
+    el.appendChild(ghost);
+  }
+  el.appendChild(content);
   el.dataset.animatedText = nextText;
   el.dataset.metricText = nextText;
   if (syncAriaLabel) {
     el.setAttribute("aria-label", nextText);
   }
-  if (prefersReducedMotion()) {
+  if (shouldReduceMotion) {
     return true;
   }
   requestAnimationFrame(() => {
     el.querySelectorAll(".metric-roll-track").forEach((track) => {
       track.classList.add("is-animating");
     });
+    el.querySelectorAll(".metric-roll-content, .metric-roll-ghost").forEach((node) => {
+      node.classList.add("is-animating");
+    });
   });
+  if (preservePrevious) {
+    const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    let cleanupTimer = 0;
+    el.dataset.metricRollToken = token;
+    const cleanup = () => {
+      if (el.dataset.metricRollToken !== token) return;
+      if (cleanupTimer) {
+        window.clearTimeout(cleanupTimer);
+        cleanupTimer = 0;
+      }
+      el.querySelectorAll(".metric-roll-ghost").forEach((node) => node.remove());
+      el.classList.remove("metric-roll-shrinking");
+      delete el.dataset.metricRollToken;
+      delete el._metricRollCleanup;
+    };
+    el._metricRollCleanup = cleanup;
+    cleanupTimer = window.setTimeout(cleanup, 900);
+  }
   return true;
 }
 
@@ -2524,10 +2625,12 @@ function setAnimatedNumericText(el, text, options) {
     return false;
   }
 
+  cancelMetricRollAnimation(el);
   cancelMetricWidthAnimation(el);
   const previousWidth = shouldAnimate ? measureMetricContentWidth(el) : 0;
+  const preservePrevious = shouldAnimate && nextText.length < prevText.length;
   const didUpdate = shouldAnimate && canRollDigits(prevText, nextText)
-    ? renderRollingDigits(el, prevText, nextText, opts.syncAriaLabel)
+    ? renderRollingDigits(el, prevText, nextText, opts.syncAriaLabel, { preservePrevious })
     : setAnimatedText(el, nextText, {
       ...opts,
       className: opts.className || "metric-value-anim",
