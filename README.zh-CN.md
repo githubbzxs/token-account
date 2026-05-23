@@ -14,14 +14,12 @@
 </p>
 
 <p>
-  将一次性静态报表改造成支持增量同步、多设备汇总和 Swift 风格 React 仪表盘的轻量服务。
+  将一次性静态报表改造成支持增量同步、多设备汇总和实时 HTML 仪表盘的轻量服务。
 </p>
 
 <p>
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat&logo=python&logoColor=white" alt="Python 3.11+" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=111827" alt="React 19" />
-  <img src="https://img.shields.io/badge/Vite-7-646CFF?style=flat&logo=vite&logoColor=white" alt="Vite 7" />
   <img src="https://img.shields.io/badge/Pydantic-E92063?style=flat&logo=pydantic&logoColor=white" alt="Pydantic" />
   <img src="https://img.shields.io/badge/SQLite-0F80CC?style=flat&logo=sqlite&logoColor=white" alt="SQLite" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker" />
@@ -44,7 +42,7 @@
 
 `token-account` 把原本一次性生成静态 HTML 的脚本改造成一个基于 FastAPI 和 SQLite 的常驻服务。
 
-它支持一台或多台设备持续上报增量事件，基于 `event_id` 做幂等去重，记录来源状态，并通过 React 仪表盘展示原生质感的范围切换、弹簧动效和数字滚动。
+它支持一台或多台设备持续上报增量事件，基于 `event_id` 做幂等去重，记录来源状态，并继续保留旧版报表 UI 作为实时仪表盘页面。
 
 ## 功能
 
@@ -52,9 +50,7 @@
 - 从本地 Codex 会话日志增量采集事件
 - 基于 `event_id` 做幂等去重
 - 将多台设备的使用量聚合为一份报告
-- 同时提供仪表盘 API 与 Vite 构建的 React 报表页
-- 范围胶囊采用类似 Swift 的 shared-layout 弹簧动效
-- 指标数字在范围切换和实时刷新时使用逐位滚动动效
+- 同时提供仪表盘 API 与服务端渲染的旧版 HTML 报表页
 - 在本地保存同步状态，减少重复上传
 
 ## 技术栈
@@ -62,9 +58,6 @@
 <p>
   <img src="https://img.shields.io/badge/FastAPI-API-009688?style=flat&logo=fastapi&logoColor=white" alt="FastAPI API" />
   <img src="https://img.shields.io/badge/Pydantic-Validation-E92063?style=flat&logo=pydantic&logoColor=white" alt="Pydantic Validation" />
-  <img src="https://img.shields.io/badge/React-UI-61DAFB?style=flat&logo=react&logoColor=111827" alt="React UI" />
-  <img src="https://img.shields.io/badge/Motion-%E5%8A%A8%E6%95%88-111827?style=flat" alt="Motion 动效" />
-  <img src="https://img.shields.io/badge/ECharts-%E5%9B%BE%E8%A1%A8-AA344D?style=flat" alt="ECharts 图表" />
   <img src="https://img.shields.io/badge/Uvicorn-ASGI-4051B5?style=flat" alt="Uvicorn ASGI" />
   <img src="https://img.shields.io/badge/SQLite-Storage-0F80CC?style=flat&logo=sqlite&logoColor=white" alt="SQLite Storage" />
   <img src="https://img.shields.io/badge/urllib.request-%E5%90%8C%E6%AD%A5%E5%AE%A2%E6%88%B7%E7%AB%AF-4B5563?style=flat" alt="urllib.request 同步客户端" />
@@ -72,11 +65,10 @@
 </p>
 
 - API：`FastAPI`、`Pydantic`、`Uvicorn`
-- 前端：`React`、`Vite`、`Motion for React`、`ECharts`
 - 存储：`SQLite`、`sqlite3`
 - 同步端：`urllib.request`、本地 JSON 状态文件
-- 报表界面：由 FastAPI 托管 React 单页应用；未构建前端时自动回退旧版 HTML
-- 运行与部署：`Python 3.11+`、`Node.js 22+`、`Docker`、`Docker Compose`
+- 报表界面：服务端渲染 HTML、旧版报表渲染器
+- 运行与部署：`Python 3.11+`、`Docker`、`Docker Compose`
 
 ## 目录结构
 
@@ -87,13 +79,8 @@ src/token_account/
   syncer.py               增量同步客户端
   storage.py              SQLite 结构与入库逻辑
   reporting.py            报表聚合与接口数据组装
-  legacy_report.py        旧版 HTML 回退渲染器
-web/
-  src/                    React 仪表盘源码
-  dist/                   生产前端构建产物
+  legacy_report.py        旧版 HTML 报表渲染器
 src/codex_token_report.py 轻量启动入口
-package.json              前端脚本与依赖
-vite.config.ts            Vite 前端构建配置
 Dockerfile                容器镜像定义
 docker-compose.yml        Compose 服务配置
 pricing.json              可选定价覆盖文件
@@ -105,28 +92,21 @@ pricing.json              可选定价覆盖文件
 
 ```bash
 pip install -r requirements.txt
-npm install
 ```
 
-2. 构建 React 仪表盘
-
-```bash
-npm run build
-```
-
-3. 启动服务
+2. 启动服务
 
 ```bash
 python3 src/codex_token_report.py serve --host 0.0.0.0 --port 8000 --db-file data/token-account.db
 ```
 
-4. 执行一次本机同步
+3. 执行一次本机同步
 
 ```bash
 python3 src/codex_token_report.py sync --service-url http://127.0.0.1:8000
 ```
 
-5. 持续后台同步
+4. 持续后台同步
 
 ```bash
 python3 src/codex_token_report.py sync-loop --service-url http://127.0.0.1:8000 --interval 60
@@ -141,12 +121,6 @@ python3 src/codex_token_report.py sync-loop --service-url http://127.0.0.1:8000 
 - 健康检查：`http://127.0.0.1:8000/api/health`
 
 Windows 下也可以直接双击 `open-report.bat`，它会在后台拉起本地服务并自动打开浏览器。
-
-前端开发时，可在启动 API 服务后单独运行 Vite 开发服务器：
-
-```bash
-npm run dev
-```
 
 ## 命令说明
 
@@ -207,7 +181,7 @@ python src/codex_token_report.py serve --host 0.0.0.0 --port 8000 --db-file /dat
 docker compose up -d --build
 ```
 
-Docker 镜像会先在 Node.js 阶段构建 React 仪表盘，再把静态产物复制到 Python 运行镜像中。默认将本地 `./data` 挂载到容器 `/data`，用于持久化 SQLite 数据。
+默认将本地 `./data` 挂载到容器 `/data`，用于持久化 SQLite 数据。
 
 ## 致谢
 
