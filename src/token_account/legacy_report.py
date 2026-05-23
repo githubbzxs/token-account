@@ -694,33 +694,36 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 <title>Codex Token Usage</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.css">
 <style>
+@import url('https://cdn.jsdelivr.net/npm/geist-font@1.0.0/dist/fonts/geist-sans/style.css');
+@import url('https://cdn.jsdelivr.net/npm/geist-font@1.0.0/dist/fonts/geist-mono/style.css');
 @import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
 
 :root {
-  --background: #0a0a0a;
-  --surface: #111113;
-  --surface-soft: #141418;
-  --surface-strong: #1a1b20;
-  --text: #f8fafc;
-  --muted: #a1a1aa;
-  --stroke: rgba(148, 163, 184, 0.16);
+  --background: #080706;
+  --surface: rgba(18, 16, 14, 0.72);
+  --surface-soft: rgba(255, 255, 255, 0.055);
+  --surface-strong: rgba(34, 29, 23, 0.78);
+  --text: #fffaf0;
+  --muted: #b7b0a6;
+  --stroke: rgba(232, 221, 205, 0.15);
+  --stroke-strong: rgba(232, 221, 205, 0.26);
   --accent: #B89C7A;
   --accent-cyan: #E3C89A;
   --accent-rgb: 184, 156, 122;
   --accent-cyan-rgb: 227, 200, 154;
-  --bg-glow-a: rgba(120, 92, 58, 0.20);
-  --bg-glow-b: rgba(94, 79, 63, 0.16);
-  --bg-glow-c: rgba(168, 152, 132, 0.07);
+  --bg-glow-a: rgba(174, 136, 84, 0.22);
+  --bg-glow-b: rgba(92, 78, 62, 0.18);
+  --bg-glow-c: rgba(236, 219, 189, 0.08);
   --bg-base-start: #080706;
   --bg-base-mid: #0b0a09;
-  --bg-base-end: #050505;
+  --bg-base-end: #050504;
   --page-border: rgba(226, 220, 210, 0.30);
-  --page-bg-start: rgba(18, 15, 12, 0.92);
-  --page-bg-end: rgba(10, 8, 7, 0.95);
-  --page-glow: rgba(214, 202, 186, 0.20);
+  --page-bg-start: rgba(23, 20, 17, 0.76);
+  --page-bg-end: rgba(9, 8, 7, 0.84);
+  --page-glow: rgba(214, 202, 186, 0.18);
   --page-outline: rgba(240, 233, 223, 0.24);
-  --page-inner-glow: rgba(186, 170, 150, 0.14);
-  --page-outer-glow: rgba(230, 219, 205, 0.16);
+  --page-inner-glow: rgba(255, 246, 232, 0.12);
+  --page-outer-glow: rgba(230, 219, 205, 0.13);
   --segment-start: #A27C4A;
   --segment-end: #D7B98A;
   --chart-line-start: #B89C7A;
@@ -738,15 +741,21 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --gap-sm: 12px;
   --gap-md: 16px;
   --gap-lg: 24px;
-  --shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+  --soft-shadow: 0 18px 52px rgba(0, 0, 0, 0.24);
+  --press-shadow: 0 12px 38px rgba(0, 0, 0, 0.22);
   --ring: rgba(184, 156, 122, 0.26);
   --font-zh: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
-  --font-en: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
+  --font-en: "Geist", "Avenir Next", "SF Pro Display", "Satoshi", "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", "SF Mono", "JetBrains Mono", monospace;
   --app-font: var(--font-en);
   --swift-duration-fast: 900ms;
   --swift-duration-normal: 2000ms;
   --swift-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   --swift-ease-spring: cubic-bezier(0.22, 0.8, 0.22, 1.02);
+  --spring-snappy: cubic-bezier(0.18, 0.9, 0.22, 1.16);
+  --spring-soft: cubic-bezier(0.16, 1, 0.28, 1);
+  --spring-press: cubic-bezier(0.2, 0.9, 0.18, 1.08);
 }
 
 * {
@@ -763,7 +772,7 @@ html[lang="en"] {
 
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: 100dvh;
   padding: 0 0 28px;
   background:
     radial-gradient(1200px 720px at 12% 2%, var(--bg-glow-a), transparent 62%),
@@ -772,22 +781,61 @@ body {
   color: var(--text);
   font-family: var(--app-font);
   line-height: 1.45;
+  position: relative;
+  overflow-x: hidden;
+  isolation: isolate;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+body::before {
+  inset: -18% -10%;
+  background:
+    radial-gradient(circle at 22% 16%, rgba(var(--accent-cyan-rgb), 0.14), transparent 26rem),
+    radial-gradient(circle at 78% 8%, rgba(255, 244, 220, 0.08), transparent 24rem),
+    radial-gradient(circle at 48% 82%, rgba(var(--accent-rgb), 0.10), transparent 32rem);
+  filter: blur(8px);
+  transform: translate3d(0, 0, 0) scale(1);
+  animation: ambientBreath 14s var(--spring-soft) infinite alternate;
+}
+
+body::after {
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.034) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.026) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.66), transparent 76%);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.66), transparent 76%);
 }
 
 .page {
   position: relative;
   max-width: 1280px;
-  margin: 24px auto 0;
-  padding: 24px clamp(18px, 2vw, 36px) 38px;
-  border-radius: 24px;
+  margin: 22px auto 0;
+  padding: 28px clamp(18px, 2.4vw, 42px) 42px;
+  border-radius: 34px;
   border: none;
-  background: linear-gradient(170deg, var(--page-bg-start), var(--page-bg-end));
+  background:
+    linear-gradient(170deg, var(--page-bg-start), var(--page-bg-end)),
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.07), transparent 22rem);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 0 24px rgba(0, 0, 0, 0.30);
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.055),
+    0 28px 120px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(30px) saturate(1.18);
+  -webkit-backdrop-filter: blur(30px) saturate(1.18);
   overflow: hidden;
+  transform: translateZ(0);
 }
 
 .page::before {
@@ -813,12 +861,12 @@ body {
 }
 
 .hero {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
-  margin-bottom: var(--gap-sm);
+  gap: 18px;
+  margin-bottom: 18px;
 }
 
 .hero-tools {
@@ -839,7 +887,10 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  transition:
+    transform 680ms var(--spring-press),
+    border-color 520ms var(--spring-soft),
+    box-shadow 620ms var(--spring-soft);
 }
 
 .theme-dot-toggle::before {
@@ -851,7 +902,7 @@ body {
 }
 
 .theme-dot-toggle:hover {
-  transform: scale(1.03);
+  transform: translate3d(0, -1px, 0) scale(1.06);
   border-color: rgba(var(--accent-cyan-rgb), 0.78);
   box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.3);
 }
@@ -869,10 +920,11 @@ body {
 
 .title h1 {
   margin: 0 0 8px;
-  font-size: clamp(30px, 5vw, 42px);
-  letter-spacing: 0.8px;
+  font-size: clamp(32px, 5vw, 58px);
+  letter-spacing: -0.055em;
+  line-height: 0.96;
   font-family: var(--app-font);
-  font-weight: 600;
+  font-weight: 760;
   text-wrap: balance;
 }
 
@@ -951,17 +1003,29 @@ html.theme-switching .chart {
 .range-controls {
   --range-selector-width: 260px;
   --range-selector-height: 36px;
-  margin: 16px 0 8px;
-  padding: 6px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  background: linear-gradient(140deg, rgba(26, 27, 32, 0.9), rgba(17, 17, 19, 0.88));
-  border-radius: 14px;
+  position: sticky;
+  top: 14px;
+  z-index: 20;
+  width: max-content;
+  max-width: 100%;
+  margin: 18px 0 10px;
+  padding: 8px;
+  border: 1px solid rgba(232, 221, 205, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+    rgba(11, 10, 9, 0.70);
+  border-radius: 28px;
   display: grid;
   grid-template-columns: var(--range-selector-width) var(--range-selector-width) auto;
   align-items: center;
-  column-gap: 10px;
+  column-gap: 8px;
   row-gap: 10px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 18px 60px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(26px) saturate(1.22);
+  -webkit-backdrop-filter: blur(26px) saturate(1.22);
+  transform: translateZ(0);
 }
 
 .range-fields {
@@ -982,9 +1046,11 @@ html.theme-switching .chart {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  border: 1px solid var(--stroke);
-  background: linear-gradient(140deg, rgba(36, 38, 46, 0.94), rgba(24, 26, 33, 0.94));
-  color: #eef2ff;
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.035)),
+    rgba(118, 118, 128, 0.15);
+  color: #fffaf0;
   border-radius: 999px;
   font-size: 14px;
   line-height: 1;
@@ -994,21 +1060,25 @@ html.theme-switching .chart {
   height: var(--range-selector-height);
   padding: 0 14px;
   min-width: 0;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 1px 2px rgba(0, 0, 0, 0.08);
   transition:
-    border-color 0.16s ease,
-    background 0.16s ease,
-    box-shadow 0.16s ease,
-    opacity 0.16s ease;
+    border-color 560ms var(--spring-soft),
+    background 560ms var(--spring-soft),
+    box-shadow 680ms var(--spring-soft),
+    opacity 520ms var(--spring-soft);
 }
 
 .range-date-trigger:hover {
-  border-color: rgba(var(--accent-cyan-rgb), 0.32);
-  background: linear-gradient(140deg, rgba(40, 43, 53, 0.95), rgba(26, 28, 35, 0.95));
+  border-color: rgba(var(--accent-cyan-rgb), 0.36);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.045)),
+    rgba(118, 118, 128, 0.18);
 }
 
 .range-date-trigger:active {
-  opacity: 0.992;
+  opacity: 0.98;
   border-color: rgba(var(--accent-cyan-rgb), 0.28);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
@@ -1035,11 +1105,27 @@ html.theme-switching .chart {
   position: fixed;
   z-index: 999;
   width: min(320px, calc(100vw - 20px));
-  border: 1px solid var(--stroke);
-  border-radius: 16px;
-  background: linear-gradient(150deg, rgba(26, 27, 32, 0.98), rgba(16, 17, 21, 0.96));
-  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.45);
-  padding: 12px;
+  border: 1px solid rgba(232, 221, 205, 0.16);
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.035)),
+    rgba(16, 14, 12, 0.92);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  padding: 14px;
+  backdrop-filter: blur(28px) saturate(1.24);
+  -webkit-backdrop-filter: blur(28px) saturate(1.24);
+  transform-origin: top center;
+  will-change: transform, opacity, filter;
+}
+
+.calendar-popover.is-opening {
+  animation: popoverSpringIn 620ms var(--spring-press) both;
+}
+
+.calendar-popover.is-closing {
+  animation: popoverSpringOut 240ms var(--spring-soft) both;
 }
 
 .calendar-head {
@@ -1060,7 +1146,7 @@ html.theme-switching .chart {
 .calendar-nav-btn {
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid var(--stroke);
   background: rgba(255, 255, 255, 0.04);
   color: #e4e4e7;
@@ -1099,16 +1185,26 @@ html.theme-switching .chart {
   border: 1px solid transparent;
   background: transparent;
   color: #e4e4e7;
-  border-radius: 9px;
+  border-radius: 12px;
   min-height: 34px;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
+  transition:
+    background-color 520ms var(--spring-soft),
+    border-color 520ms var(--spring-soft),
+    color 520ms var(--spring-soft),
+    transform 520ms var(--spring-press);
 }
 
 .calendar-day-btn:hover:not(:disabled) {
   border-color: rgba(var(--accent-cyan-rgb), 0.4);
   background: rgba(var(--accent-cyan-rgb), 0.14);
+  transform: translate3d(0, -1px, 0) scale(1.03);
+}
+
+.calendar-day-btn:active:not(:disabled) {
+  transform: translate3d(0, 0, 0) scale(0.94);
 }
 
 .calendar-day-btn.is-outside {
@@ -1174,13 +1270,18 @@ html.theme-switching .chart {
   border-radius: 999px;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    border-color 520ms var(--spring-soft),
+    background-color 520ms var(--spring-soft),
+    box-shadow 620ms var(--spring-soft),
+    transform 620ms var(--spring-press);
 }
 
 .range-action-btn:hover,
 .file-button:hover {
   border-color: rgba(var(--accent-cyan-rgb), 0.5);
   background: rgba(var(--accent-cyan-rgb), 0.15);
+  transform: translate3d(0, -1px, 0);
 }
 
 .range-buttons {
@@ -1201,8 +1302,10 @@ html.theme-switching .chart {
   box-sizing: border-box;
   padding: 2px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(118, 118, 128, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.105);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.025)),
+    rgba(118, 118, 128, 0.16);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 1px 2px rgba(0, 0, 0, 0.12);
@@ -1224,19 +1327,19 @@ html.theme-switching .chart {
   width: 0;
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04)),
-    rgba(var(--accent-rgb), 0.82);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0.06)),
+    linear-gradient(135deg, rgba(var(--accent-rgb), 0.95), rgba(var(--accent-cyan-rgb), 0.82));
   box-shadow:
-    0 6px 16px rgba(0, 0, 0, 0.16),
-    0 0 0 0.5px rgba(255, 255, 255, 0.16) inset,
-    0 1px 0 rgba(255, 255, 255, 0.18) inset;
+    0 9px 22px rgba(0, 0, 0, 0.20),
+    0 0 0 0.5px rgba(255, 255, 255, 0.20) inset,
+    0 1px 0 rgba(255, 255, 255, 0.24) inset;
   opacity: 0;
   transform: translate3d(0, 0, 0);
   transform-origin: center center;
   will-change: transform, width, opacity, box-shadow;
   pointer-events: none;
   backface-visibility: hidden;
-  transition: box-shadow 180ms cubic-bezier(0.25, 1, 0.5, 1);
+  transition: box-shadow 620ms var(--spring-soft);
   z-index: 0;
 }
 
@@ -1264,7 +1367,7 @@ html.theme-switching .chart {
   min-height: calc(var(--range-selector-height) - 4px);
   border: none;
   background: transparent;
-  color: #b6bac6;
+  color: #b8b5ae;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1283,18 +1386,18 @@ html.theme-switching .chart {
   overflow: hidden;
   transform: translateY(0);
   transition:
-    color 0.20s cubic-bezier(0.25, 1, 0.5, 1),
-    opacity 0.18s ease,
-    transform 0.24s cubic-bezier(0.25, 1, 0.5, 1);
+    color 520ms var(--spring-soft),
+    opacity 520ms var(--spring-soft),
+    transform 720ms var(--spring-press);
 }
 
 .range-segmented button:hover {
-  color: #f8fafc;
+  color: #fffaf0;
 }
 
 .range-segmented button:active {
   opacity: 1;
-  transform: scale(0.968);
+  transform: scale(0.965);
 }
 
 .range-segmented button.is-active {
@@ -1334,28 +1437,40 @@ html.theme-switching .chart {
 .cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--gap-md);
-  margin: var(--gap-lg) 0 var(--gap-lg);
+  gap: 18px;
+  margin: 24px 0 24px;
   align-items: stretch;
 }
 
 .card {
-  background: linear-gradient(145deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
-  border: 1px solid var(--stroke);
-  border-radius: 20px;
-  padding: 18px 20px;
+  background:
+    radial-gradient(circle at 14% 0%, rgba(255, 255, 255, 0.11), transparent 18rem),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.035)),
+    var(--surface);
+  border: 1px solid rgba(232, 221, 205, 0.14);
+  border-radius: 32px;
+  padding: 24px 26px;
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
-  animation: rise 0.42s var(--swift-ease-standard) both;
+  animation: rise 720ms var(--spring-soft) both;
   animation-delay: 0s;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  transform: translate3d(0, 0, 0) scale(1);
+  transform-origin: center;
+  will-change: transform, box-shadow, filter;
+  backdrop-filter: blur(24px) saturate(1.14);
+  -webkit-backdrop-filter: blur(24px) saturate(1.14);
+  transition:
+    border-color 680ms var(--spring-soft),
+    box-shadow 760ms var(--spring-soft),
+    filter 760ms var(--spring-soft);
 }
 
 .metric-card {
-  min-height: 148px;
+  min-height: 168px;
   justify-content: flex-start;
 }
 
@@ -1363,7 +1478,7 @@ html.theme-switching .chart {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) 1px minmax(220px, 0.78fr);
   align-items: stretch;
-  gap: 18px;
+  gap: 24px;
 }
 
 .summary-card-divider {
@@ -1412,14 +1527,39 @@ html.theme-switching .chart {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
   white-space: nowrap;
+  font-family: var(--font-mono);
 }
 
 .card::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), transparent 65%);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 54%),
+    radial-gradient(circle at var(--press-x, 50%) var(--press-y, 50%), rgba(255, 250, 240, 0.13), transparent 11rem);
+  opacity: 0.72;
   pointer-events: none;
+  transition: opacity 680ms var(--spring-soft);
+}
+
+.card > *,
+.panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.card:hover {
+  border-color: rgba(232, 221, 205, 0.23);
+  box-shadow: 0 28px 92px rgba(0, 0, 0, 0.36);
+}
+
+.card.is-pressed {
+  box-shadow: var(--press-shadow);
+  filter: saturate(1.06);
+}
+
+.card.is-pressed::after {
+  opacity: 1;
 }
 
 .card .label {
@@ -1431,11 +1571,12 @@ html.theme-switching .chart {
 
 .card .value {
   margin-top: 10px;
-  font-size: clamp(24px, 4vw, 32px);
-  font-weight: 700;
-  letter-spacing: 0.2px;
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 760;
+  letter-spacing: -0.055em;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
+  font-family: var(--font-mono);
 }
 
 .text-fade-anim,
@@ -1445,14 +1586,14 @@ html.theme-switching .chart {
 }
 
 .metric-value-anim {
-  animation: metricValueSettle 520ms var(--swift-ease-standard) both;
+  animation: metricValueSettle 760ms var(--spring-press) both;
   will-change: opacity, transform, filter;
 }
 
 .metric-width-animating {
   overflow: hidden;
   vertical-align: top;
-  transition: width 520ms var(--swift-ease-standard);
+  transition: none;
   will-change: width;
 }
 
@@ -1482,9 +1623,9 @@ html.theme-switching .chart {
   transform: translate3d(0, 5px, 0) scale(0.985);
   filter: blur(4px);
   transition:
-    opacity 460ms var(--swift-ease-standard),
-    transform 520ms var(--swift-ease-standard),
-    filter 520ms var(--swift-ease-standard);
+    opacity 640ms var(--spring-soft),
+    transform 760ms var(--spring-press),
+    filter 760ms var(--spring-soft);
   will-change: opacity, transform, filter;
 }
 
@@ -1509,9 +1650,9 @@ html.theme-switching .chart {
   transform: translate3d(0, 0, 0) scale(1);
   filter: blur(0);
   transition:
-    opacity 420ms var(--swift-ease-standard),
-    transform 520ms var(--swift-ease-standard),
-    filter 520ms var(--swift-ease-standard);
+    opacity 620ms var(--spring-soft),
+    transform 760ms var(--spring-press),
+    filter 760ms var(--spring-soft);
   will-change: opacity, transform, filter;
 }
 
@@ -1547,7 +1688,7 @@ html.theme-switching .chart {
 }
 
 .metric-roll-track.is-animating {
-  transition: transform 820ms cubic-bezier(0.2, 0.86, 0.22, 1);
+  transition: transform 980ms var(--spring-press);
   transform: translateY(calc(var(--roll-to, 0) * -1em));
 }
 
@@ -1570,17 +1711,57 @@ html.theme-switching .chart {
 .panel-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--gap-md);
+  gap: 18px;
 }
 
 .panel {
-  background: linear-gradient(150deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
-  border: 1px solid var(--stroke);
-  border-radius: 20px;
-  padding: 18px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.09), transparent 17rem),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.028)),
+    rgba(18, 16, 14, 0.70);
+  border: 1px solid rgba(232, 221, 205, 0.13);
+  border-radius: 30px;
+  padding: 20px;
   box-shadow: var(--shadow);
-  animation: rise 0.46s var(--swift-ease-standard) both;
+  animation: rise 760ms var(--spring-soft) both;
   animation-delay: 0s;
+  position: relative;
+  overflow: hidden;
+  transform: translate3d(0, 0, 0) scale(1);
+  transform-origin: center;
+  will-change: transform, box-shadow, filter;
+  backdrop-filter: blur(22px) saturate(1.14);
+  -webkit-backdrop-filter: blur(22px) saturate(1.14);
+  transition:
+    border-color 680ms var(--spring-soft),
+    box-shadow 760ms var(--spring-soft),
+    filter 760ms var(--spring-soft);
+}
+
+.panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), transparent 52%),
+    radial-gradient(circle at var(--press-x, 50%) var(--press-y, 50%), rgba(255, 250, 240, 0.10), transparent 12rem);
+  opacity: 0.64;
+  pointer-events: none;
+  transition: opacity 680ms var(--spring-soft);
+}
+
+.panel:hover {
+  border-color: rgba(232, 221, 205, 0.22);
+  box-shadow: 0 28px 92px rgba(0, 0, 0, 0.35);
+}
+
+.panel.is-pressed {
+  box-shadow: var(--press-shadow);
+  filter: saturate(1.06);
+}
+
+.panel.is-pressed::after {
+  opacity: 1;
 }
 
 .panel h3 {
@@ -1615,7 +1796,7 @@ html.theme-switching .chart {
 
 .directory-list {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
 .directory-row {
@@ -1623,12 +1804,24 @@ html.theme-switching .chart {
   grid-template-columns: 42px minmax(0, 1fr) minmax(96px, auto) minmax(80px, auto);
   align-items: center;
   gap: 10px;
-  padding: 9px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 11px 13px;
+  border-radius: 18px;
+  border: 1px solid rgba(232, 221, 205, 0.095);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.03), transparent 56%),
-    rgba(255, 255, 255, 0.02);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.045), transparent 56%),
+    rgba(255, 255, 255, 0.025);
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition:
+    border-color 620ms var(--spring-soft),
+    background-color 620ms var(--spring-soft),
+    transform 720ms var(--spring-press);
+  will-change: transform, opacity;
+}
+
+.directory-row:hover {
+  border-color: rgba(232, 221, 205, 0.18);
+  transform: translate3d(0, -1px, 0);
 }
 
 .directory-row-empty {
@@ -1644,7 +1837,7 @@ html.theme-switching .chart {
   justify-content: center;
   width: 30px;
   height: 30px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.24), rgba(var(--accent-cyan-rgb), 0.18));
   color: #f8fafc;
   font-size: 12px;
@@ -1696,6 +1889,7 @@ html.theme-switching .chart {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
   white-space: nowrap;
+  font-family: var(--font-mono);
 }
 
 .cost-value,
@@ -1728,12 +1922,16 @@ html.theme-switching .chart {
   padding: 5px 10px;
   font-size: 11px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    border-color 520ms var(--spring-soft),
+    background-color 520ms var(--spring-soft),
+    transform 620ms var(--spring-press);
 }
 
 .directory-page-btn:hover:not(:disabled) {
   border-color: rgba(var(--accent-cyan-rgb), 0.5);
   background: rgba(var(--accent-cyan-rgb), 0.15);
+  transform: translate3d(0, -1px, 0);
 }
 
 .directory-page-btn:disabled {
@@ -1746,12 +1944,12 @@ html.theme-switching .chart {
 }
 
 .chart-panel {
-  padding: 14px;
+  padding: 16px;
 }
 
 .chart-panel .chart {
-  height: 228px;
-  border-radius: 14px;
+  height: 246px;
+  border-radius: 22px;
 }
 
 .chart-panel .heatmap-chart {
@@ -1779,7 +1977,7 @@ html.theme-switching .chart {
 .heatmap-legend-chip {
   width: 12px;
   height: 12px;
-  border-radius: 4px;
+  border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -1788,14 +1986,36 @@ html.theme-switching .chart {
   width: 100%;
   height: 240px;
   border: none;
-  border-radius: 12px;
-  background: rgba(17, 17, 19, 0.82);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.07), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+    rgba(11, 10, 9, 0.74);
   overflow: hidden;
   isolation: isolate;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+  transform: translateZ(0);
+}
+
+.chart::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.05), transparent 38%),
+    radial-gradient(circle at 78% 12%, rgba(var(--accent-cyan-rgb), 0.10), transparent 14rem);
+  opacity: 0.78;
+}
+
+.chart.is-springing::before {
+  animation: chartBreath 960ms var(--spring-soft) both;
 }
 
 .chart-line-redraw {
-  animation: chartLineDraw 3000ms cubic-bezier(0.18, 0.78, 0.2, 1) both;
+  animation: chartLineDraw 1600ms var(--spring-soft) both;
   stroke-dasharray: var(--line-length);
   stroke-dashoffset: var(--line-length);
   stroke-linecap: round;
@@ -1820,8 +2040,8 @@ html.theme-switching .chart {
   min-height: 138px;
   padding: 10px 0 0;
   background:
-    linear-gradient(180deg, rgba(15, 18, 24, 0.88), rgba(10, 12, 18, 0.9)),
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.02), transparent 42%);
+    linear-gradient(180deg, rgba(17, 15, 13, 0.88), rgba(9, 8, 7, 0.90)),
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.04), transparent 42%);
   overflow-x: auto;
   overflow-y: hidden;
 }
@@ -1862,11 +2082,18 @@ html.theme-switching .chart {
   stroke: rgba(255, 255, 255, 0.05);
   stroke-width: 1px;
   shape-rendering: geometricPrecision;
+  transition:
+    fill 760ms var(--spring-soft),
+    stroke 520ms var(--spring-soft),
+    transform 720ms var(--spring-press);
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 
 .heatmap-canvas .ch-subdomain-bg:hover {
   stroke: rgba(255, 255, 255, 0.16);
+  transform: scale(1.16);
 }
 
 .heatmap-empty {
@@ -1981,19 +2208,85 @@ html.theme-switching .chart {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translate3d(0, 16px, 0) scale(0.985);
+    filter: blur(8px);
+  }
+  64% {
+    opacity: 1;
+    filter: blur(0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes ambientBreath {
+  0% {
+    opacity: 0.78;
+    transform: translate3d(-0.8%, -0.6%, 0) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0.8%, 0.6%, 0) scale(1.035);
+  }
+}
+
+@keyframes popoverSpringIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -8px, 0) scale(0.965);
+    filter: blur(6px);
+  }
+  58% {
+    opacity: 1;
+    transform: translate3d(0, 1px, 0) scale(1.012);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes popoverSpringOut {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.982);
+    filter: blur(5px);
+  }
+}
+
+@keyframes chartBreath {
+  0% {
+    opacity: 0.55;
+    transform: scaleX(0.985);
+  }
+  48% {
+    opacity: 1;
+    transform: scaleX(1.012);
+  }
+  100% {
+    opacity: 0.78;
+    transform: scaleX(1);
   }
 }
 
 @media (max-width: 900px) {
   .page {
+    margin-top: 0;
+    border-radius: 0 0 28px 28px;
     padding: 24px 14px 42px;
   }
   .hero {
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
   }
   .panel.wide {
@@ -2022,6 +2315,9 @@ html.theme-switching .chart {
     padding: 0 10px 0 10px;
   }
   .range-controls {
+    position: relative;
+    top: 0;
+    width: 100%;
     grid-template-columns: 1fr;
     gap: 10px;
   }
@@ -2081,7 +2377,7 @@ html.theme-switching .chart {
     grid-template-columns: minmax(0, 1fr);
   }
   .metric-card {
-    min-height: 108px;
+    min-height: 128px;
   }
   .summary-card {
     grid-template-columns: minmax(0, 1fr);
@@ -2199,10 +2495,14 @@ html.theme-switching .chart {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  body::before,
   .text-fade-anim,
   .metric-value-anim,
   .metric-roll-track.is-animating,
   .i18n-switch-anim,
+  .calendar-popover.is-opening,
+  .calendar-popover.is-closing,
+  .chart.is-springing,
   .chart-line-redraw,
   html.theme-switching body,
   html.theme-switching .page,
@@ -2222,6 +2522,14 @@ html.theme-switching .chart {
   }
   .range-segmented-slider {
     transition: none !important;
+  }
+  .card,
+  .panel,
+  .range-date-trigger,
+  .range-segmented button,
+  .calendar-day-btn,
+  .directory-row {
+    transform: none !important;
   }
   .range-segmented.is-animating button.is-active {
     animation: none !important;
@@ -2355,6 +2663,12 @@ let quickRangeSelection = "";
 let quickRangeSliderAnimation = null;
 let quickRangeSliderCleanupTimer = 0;
 let quickRangeApplyToken = 0;
+let dailyChartSpringAnimation = null;
+let dailyChartCurrentLabels = [];
+let dailyChartCurrentValues = [];
+let dailyChartTargetLabels = [];
+let dailyChartTargetValues = [];
+let calendarPopoverTimer = 0;
 const THEME_STORAGE_KEY = "token-report-theme";
 let themeSwitchTimer = null;
 const calendarState = {
@@ -2370,6 +2684,261 @@ const calendarState = {
 
 function prefersReducedMotion() {
   return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
+function springNumber(from, to, options) {
+  const opts = options || {};
+  if (prefersReducedMotion()) {
+    if (typeof opts.onUpdate === "function") opts.onUpdate(to);
+    if (typeof opts.onComplete === "function") opts.onComplete();
+    return { cancel() {} };
+  }
+  const stiffness = opts.stiffness || 420;
+  const damping = opts.damping || 34;
+  const mass = opts.mass || 0.82;
+  const precision = opts.precision || 0.001;
+  let value = Number(from) || 0;
+  let velocity = Number(opts.velocity) || 0;
+  let previousTime = performance.now();
+  let frameId = 0;
+  let cancelled = false;
+  const step = (now) => {
+    if (cancelled) return;
+    const dt = Math.min(0.04, Math.max(0.001, (now - previousTime) / 1000));
+    previousTime = now;
+    const displacement = value - to;
+    const springForce = -stiffness * displacement;
+    const dampingForce = -damping * velocity;
+    const acceleration = (springForce + dampingForce) / mass;
+    velocity += acceleration * dt;
+    value += velocity * dt;
+    if (typeof opts.onUpdate === "function") opts.onUpdate(value);
+    if (Math.abs(value - to) <= precision && Math.abs(velocity) <= precision) {
+      if (typeof opts.onUpdate === "function") opts.onUpdate(to);
+      if (typeof opts.onComplete === "function") opts.onComplete();
+      return;
+    }
+    frameId = requestAnimationFrame(step);
+  };
+  frameId = requestAnimationFrame(step);
+  return {
+    cancel() {
+      cancelled = true;
+      if (frameId) cancelAnimationFrame(frameId);
+    },
+  };
+}
+
+function springObject(from, to, options) {
+  const opts = options || {};
+  const keys = Object.keys(to || {});
+  if (prefersReducedMotion()) {
+    if (typeof opts.onUpdate === "function") opts.onUpdate({ ...to });
+    if (typeof opts.onComplete === "function") opts.onComplete();
+    return { cancel() {} };
+  }
+  const stiffness = opts.stiffness || 420;
+  const damping = opts.damping || 34;
+  const mass = opts.mass || 0.82;
+  const precision = opts.precision || 0.01;
+  const value = {};
+  const velocity = {};
+  keys.forEach((key) => {
+    value[key] = Number(from && from[key]) || 0;
+    velocity[key] = 0;
+  });
+  let previousTime = performance.now();
+  let frameId = 0;
+  let cancelled = false;
+  const step = (now) => {
+    if (cancelled) return;
+    const dt = Math.min(0.04, Math.max(0.001, (now - previousTime) / 1000));
+    previousTime = now;
+    let settled = true;
+    keys.forEach((key) => {
+      const target = Number(to[key]) || 0;
+      const displacement = value[key] - target;
+      const springForce = -stiffness * displacement;
+      const dampingForce = -damping * velocity[key];
+      const acceleration = (springForce + dampingForce) / mass;
+      velocity[key] += acceleration * dt;
+      value[key] += velocity[key] * dt;
+      if (Math.abs(value[key] - target) > precision || Math.abs(velocity[key]) > precision) {
+        settled = false;
+      }
+    });
+    if (typeof opts.onUpdate === "function") opts.onUpdate({ ...value });
+    if (settled) {
+      if (typeof opts.onUpdate === "function") opts.onUpdate({ ...to });
+      if (typeof opts.onComplete === "function") opts.onComplete();
+      return;
+    }
+    frameId = requestAnimationFrame(step);
+  };
+  frameId = requestAnimationFrame(step);
+  return {
+    cancel() {
+      cancelled = true;
+      if (frameId) cancelAnimationFrame(frameId);
+    },
+  };
+}
+
+function springArray(fromValues, toValues, options) {
+  const opts = options || {};
+  const target = Array.isArray(toValues) ? toValues.map((value) => Number(value || 0)) : [];
+  const source = target.map((_, index) => Number((fromValues || [])[index] || 0));
+  if (prefersReducedMotion()) {
+    if (typeof opts.onUpdate === "function") opts.onUpdate(target);
+    if (typeof opts.onComplete === "function") opts.onComplete();
+    return { cancel() {} };
+  }
+  const stiffness = opts.stiffness || 180;
+  const damping = opts.damping || 24;
+  const mass = opts.mass || 0.9;
+  const precision = opts.precision || 0.35;
+  const value = source.slice();
+  const velocity = source.map(() => 0);
+  let previousTime = performance.now();
+  let frameId = 0;
+  let cancelled = false;
+  const step = (now) => {
+    if (cancelled) return;
+    const dt = Math.min(0.04, Math.max(0.001, (now - previousTime) / 1000));
+    previousTime = now;
+    let settled = true;
+    for (let i = 0; i < target.length; i += 1) {
+      const displacement = value[i] - target[i];
+      const springForce = -stiffness * displacement;
+      const dampingForce = -damping * velocity[i];
+      const acceleration = (springForce + dampingForce) / mass;
+      velocity[i] += acceleration * dt;
+      value[i] += velocity[i] * dt;
+      if (Math.abs(value[i] - target[i]) > precision || Math.abs(velocity[i]) > precision) {
+        settled = false;
+      }
+    }
+    if (typeof opts.onUpdate === "function") opts.onUpdate(value.slice());
+    if (settled) {
+      if (typeof opts.onUpdate === "function") opts.onUpdate(target.slice());
+      if (typeof opts.onComplete === "function") opts.onComplete();
+      return;
+    }
+    frameId = requestAnimationFrame(step);
+  };
+  frameId = requestAnimationFrame(step);
+  return {
+    cancel() {
+      cancelled = true;
+      if (frameId) cancelAnimationFrame(frameId);
+    },
+  };
+}
+
+const TACTILE_SELECTOR = [
+  ".card",
+  ".panel",
+  ".range-date-trigger",
+  ".range-segmented button",
+  ".calendar-nav-btn",
+  ".calendar-day-btn",
+  ".calendar-actions button",
+  ".directory-page-btn",
+  ".range-action-btn",
+  ".file-button",
+].join(",");
+let tactileTarget = null;
+
+function getTactileTarget(event) {
+  const target = event.target;
+  if (!(target instanceof Element)) return null;
+  const el = target.closest(TACTILE_SELECTOR);
+  if (!(el instanceof HTMLElement)) return null;
+  if (el.matches("button:disabled") || el.getAttribute("aria-disabled") === "true") return null;
+  return el;
+}
+
+function tactileScaleFor(el, pressed) {
+  if (!pressed) return 1;
+  if (el.classList.contains("card")) return 0.984;
+  if (el.classList.contains("panel")) return 0.988;
+  return 0.955;
+}
+
+function tactileYFor(el, pressed) {
+  if (!pressed) return 0;
+  if (el.classList.contains("card") || el.classList.contains("panel")) return 1.2;
+  return 0.4;
+}
+
+function applyTactileSpring(el, pressed) {
+  if (!el || prefersReducedMotion()) return;
+  if (typeof el._tactileSpringCancel === "function") {
+    el._tactileSpringCancel();
+  }
+  const from = {
+    scale: Number(el.dataset.tactileScale || "1") || 1,
+    y: Number(el.dataset.tactileY || "0") || 0,
+  };
+  const to = {
+    scale: tactileScaleFor(el, pressed),
+    y: tactileYFor(el, pressed),
+  };
+  el.classList.toggle("is-pressed", pressed);
+  const animation = springObject(from, to, {
+    stiffness: pressed ? 720 : 430,
+    damping: pressed ? 44 : 30,
+    mass: pressed ? 0.72 : 0.86,
+    precision: 0.001,
+    onUpdate(value) {
+      el.dataset.tactileScale = String(value.scale);
+      el.dataset.tactileY = String(value.y);
+      el.style.transform = `translate3d(0, ${value.y.toFixed(3)}px, 0) scale(${value.scale.toFixed(4)})`;
+    },
+    onComplete() {
+      if (!pressed) {
+        el.classList.remove("is-pressed");
+        delete el.dataset.tactileScale;
+        delete el.dataset.tactileY;
+        el.style.transform = "";
+        delete el._tactileSpringCancel;
+      }
+    },
+  });
+  el._tactileSpringCancel = animation.cancel;
+}
+
+function updateTactileSpot(el, event) {
+  if (!el || !event) return;
+  const rect = el.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const x = ((event.clientX - rect.left) / rect.width) * 100;
+  const y = ((event.clientY - rect.top) / rect.height) * 100;
+  el.style.setProperty("--press-x", `${Math.max(0, Math.min(100, x)).toFixed(2)}%`);
+  el.style.setProperty("--press-y", `${Math.max(0, Math.min(100, y)).toFixed(2)}%`);
+}
+
+function setupTactileSpringFeedback() {
+  document.addEventListener("pointerdown", (event) => {
+    const el = getTactileTarget(event);
+    if (!el) return;
+    tactileTarget = el;
+    updateTactileSpot(el, event);
+    applyTactileSpring(el, true);
+  }, { passive: true });
+  document.addEventListener("pointermove", (event) => {
+    if (!tactileTarget) return;
+    updateTactileSpot(tactileTarget, event);
+  }, { passive: true });
+  const release = () => {
+    if (!tactileTarget) return;
+    const el = tactileTarget;
+    tactileTarget = null;
+    applyTactileSpring(el, false);
+  };
+  document.addEventListener("pointerup", release, { passive: true });
+  document.addEventListener("pointercancel", release, { passive: true });
+  document.addEventListener("lostpointercapture", release, { passive: true });
 }
 
 function triggerSwapAnimation(el, className) {
@@ -2430,31 +2999,37 @@ function animateMetricWidthChange(el, previousWidth) {
       window.clearTimeout(el._metricWidthTimer);
       delete el._metricWidthTimer;
     }
+    if (typeof el._metricWidthSpringCancel === "function") {
+      el._metricWidthSpringCancel();
+      delete el._metricWidthSpringCancel;
+    }
     el.classList.remove("metric-width-animating");
     el.style.width = "";
     delete el.dataset.metricWidthToken;
     delete el._metricWidthCleanup;
   };
-  const handleTransitionEnd = (event) => {
-    if (event.target !== el || event.propertyName !== "width") return;
-    el.removeEventListener("transitionend", handleTransitionEnd);
-    cleanup();
-  };
 
   el._metricWidthCleanup = () => {
-    el.removeEventListener("transitionend", handleTransitionEnd);
     cleanup();
   };
-  el.addEventListener("transitionend", handleTransitionEnd);
   window.requestAnimationFrame(() => {
-    if (el.dataset.metricWidthToken === token) {
-      el.style.width = `${Math.ceil(nextWidth)}px`;
-    }
+    if (el.dataset.metricWidthToken !== token) return;
+    const animation = springNumber(previousWidth, nextWidth, {
+      stiffness: 430,
+      damping: 32,
+      mass: 0.82,
+      precision: 0.08,
+      onUpdate(value) {
+        if (el.dataset.metricWidthToken !== token) return;
+        el.style.width = `${Math.max(0, value).toFixed(2)}px`;
+      },
+      onComplete: cleanup,
+    });
+    el._metricWidthSpringCancel = animation.cancel;
   });
   el._metricWidthTimer = window.setTimeout(() => {
-    el.removeEventListener("transitionend", handleTransitionEnd);
     cleanup();
-  }, 780);
+  }, 1400);
 }
 
 function setAnimatedText(el, text, options) {
@@ -2946,7 +3521,6 @@ function scheduleQuickRangeApply(startISO, endISO) {
 function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   const canAnimate =
     !prefersReducedMotion() &&
-    typeof slider.animate === "function" &&
     fromState.visible &&
     toState.visible;
   const travel = Math.abs(toState.x - fromState.x);
@@ -2957,47 +3531,38 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   }
   clearQuickRangeSliderMotion(segmented, slider);
   const movingRight = toState.x >= fromState.x;
-  const settleOffset = Math.min(0.6, Math.max(0.12, travel * 0.003));
-  const settleX = toState.x + (movingRight ? settleOffset : -settleOffset);
-  const duration = Math.min(320, Math.max(210, 210 + travel * 0.34));
   applyQuickRangeSliderState(slider, fromState);
   segmented.classList.add("is-animating");
   segmented.dataset.motionDirection = movingRight ? "right" : "left";
   slider.classList.add("is-animating");
-  const animation = slider.animate(
-    [
-      {
-        transform: `translate3d(${fromState.x.toFixed(2)}px, 0, 0)`,
-        width: `${fromState.width.toFixed(2)}px`,
-        opacity: 1,
-        offset: 0,
-      },
-      {
-        transform: `translate3d(${settleX.toFixed(2)}px, 0, 0)`,
-        width: `${toState.width.toFixed(2)}px`,
-        opacity: 1,
-        offset: 0.82,
-      },
-      {
-        transform: `translate3d(${toState.x.toFixed(2)}px, 0, 0)`,
-        width: `${toState.width.toFixed(2)}px`,
-        opacity: 1,
-        offset: 1,
-      },
-    ],
+  const animation = springObject(
+    { x: fromState.x, width: fromState.width, opacity: fromState.visible ? 1 : 0 },
+    { x: toState.x, width: toState.width, opacity: toState.visible ? 1 : 0 },
     {
-      duration,
-      easing: "cubic-bezier(0.2, 0.9, 0.2, 1)",
-      fill: "both",
+      stiffness: 560,
+      damping: 38,
+      mass: 0.82,
+      precision: 0.015,
+      onUpdate(value) {
+        const next = {
+          x: value.x,
+          width: Math.max(0, value.width),
+          visible: value.opacity > 0.02,
+        };
+        applyQuickRangeSliderState(slider, next);
+        slider.style.opacity = String(Math.max(0, Math.min(1, value.opacity)));
+      },
+      onComplete() {
+        if (quickRangeSliderAnimation !== animation) return;
+        commitQuickRangeSliderState(segmented, slider, toState);
+      },
     }
   );
   quickRangeSliderAnimation = animation;
-  const finish = () => {
+  quickRangeSliderCleanupTimer = window.setTimeout(() => {
     if (quickRangeSliderAnimation !== animation) return;
     commitQuickRangeSliderState(segmented, slider, toState);
-  };
-  animation.finished.then(finish).catch(() => {});
-  quickRangeSliderCleanupTimer = window.setTimeout(finish, duration + 80);
+  }, 1200);
 }
 
 function updateQuickRangeSlider(options) {
@@ -3074,7 +3639,21 @@ function closeCalendarPopover() {
   if (!popover) return;
   calendarState.open = false;
   calendarState.selectingPhase = "start";
-  popover.classList.add("hidden");
+  if (calendarPopoverTimer) {
+    window.clearTimeout(calendarPopoverTimer);
+    calendarPopoverTimer = 0;
+  }
+  popover.classList.remove("is-opening");
+  if (prefersReducedMotion()) {
+    popover.classList.add("hidden");
+  } else {
+    popover.classList.add("is-closing");
+    calendarPopoverTimer = window.setTimeout(() => {
+      popover.classList.add("hidden");
+      popover.classList.remove("is-closing");
+      calendarPopoverTimer = 0;
+    }, 240);
+  }
   popover.setAttribute("aria-hidden", "true");
   if (trigger) trigger.setAttribute("aria-expanded", "false");
 }
@@ -3199,7 +3778,17 @@ function openCalendarPopover() {
   calendarState.draftEndISO = endISO;
   calendarState.selectingPhase = "start";
   renderCalendarDays();
+  if (calendarPopoverTimer) {
+    window.clearTimeout(calendarPopoverTimer);
+    calendarPopoverTimer = 0;
+  }
+  popover.classList.remove("is-closing");
   popover.classList.remove("hidden");
+  if (!prefersReducedMotion()) {
+    popover.classList.remove("is-opening");
+    void popover.offsetWidth;
+    popover.classList.add("is-opening");
+  }
   popover.setAttribute("aria-hidden", "false");
   trigger.setAttribute("aria-expanded", "true");
   positionCalendarPopover();
@@ -3362,6 +3951,52 @@ async function syncLatestData() {
   }
 }
 
+function arraysShallowEqual(left, right) {
+  if (!Array.isArray(left) || !Array.isArray(right)) return false;
+  if (left.length !== right.length) return false;
+  for (let i = 0; i < left.length; i += 1) {
+    if (left[i] !== right[i]) return false;
+  }
+  return true;
+}
+
+function resampleValues(values, nextLength) {
+  const source = Array.isArray(values) ? values.map((value) => Number(value || 0)) : [];
+  if (nextLength <= 0) return [];
+  if (!source.length) return Array(nextLength).fill(0);
+  if (source.length === nextLength) return source.slice();
+  if (nextLength === 1) return [source[source.length - 1] || 0];
+  if (source.length === 1) return Array(nextLength).fill(source[0] || 0);
+  const lastIndex = source.length - 1;
+  return Array.from({ length: nextLength }, (_, index) => {
+    const pos = (index / (nextLength - 1)) * lastIndex;
+    const leftIndex = Math.floor(pos);
+    const rightIndex = Math.min(lastIndex, leftIndex + 1);
+    const mix = pos - leftIndex;
+    return source[leftIndex] + (source[rightIndex] - source[leftIndex]) * mix;
+  });
+}
+
+function chartDataChanged(left, right) {
+  if (!Array.isArray(left) || !Array.isArray(right)) return true;
+  if (left.length !== right.length) return true;
+  for (let i = 0; i < left.length; i += 1) {
+    if (Math.abs(Number(left[i] || 0) - Number(right[i] || 0)) > 0.5) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function roundedChartValues(values) {
+  return values.map((value) => Math.max(0, Math.round(Number(value || 0))));
+}
+
+function setChartSpringing(el, active) {
+  if (!el) return;
+  el.classList.toggle("is-springing", Boolean(active));
+}
+
 function setupAutoSync(options) {
   const opts = options || {};
   if (opts.skipInitial !== true) {
@@ -3380,55 +4015,57 @@ function setupAutoSync(options) {
   });
 }
 
-function lineChart(el, labels, values, options) {
-  if (!el) return;
+function buildLineChartSeries(values) {
+  const chartValues = Array.isArray(values) ? values.map(v => Number(v || 0)) : [];
+  const palette = getThemePalette();
+  return {
+    type: "line",
+    id: "hourly-total-line",
+    name: labelFor("card_total"),
+    data: chartValues,
+    showSymbol: false,
+    smooth: 0.62,
+    sampling: "lttb",
+    universalTransition: true,
+    lineStyle: {
+      width: 1.7,
+      color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
+        { offset: 0, color: palette.lineStart },
+        { offset: 1, color: palette.lineEnd },
+      ]),
+      opacity: 0.92,
+      cap: "round",
+      join: "round",
+    },
+    areaStyle: {
+      opacity: 1,
+      color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
+        { offset: 0, color: palette.lineStart },
+        { offset: 0.30, color: palette.areaStart },
+        { offset: 0.64, color: palette.areaMid },
+        { offset: 1, color: palette.areaEnd },
+      ]),
+    },
+    emphasis: { focus: "series" },
+  };
+}
+
+function buildLineChartOption(labels, values, options) {
   const chartLabels = Array.isArray(labels) ? labels : [];
   const chartValues = Array.isArray(values) ? values.map(v => Number(v || 0)) : [];
   const xAxisLabelMode = pickXAxisLabelMode(chartLabels);
   const opts = options || {};
-  if (!window.echarts) {
-    el.innerHTML = "";
-    return;
-  }
-  if (!dailyChartInstance || dailyChartInstance.isDisposed() || dailyChartInstance.getDom() !== el) {
-    if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
-      dailyChartInstance.dispose();
-    }
-    dailyChartInstance = window.echarts.init(el, null, { renderer: "svg" });
-  }
-  dailyChartViewportWidth = Math.round(el.getBoundingClientRect().width || el.clientWidth || 0);
-  if (!chartResizeBound) {
-    window.addEventListener("resize", () => {
-      if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
-        const chartEl = dailyChartInstance.getDom();
-        const nextWidth = Math.round(chartEl.getBoundingClientRect().width || chartEl.clientWidth || 0);
-        if (nextWidth > 0 && Math.abs(nextWidth - dailyChartViewportWidth) < 1) {
-          return;
-        }
-        dailyChartViewportWidth = nextWidth;
-        dailyChartInstance.resize();
-      }
-    });
-    chartResizeBound = true;
-  }
-  if (!chartValues.length) {
-    dailyChartInstance.clear();
-    return;
-  }
-  const prefersReduced = prefersReducedMotion();
-  const shouldRedraw = Boolean(opts.redraw) && !prefersReduced;
-  const animateChartUpdate = false;
   const palette = getThemePalette();
   const isCompactChart = dailyChartViewportWidth > 0 && dailyChartViewportWidth < 560;
-  const chartOption = {
+  return {
     backgroundColor: "transparent",
-    animation: animateChartUpdate,
-    animationDuration: animateChartUpdate ? 420 : 0,
-    animationDurationUpdate: animateChartUpdate ? 560 : 0,
-    animationEasing: "quarticOut",
-    animationEasingUpdate: "quarticOut",
+    animation: false,
+    animationDuration: 0,
+    animationDurationUpdate: 0,
+    animationEasing: "cubicOut",
+    animationEasingUpdate: "cubicOut",
     stateAnimation: {
-      duration: animateChartUpdate ? 280 : 0,
+      duration: prefersReducedMotion() ? 0 : 420,
       easing: "cubicOut",
     },
     grid: { left: isCompactChart ? 38 : 48, right: isCompactChart ? 12 : 26, top: 16, bottom: isCompactChart ? 44 : 56 },
@@ -3438,7 +4075,7 @@ function lineChart(el, labels, values, options) {
       borderColor: palette.tooltipBorder,
       borderWidth: 1,
       textStyle: { color: "#f8fafc" },
-      transitionDuration: animateChartUpdate ? 0.14 : 0,
+      transitionDuration: prefersReducedMotion() ? 0 : 0.18,
       axisPointer: { type: "line", lineStyle: { color: palette.axisPointer, width: 1 } },
       valueFormatter: (value) => formatChartNumber(value),
     },
@@ -3462,42 +4099,124 @@ function lineChart(el, labels, values, options) {
       },
       splitLine: { lineStyle: { color: "rgba(148,163,184,0.10)" } },
     },
-    series: [
-      {
-        type: "line",
-        id: "hourly-total-line",
-        data: chartValues,
-        showSymbol: false,
-        smooth: 0.58,
-        sampling: "lttb",
-        universalTransition: false,
-        lineStyle: {
-          width: 1.8,
-          color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
-            { offset: 0, color: palette.lineStart },
-            { offset: 1, color: palette.lineEnd },
-          ]),
-          opacity: 0.9,
-        },
-        areaStyle: {
-          color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: palette.lineStart },
-            { offset: 0.28, color: palette.areaStart },
-            { offset: 0.64, color: palette.areaMid },
-            { offset: 1, color: palette.areaEnd },
-          ]),
-        },
-        emphasis: { focus: "series" },
-      },
-    ],
+    series: [buildLineChartSeries(chartValues)],
   };
-  dailyChartInstance.setOption(chartOption, {
-    notMerge: true,
-    lazyUpdate: false,
-  });
-  if (shouldRedraw) {
-    playChartLineRedraw(el);
+}
+
+function lineChart(el, labels, values, options) {
+  if (!el) return;
+  const chartLabels = Array.isArray(labels) ? labels : [];
+  const chartValues = Array.isArray(values) ? values.map(v => Number(v || 0)) : [];
+  const opts = options || {};
+  if (!window.echarts) {
+    el.innerHTML = "";
+    return;
   }
+  if (!dailyChartInstance || dailyChartInstance.isDisposed() || dailyChartInstance.getDom() !== el) {
+    if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
+      dailyChartInstance.dispose();
+    }
+    dailyChartInstance = window.echarts.init(el, null, { renderer: "canvas" });
+    dailyChartCurrentLabels = [];
+    dailyChartCurrentValues = [];
+    dailyChartTargetLabels = [];
+    dailyChartTargetValues = [];
+  }
+  dailyChartViewportWidth = Math.round(el.getBoundingClientRect().width || el.clientWidth || 0);
+  if (!chartResizeBound) {
+    window.addEventListener("resize", () => {
+      if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
+        const chartEl = dailyChartInstance.getDom();
+        const nextWidth = Math.round(chartEl.getBoundingClientRect().width || chartEl.clientWidth || 0);
+        if (nextWidth > 0 && Math.abs(nextWidth - dailyChartViewportWidth) < 1) {
+          return;
+        }
+        dailyChartViewportWidth = nextWidth;
+        dailyChartInstance.resize();
+      }
+    });
+    chartResizeBound = true;
+  }
+  if (!chartValues.length) {
+    if (dailyChartSpringAnimation) {
+      dailyChartSpringAnimation.cancel();
+      dailyChartSpringAnimation = null;
+    }
+    dailyChartInstance.clear();
+    dailyChartCurrentLabels = [];
+    dailyChartCurrentValues = [];
+    dailyChartTargetLabels = [];
+    dailyChartTargetValues = [];
+    setChartSpringing(el, false);
+    return;
+  }
+  const prefersReduced = prefersReducedMotion();
+  const shouldRedraw = Boolean(opts.redraw) && !prefersReduced;
+  const firstRender = !dailyChartCurrentLabels.length || !dailyChartCurrentValues.length;
+  const labelsChanged = !arraysShallowEqual(dailyChartTargetLabels, chartLabels);
+  const valuesChanged = chartDataChanged(dailyChartTargetValues, chartValues);
+  dailyChartTargetLabels = chartLabels.slice();
+  dailyChartTargetValues = chartValues.slice();
+
+  if (dailyChartSpringAnimation) {
+    dailyChartSpringAnimation.cancel();
+    dailyChartSpringAnimation = null;
+  }
+
+  if (prefersReduced || firstRender || (!labelsChanged && !valuesChanged && !shouldRedraw)) {
+    const finalValues = roundedChartValues(chartValues);
+    dailyChartCurrentLabels = chartLabels.slice();
+    dailyChartCurrentValues = finalValues.slice();
+    dailyChartInstance.setOption(buildLineChartOption(chartLabels, finalValues, opts), {
+      notMerge: firstRender,
+      lazyUpdate: false,
+      replaceMerge: ["xAxis", "series"],
+    });
+    setChartSpringing(el, false);
+    return;
+  }
+
+  const fromValues = resampleValues(dailyChartCurrentValues, chartValues.length);
+  setChartSpringing(el, true);
+  dailyChartInstance.setOption(buildLineChartOption(chartLabels, roundedChartValues(fromValues), opts), {
+    notMerge: false,
+    lazyUpdate: true,
+    replaceMerge: labelsChanged ? ["xAxis", "series"] : ["series"],
+  });
+  dailyChartSpringAnimation = springArray(fromValues, chartValues, {
+    stiffness: labelsChanged ? 150 : 190,
+    damping: labelsChanged ? 23 : 26,
+    mass: 0.94,
+    precision: Math.max(0.5, Math.max(...chartValues, 1) * 0.0008),
+    onUpdate(nextValues) {
+      const roundedValues = roundedChartValues(nextValues);
+      dailyChartCurrentLabels = chartLabels.slice();
+      dailyChartCurrentValues = roundedValues.slice();
+      if (!dailyChartInstance || dailyChartInstance.isDisposed()) return;
+      dailyChartInstance.setOption({ series: [buildLineChartSeries(roundedValues)] }, {
+        notMerge: false,
+        lazyUpdate: true,
+        replaceMerge: ["series"],
+      });
+    },
+    onComplete() {
+      dailyChartSpringAnimation = null;
+      const finalValues = roundedChartValues(chartValues);
+      dailyChartCurrentLabels = chartLabels.slice();
+      dailyChartCurrentValues = finalValues.slice();
+      if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
+        dailyChartInstance.setOption({ series: [buildLineChartSeries(finalValues)] }, {
+          notMerge: false,
+          lazyUpdate: false,
+          replaceMerge: ["series"],
+        });
+      }
+      setChartSpringing(el, false);
+      if (shouldRedraw) {
+        playChartLineRedraw(el);
+      }
+    },
+  });
 }
 
 function playChartLineRedraw(el) {
@@ -4186,6 +4905,7 @@ function renderDirectoryLeaderboard(startISO, endISO, options) {
   const opts = options || {};
   const list = document.getElementById("directory-list");
   if (!list) return;
+  const shouldAnimate = opts.animate !== false && !prefersReducedMotion();
   if (opts.resetPage) {
     directoryLeaderboardPage = 1;
   }
@@ -4205,7 +4925,7 @@ function renderDirectoryLeaderboard(startISO, endISO, options) {
     const tokenText = formatNumber(item.total_tokens || 0);
     const costText = formatMoneyUSD(item.total_cost || 0);
     return `
-      <div class="directory-row">
+      <div class="directory-row" style="--row-index:${index}">
         <div class="directory-rank">#${rank}</div>
         <div class="directory-meta">
           <div class="directory-name">${escapeHTML(displayName)}</div>
@@ -4222,6 +4942,39 @@ function renderDirectoryLeaderboard(startISO, endISO, options) {
       </div>
     `;
   }).join("");
+  if (shouldAnimate) {
+    springRevealRows(Array.from(list.querySelectorAll(".directory-row")));
+  }
+}
+
+function springRevealRows(rows) {
+  if (!Array.isArray(rows) || prefersReducedMotion()) return;
+  rows.forEach((row, index) => {
+    if (!(row instanceof HTMLElement)) return;
+    row.style.opacity = "0";
+    row.style.transform = "translate3d(0, 10px, 0) scale(0.985)";
+    window.setTimeout(() => {
+      const animation = springObject(
+        { y: 10, scale: 0.985, opacity: 0 },
+        { y: 0, scale: 1, opacity: 1 },
+        {
+          stiffness: 390,
+          damping: 30,
+          mass: 0.86,
+          precision: 0.001,
+          onUpdate(value) {
+            row.style.opacity = String(Math.max(0, Math.min(1, value.opacity)));
+            row.style.transform = `translate3d(0, ${value.y.toFixed(2)}px, 0) scale(${value.scale.toFixed(4)})`;
+          },
+          onComplete() {
+            row.style.opacity = "";
+            row.style.transform = "";
+          },
+        }
+      );
+      row._directoryRevealCancel = animation.cancel;
+    }, index * 34);
+  });
 }
 
 function normalizeImportedData(raw) {
@@ -4773,6 +5526,7 @@ function bootDashboard() {
   setupDirectoryPagination();
   setupCustomDatePicker();
   setupDailyChartZoom();
+  setupTactileSpringFeedback();
   if (hasInitialDashboardData()) {
     renderInitialDashboard();
     setupAutoSync({ skipInitial: true });
