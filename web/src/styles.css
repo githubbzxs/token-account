@@ -1,0 +1,791 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    "Avenir Next", "SF Pro Display", "Satoshi", "Geist", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #f8fafc;
+  background: #080706;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --bg: #080706;
+  --surface: rgba(19, 17, 15, 0.72);
+  --surface-strong: rgba(30, 26, 22, 0.82);
+  --surface-soft: rgba(255, 255, 255, 0.055);
+  --stroke: rgba(232, 221, 205, 0.14);
+  --stroke-strong: rgba(232, 221, 205, 0.24);
+  --text: #f8fafc;
+  --muted: #a7a29a;
+  --subtle: #77716a;
+  --accent: #d7b98a;
+  --accent-strong: #f1d7a7;
+  --accent-dark: #7f6139;
+  --danger: #f2a38e;
+  --shadow: 0 26px 80px rgba(0, 0, 0, 0.34);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 18% -12%, rgba(161, 124, 74, 0.25), transparent 34rem),
+    radial-gradient(circle at 90% 6%, rgba(227, 200, 154, 0.12), transparent 30rem),
+    linear-gradient(180deg, #0d0b09 0%, #080706 56%, #050505 100%);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100dvh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid rgba(215, 185, 138, 0.58);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.appShell {
+  position: relative;
+  width: min(1180px, calc(100vw - 32px));
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 44px 0 52px;
+}
+
+.ambientLayer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.05), transparent 26%),
+    radial-gradient(circle at 50% 30%, rgba(215, 185, 138, 0.08), transparent 28rem);
+}
+
+.ambientLayer::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.026) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.72), transparent 72%);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 26px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 820px;
+  margin: 0;
+  color: #fffaf0;
+  font-size: clamp(34px, 5vw, 68px);
+  line-height: 0.94;
+  letter-spacing: -0.06em;
+}
+
+.heroMeta {
+  min-width: 220px;
+  padding: 14px 16px;
+  border: 1px solid var(--stroke);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px) saturate(1.25);
+}
+
+.heroMeta span,
+.heroMeta strong {
+  display: block;
+}
+
+.heroMeta span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.heroMeta strong {
+  margin-top: 2px;
+  color: #fffaf0;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboardStack {
+  display: grid;
+  gap: 18px;
+}
+
+.rangeBar {
+  position: sticky;
+  top: 14px;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 260px 310px;
+  gap: 12px;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  padding: 8px;
+  border: 1px solid rgba(232, 221, 205, 0.12);
+  border-radius: 28px;
+  background: rgba(11, 10, 9, 0.68);
+  box-shadow:
+    0 14px 46px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(24px) saturate(1.24);
+}
+
+.dateControlWrap {
+  position: relative;
+}
+
+.dateTrigger {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: #fffaf0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025)),
+    rgba(118, 118, 128, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dateTrigger span {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dateSheet {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 296px;
+  padding: 16px;
+  border: 1px solid rgba(232, 221, 205, 0.15);
+  border-radius: 26px;
+  background: rgba(17, 15, 13, 0.96);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(28px) saturate(1.22);
+}
+
+.dateSheet label {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dateSheet input {
+  width: 100%;
+  height: 38px;
+  border: 1px solid rgba(232, 221, 205, 0.14);
+  border-radius: 15px;
+  color: #fffaf0;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dateSheetActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.dateSheetActions button,
+.ghostButton,
+.pagination button {
+  min-height: 34px;
+  border: 1px solid rgba(232, 221, 205, 0.13);
+  border-radius: 999px;
+  color: #f3eadb;
+  background: rgba(255, 255, 255, 0.055);
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dateSheetActions .primaryButton {
+  border-color: rgba(215, 185, 138, 0.38);
+  color: #21190f;
+  background: linear-gradient(180deg, #f1d7a7, #c99f63);
+}
+
+.segmentedControl {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  width: 100%;
+  height: 36px;
+  padding: 2px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 999px;
+  background: rgba(118, 118, 128, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.segmentedButton {
+  position: relative;
+  min-width: 0;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.segmentedPill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.045)),
+    linear-gradient(135deg, #a27c4a, #d7b98a);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.18),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.segmentedLabel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: 13px;
+  font-weight: 760;
+  letter-spacing: 0.01em;
+}
+
+.emptyBanner,
+.statePanel {
+  border: 1px solid rgba(215, 185, 138, 0.18);
+  border-radius: 28px;
+  background: rgba(215, 185, 138, 0.08);
+  color: #f1d7a7;
+}
+
+.emptyBanner {
+  padding: 14px 18px;
+  font-weight: 700;
+}
+
+.statePanel {
+  display: grid;
+  gap: 12px;
+  min-height: 160px;
+  align-content: center;
+  padding: 24px;
+}
+
+.statePanel strong {
+  font-size: 22px;
+}
+
+.statePanel span {
+  color: var(--muted);
+}
+
+.skeletonLine {
+  width: min(360px, 100%);
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.055));
+  background-size: 220% 100%;
+  animation: shimmer 1.2s infinite linear;
+}
+
+.skeletonLine.wide {
+  width: min(620px, 100%);
+  height: 34px;
+}
+
+.summaryPanel,
+.panel {
+  border: 1px solid var(--stroke);
+  border-radius: 34px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.022)),
+    var(--surface);
+  box-shadow:
+    var(--shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(22px) saturate(1.16);
+}
+
+.summaryPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(220px, 0.7fr);
+  gap: 20px;
+  padding: 28px;
+}
+
+.summaryMain,
+.summaryCost {
+  min-width: 0;
+}
+
+.summaryMain p,
+.summaryCost p,
+.miniMetric span:first-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.summaryMain > span,
+.summaryCost > span {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.heroMetric {
+  margin-top: 4px;
+  color: #fffaf0;
+  font-size: clamp(46px, 8vw, 96px);
+  line-height: 0.92;
+  letter-spacing: -0.075em;
+}
+
+.costMetric {
+  margin-top: 9px;
+  color: var(--accent-strong);
+  font-size: clamp(30px, 4.6vw, 56px);
+  line-height: 0.96;
+  letter-spacing: -0.055em;
+}
+
+.metricRail {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid rgba(232, 221, 205, 0.10);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.miniMetric {
+  min-width: 0;
+  padding: 16px;
+  background: rgba(5, 5, 5, 0.18);
+}
+
+.miniMetricValue {
+  margin-top: 5px;
+  color: #fffaf0;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.animatedMetric {
+  display: inline-flex;
+  align-items: baseline;
+  max-width: 100%;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.digitWindow {
+  display: inline-block;
+  width: 0.62em;
+  height: 1em;
+  overflow: hidden;
+  vertical-align: -0.07em;
+}
+
+.digitTrack {
+  display: grid;
+  grid-auto-rows: 1em;
+  will-change: transform;
+}
+
+.digitCell {
+  display: grid;
+  height: 1em;
+  place-items: center;
+}
+
+.metricStatic {
+  display: inline-block;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.65fr);
+  gap: 18px;
+}
+
+.panel {
+  min-width: 0;
+  padding: 22px;
+}
+
+.panelHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.panelHeading h2 {
+  margin: 0;
+  color: #fffaf0;
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.panelHeading span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chartCanvas {
+  width: 100%;
+  height: 330px;
+}
+
+.hourlyPanel {
+  display: grid;
+}
+
+.hourlyBars {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(4px, 1fr));
+  gap: 4px;
+  align-items: end;
+  height: 280px;
+  padding: 12px 6px 0;
+}
+
+.hourBar {
+  height: 100%;
+  border-radius: 999px 999px 4px 4px;
+  transform-origin: bottom;
+  background: linear-gradient(180deg, #f1d7a7, #7f6139);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.hourlyScale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  color: var(--subtle);
+  font-size: 11px;
+  font-weight: 760;
+  font-variant-numeric: tabular-nums;
+}
+
+.heatmapPanel {
+  overflow: hidden;
+}
+
+.heatmapGrid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 11px);
+  grid-auto-columns: 11px;
+  gap: 4px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-color: rgba(215, 185, 138, 0.32) transparent;
+}
+
+.heatCell {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  background: #181512;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.heatLevel0 {
+  background: #181512;
+}
+
+.heatLevel1 {
+  background: #4c3b25;
+}
+
+.heatLevel2 {
+  background: #765834;
+}
+
+.heatLevel3 {
+  background: #a27c4a;
+}
+
+.heatLevel4 {
+  background: #d7b98a;
+}
+
+.heatmapLegend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 10px;
+  color: var(--subtle);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.directoryList {
+  display: grid;
+  gap: 8px;
+}
+
+.directoryRow {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) minmax(124px, auto);
+  gap: 14px;
+  align-items: center;
+  padding: 13px 14px;
+  border: 1px solid rgba(232, 221, 205, 0.10);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.directoryRank {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.directoryMeta {
+  min-width: 0;
+}
+
+.directoryMeta strong,
+.directoryMeta span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.directoryMeta strong {
+  color: #fffaf0;
+  font-size: 14px;
+}
+
+.directoryMeta span {
+  margin-top: 2px;
+  color: var(--subtle);
+  font-size: 12px;
+}
+
+.directoryNumbers {
+  display: grid;
+  justify-items: end;
+  gap: 3px;
+}
+
+.directoryValue {
+  color: #fffaf0;
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.directoryNumbers > span:last-child {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.directoryEmpty {
+  padding: 34px 16px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.pagination span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -20% 0;
+  }
+}
+
+@media (max-width: 860px) {
+  .appShell {
+    width: min(100% - 22px, 720px);
+    padding: 26px 0 34px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .heroMeta {
+    width: 100%;
+  }
+
+  .rangeBar {
+    position: relative;
+    top: 0;
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+
+  .summaryPanel,
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .metricRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chartCanvas {
+    height: 280px;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero h1 {
+    font-size: 38px;
+  }
+
+  .rangeBar {
+    padding: 7px;
+    border-radius: 24px;
+  }
+
+  .segmentedControl {
+    height: 34px;
+  }
+
+  .segmentedLabel {
+    font-size: 12px;
+  }
+
+  .summaryPanel,
+  .panel {
+    border-radius: 26px;
+    padding: 18px;
+  }
+
+  .metricRail {
+    grid-template-columns: 1fr;
+  }
+
+  .directoryRow {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .directoryNumbers {
+    grid-column: 2;
+    justify-items: start;
+  }
+
+  .dateSheet {
+    width: min(296px, calc(100vw - 44px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

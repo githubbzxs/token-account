@@ -1,3 +1,12 @@
+FROM node:22-slim AS web-build
+
+WORKDIR /app
+
+# 前端依赖单独安装，保证 Docker 构建可以复用缓存。
+COPY package.json package-lock.json tsconfig.json vite.config.ts ./
+COPY web ./web
+RUN npm ci && npm run build
+
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -8,6 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # 再复制项目代码。
 COPY . .
+COPY --from=web-build /app/web/dist ./web/dist
 
 EXPOSE 8000
 

@@ -1,20 +1,16 @@
-# Git 与本地缓存
 .git
-__pycache__/
+.venv
+venv
+node_modules
+web/dist
+data
+report
+.codex
+__pycache__
 *.pyc
-
-# 虚拟环境
-.venv/
-venv/
-node_modules/
-
-# 本地服务数据
-report/
-data/
 *.db
-*.sqlite
 *.sqlite3
-
-# 平台文件
+*token-account-sync-state.json
+npm-debug.log*
 .DS_Store
 Thumbs.db
