@@ -742,8 +742,8 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --font-zh: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
   --font-en: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
   --app-font: var(--font-en);
-  --swift-duration-fast: 280ms;
-  --swift-duration-normal: 620ms;
+  --swift-duration-fast: 320ms;
+  --swift-duration-normal: 760ms;
   --swift-ease-standard: cubic-bezier(0.2, 0.76, 0.24, 1);
   --swift-ease-spring: cubic-bezier(0.22, 0.86, 0.2, 1);
   --swift-ease-settle: cubic-bezier(0.2, 0.8, 0.18, 1);
@@ -1493,12 +1493,12 @@ html.theme-switching .chart {
 
 .text-fade-anim,
 .i18n-switch-anim {
-  animation: textFadeOnly 240ms var(--swift-ease-standard) both;
+  animation: textFadeOnly 360ms var(--swift-ease-standard) both;
   will-change: opacity, transform;
 }
 
 .metric-value-anim {
-  animation: metricValueSettle 300ms var(--swift-ease-settle) both;
+  animation: metricValueSettle 520ms var(--swift-ease-settle) both;
   will-change: opacity, transform;
 }
 
@@ -2170,8 +2170,8 @@ html.theme-switching .chart {
 
 @keyframes textFadeOnly {
   0% {
-    opacity: 0.9;
-    transform: translate3d(0, 1.5px, 0) scale(0.997);
+    opacity: 0.84;
+    transform: translate3d(0, 3px, 0) scale(0.992);
   }
   100% {
     opacity: 1;
@@ -2182,8 +2182,11 @@ html.theme-switching .chart {
 
 @keyframes metricValueSettle {
   0% {
-    opacity: 0.9;
-    transform: translate3d(0, 1.5px, 0) scale(0.997);
+    opacity: 0.78;
+    transform: translate3d(0, 4px, 0) scale(0.99);
+  }
+  62% {
+    opacity: 1;
   }
   100% {
     opacity: 1;
@@ -2416,12 +2419,12 @@ function byId(id) {
 }
 
 const SWIFT_SPRINGS = {
-  text: { response: 0.24, damping: 1, restDelta: 0.0015, restSpeed: 0.045 },
-  digit: { response: 0.34, damping: 0.98, restDelta: 0.002, restSpeed: 0.05 },
-  slider: { response: 0.24, damping: 1.02, restDelta: 0.01, restSpeed: 0.12 },
-  label: { response: 0.2, damping: 0.96, restDelta: 0.0015, restSpeed: 0.045 },
-  press: { response: 0.16, damping: 0.9, restDelta: 0.001, restSpeed: 0.055 },
-  layout: { response: 0.28, damping: 1, restDelta: 0.03, restSpeed: 0.14 },
+  text: { response: 0.34, damping: 0.9, restDelta: 0.0015, restSpeed: 0.035 },
+  digit: { response: 0.58, damping: 0.84, restDelta: 0.002, restSpeed: 0.035 },
+  slider: { response: 0.44, damping: 0.82, restDelta: 0.012, restSpeed: 0.08 },
+  label: { response: 0.28, damping: 0.68, restDelta: 0.0015, restSpeed: 0.035 },
+  press: { response: 0.18, damping: 0.72, restDelta: 0.001, restSpeed: 0.045 },
+  layout: { response: 0.42, damping: 0.88, restDelta: 0.03, restSpeed: 0.12 },
 };
 const activeSpringAnimations = new Set();
 let springFrameId = 0;
@@ -2531,10 +2534,10 @@ function triggerSwapAnimation(el, className) {
   if (className) {
     el.classList.remove(className);
   }
-  el.style.opacity = "0.92";
-  el.style.transform = "translate3d(0, 1.5px, 0) scale(0.997)";
+  el.style.opacity = "0.84";
+  el.style.transform = "translate3d(0, 3px, 0) scale(0.992)";
   const animation = animateSpringValues(
-    { opacity: 0.92, y: 1.5, scale: 0.997 },
+    { opacity: 0.84, y: 3, scale: 0.992 },
     { opacity: 1, y: 0, scale: 1 },
     {
       spring: SWIFT_SPRINGS.text,
@@ -2671,7 +2674,7 @@ function renderSpringNumericText(el, prevText, nextText, syncAriaLabel) {
   const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   el.dataset.metricNumberToken = token;
   const animation = animateSpringValues(
-    { progress: 0, opacity: 0.96, y: 1.2 * direction, scale: 0.998 },
+    { progress: 0, opacity: 0.88, y: 3 * direction, scale: 0.992 },
     { progress: 1, opacity: 1, y: 0, scale: 1 },
     {
       spring: SWIFT_SPRINGS.digit,
@@ -3001,10 +3004,16 @@ function captureQuickRangeSliderState(segmented, slider) {
     return { x: 0, width: 0, visible: false };
   }
   const stored = readQuickRangeSliderState(slider);
-  const visible = stored.visible && stored.width > 0.5;
+  const styles = window.getComputedStyle ? window.getComputedStyle(slider) : null;
+  const liveX = styles ? Number.parseFloat(styles.getPropertyValue("--slider-x")) : NaN;
+  const liveWidth = styles ? Number.parseFloat(styles.getPropertyValue("--slider-width")) : NaN;
+  const liveOpacity = styles ? Number.parseFloat(styles.getPropertyValue("--slider-opacity")) : NaN;
+  const x = Number.isFinite(liveX) ? liveX : stored.x;
+  const width = Number.isFinite(liveWidth) ? liveWidth : stored.width;
+  const visible = (Number.isFinite(liveOpacity) ? liveOpacity > 0.01 : stored.visible) && width > 0.5;
   return {
-    x: Math.max(0, stored.x),
-    width: Math.max(0, stored.width),
+    x: Math.max(0, x),
+    width: Math.max(0, width),
     visible,
   };
 }
@@ -3138,7 +3147,7 @@ function scheduleQuickRangeApply(startISO, endISO) {
       preserveQuickRangeMotion: true,
     });
   };
-  const delay = prefersReducedMotion() ? 0 : 32;
+  const delay = prefersReducedMotion() ? 0 : 72;
   if (window.requestAnimationFrame) {
     window.requestAnimationFrame(() => {
       window.setTimeout(run, delay);
@@ -3160,12 +3169,14 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     return;
   }
   clearQuickRangeSliderMotion(segmented, slider);
-  const fromScale = 1;
+  const movingRight = toState.x >= fromState.x;
+  const fromScale = toState.width > 0 ? Math.max(0.72, Math.min(1.28, fromState.width / toState.width)) : 1;
   slider.style.setProperty("--slider-width", `${Math.max(0, toState.width).toFixed(2)}px`);
   slider.style.setProperty("--slider-x", `${fromState.x.toFixed(2)}px`);
   slider.style.setProperty("--slider-scale-x", fromScale.toFixed(4));
   slider.style.setProperty("--slider-opacity", "1");
   segmented.classList.add("is-animating");
+  segmented.dataset.motionDirection = movingRight ? "right" : "left";
   slider.classList.add("is-animating");
   const animation = animateSpringValues(
     { x: fromState.x, scale: fromScale, opacity: 1 },
@@ -3173,11 +3184,12 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     {
       spring: {
         ...SWIFT_SPRINGS.slider,
-        response: Math.min(0.3, Math.max(0.22, SWIFT_SPRINGS.slider.response + travel * 0.00008)),
+        response: Math.min(0.52, Math.max(0.34, SWIFT_SPRINGS.slider.response + travel * 0.00035)),
       },
-      onUpdate: (value) => {
+      onUpdate: (value, velocity) => {
+        const stretch = Math.max(-0.075, Math.min(0.075, (velocity.x || 0) * 0.0018));
         slider.style.setProperty("--slider-x", `${value.x.toFixed(3)}px`);
-        slider.style.setProperty("--slider-scale-x", "1");
+        slider.style.setProperty("--slider-scale-x", Math.max(0.68, value.scale + stretch).toFixed(4));
         slider.style.setProperty("--slider-opacity", clampUnit(value.opacity).toFixed(4));
       },
       onComplete: () => {
@@ -3191,7 +3203,7 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     if (quickRangeSliderAnimation !== animation) return;
     commitQuickRangeSliderState(segmented, slider, toState);
   };
-  quickRangeSliderCleanupTimer = window.setTimeout(finish, 620);
+  quickRangeSliderCleanupTimer = window.setTimeout(finish, 980);
 }
 
 function updateQuickRangeSlider(options) {
@@ -3612,13 +3624,23 @@ function playChartRefreshMotion(el) {
   });
 }
 
+function cancelLineChartAnimation(chart) {
+  if (!chart) return;
+  if (chart.chartAnimation && typeof chart.chartAnimation.cancel === "function") {
+    chart.chartAnimation.cancel();
+    chart.chartAnimation = null;
+  }
+  if (chart.frame) {
+    window.cancelAnimationFrame(chart.frame);
+    chart.frame = 0;
+  }
+}
+
 function ensureLineChart(el) {
   if (dailyChartInstance && dailyChartInstance.el === el) {
     return dailyChartInstance;
   }
-  if (dailyChartInstance && dailyChartInstance.frame) {
-    window.cancelAnimationFrame(dailyChartInstance.frame);
-  }
+  cancelLineChartAnimation(dailyChartInstance);
   if (dailyChartInstance && dailyChartInstance.hoverFrame) {
     window.cancelAnimationFrame(dailyChartInstance.hoverFrame);
   }
@@ -3643,6 +3665,7 @@ function ensureLineChart(el) {
     height: 0,
     dpr: 1,
     frame: 0,
+    chartAnimation: null,
     hoverFrame: 0,
     pendingPointerX: 0,
     pointerRect: null,
@@ -3886,34 +3909,37 @@ function drawLineChart(chart, values) {
 }
 
 function animateLineChart(chart, fromValues, toValues) {
-  if (!chart || prefersReducedMotion()) {
+  if (!chart) return;
+  if (prefersReducedMotion()) {
+    cancelLineChartAnimation(chart);
     chart.drawnValues = toValues.slice();
     drawLineChart(chart, chart.drawnValues);
     return;
   }
-  if (chart.frame) {
-    window.cancelAnimationFrame(chart.frame);
-    chart.frame = 0;
-  }
-  const start = performance.now();
-  const duration = 320;
+  cancelLineChartAnimation(chart);
   const from = resampleValues(fromValues, toValues.length);
-  const step = (timestamp) => {
-    const progress = smoothProgress((timestamp - start) / duration);
-    chart.drawnValues = toValues.map((target, index) => {
-      const initial = Number(from[index] || 0);
-      return initial + (Number(target || 0) - initial) * progress;
-    });
-    drawLineChart(chart, chart.drawnValues);
-    if (progress < 1) {
-      chart.frame = window.requestAnimationFrame(step);
-      return;
+  const animation = animateSpringValues(
+    { progress: 0 },
+    { progress: 1 },
+    {
+      spring: SWIFT_SPRINGS.layout,
+      onUpdate: (value) => {
+        const progress = clampUnit(value.progress);
+        chart.drawnValues = toValues.map((target, index) => {
+          const initial = Number(from[index] || 0);
+          return initial + (Number(target || 0) - initial) * progress;
+        });
+        drawLineChart(chart, chart.drawnValues);
+      },
+      onComplete: () => {
+        chart.frame = 0;
+        chart.chartAnimation = null;
+        chart.drawnValues = toValues.slice();
+        drawLineChart(chart, chart.drawnValues);
+      },
     }
-    chart.frame = 0;
-    chart.drawnValues = toValues.slice();
-    drawLineChart(chart, chart.drawnValues);
-  };
-  chart.frame = window.requestAnimationFrame(step);
+  );
+  chart.chartAnimation = animation;
 }
 
 function lineChart(el, labels, values, options) {
@@ -3944,10 +3970,7 @@ function lineChart(el, labels, values, options) {
     chart.values = [];
     chart.targetValues = [];
     chart.drawnValues = [];
-    if (chart.frame) {
-      window.cancelAnimationFrame(chart.frame);
-      chart.frame = 0;
-    }
+    cancelLineChartAnimation(chart);
     if (chart.hoverFrame) {
       window.cancelAnimationFrame(chart.hoverFrame);
       chart.hoverFrame = 0;
@@ -3976,10 +3999,7 @@ function lineChart(el, labels, values, options) {
   if (animateChartUpdate && (dataChanged || resized)) {
     animateLineChart(chart, previousValues, chartValues);
   } else {
-    if (chart.frame) {
-      window.cancelAnimationFrame(chart.frame);
-      chart.frame = 0;
-    }
+    cancelLineChartAnimation(chart);
     chart.drawnValues = chartValues.slice();
     drawLineChart(chart, chart.drawnValues);
   }
