@@ -692,7 +692,6 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Codex Token Usage</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.css">
 <style>
 @import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css');
 
@@ -1508,13 +1507,6 @@ html.theme-switching .chart {
   will-change: opacity, transform;
 }
 
-.metric-width-animating {
-  overflow: hidden;
-  vertical-align: top;
-  transition: width 280ms var(--swift-ease-settle);
-  will-change: width;
-}
-
 .card .sub {
   margin-top: 8px;
   color: var(--muted);
@@ -1761,6 +1753,42 @@ html.theme-switching .chart {
   background: rgba(17, 17, 19, 0.82);
   overflow: hidden;
   isolation: isolate;
+  contain: layout paint style;
+}
+
+.chart canvas.report-line-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.chart-tooltip,
+.heatmap-tooltip {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-50%, calc(-100% - 10px), 0) scale(0.98);
+  transform-origin: 50% 100%;
+  transition:
+    opacity 120ms var(--swift-ease-standard),
+    transform 140ms var(--swift-ease-standard);
+  border: 1px solid var(--tooltip-border);
+  border-radius: 10px;
+  background: rgba(10, 14, 20, 0.96);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.36);
+  color: #f8fafc;
+  padding: 7px 9px;
+  font-size: 11px;
+  line-height: 1.35;
+  white-space: nowrap;
+  will-change: transform, opacity;
+}
+
+.chart-tooltip.is-visible,
+.heatmap-tooltip.is-visible {
+  opacity: 1;
+  transform: translate3d(-50%, calc(-100% - 12px), 0) scale(1);
 }
 
 .chart::after {
@@ -1815,6 +1843,42 @@ html.theme-switching .chart {
   width: max-content;
   min-width: 760px;
   padding: 0 12px 0 12px;
+  position: relative;
+}
+
+.heatmap-svg {
+  display: block;
+  overflow: visible;
+}
+
+.heatmap-svg.is-entering .heatmap-day-cell {
+  opacity: 0;
+  transform: scale(0.86);
+}
+
+.heatmap-svg.is-ready .heatmap-day-cell {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.heatmap-month-label {
+  fill: #94a3b8;
+  font-size: 11px;
+  font-family: var(--app-font);
+  dominant-baseline: hanging;
+}
+
+.heatmap-day-cell {
+  transition:
+    opacity 160ms var(--swift-ease-standard),
+    transform 180ms var(--swift-ease-standard),
+    stroke 160ms var(--swift-ease-standard);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.heatmap-day-cell:hover {
+  transform: scale(1.12);
 }
 
 .heatmap-canvas .ch-container {
@@ -2296,12 +2360,6 @@ html.theme-switching .chart {
   </div>
 
 </div>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/Tooltip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/LegendLite.min.js"></script>
 <script>
 const DATA = __INITIAL_DATA_JSON__;
 const I18N = __I18N_JSON__;
@@ -2314,13 +2372,16 @@ const MONTH_LABELS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+const NUMBER_FORMATTER = new Intl.NumberFormat("en-US");
+const ELEMENT_CACHE = new Map();
 let dailyChartInstance = null;
-let contributionHeatmapInstance = null;
 let contributionHeatmapRenderToken = 0;
 let chartResizeBound = false;
 let dailyChartViewportWidth = 0;
 let dailyChartDataKey = "";
 let chartResizeFrame = 0;
+let themePaletteCache = null;
+let themePaletteCacheKey = "";
 let quickRangeResizeBound = false;
 let quickRangeSelection = "";
 let quickRangeSliderAnimation = null;
@@ -2343,6 +2404,15 @@ const calendarState = {
 
 function prefersReducedMotion() {
   return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
+function byId(id) {
+  if (!id) return null;
+  const cached = ELEMENT_CACHE.get(id);
+  if (cached && cached.isConnected) return cached;
+  const el = document.getElementById(id);
+  if (el) ELEMENT_CACHE.set(id, el);
+  return el;
 }
 
 const SWIFT_SPRINGS = {
@@ -2404,7 +2474,7 @@ function animateSpringValues(from, to, options) {
         }
       });
       if (typeof opts.onUpdate === "function") {
-        opts.onUpdate({ ...current }, { ...velocity });
+        opts.onUpdate(current, velocity);
       }
       if (!settled) return false;
       keys.forEach((key) => {
@@ -2412,7 +2482,7 @@ function animateSpringValues(from, to, options) {
         velocity[key] = 0;
       });
       if (typeof opts.onUpdate === "function") {
-        opts.onUpdate({ ...current }, { ...velocity });
+        opts.onUpdate(current, velocity);
       }
       if (typeof opts.onComplete === "function") {
         opts.onComplete();
@@ -2487,25 +2557,8 @@ function triggerSwapAnimation(el, className) {
   };
 }
 
-function measureMetricContentWidth(el) {
-  if (!el) return 0;
-  const measureTarget = el;
-  const range = document.createRange();
-  range.selectNodeContents(measureTarget);
-  const rect = range.getBoundingClientRect();
-  if (typeof range.detach === "function") {
-    range.detach();
-  }
-  if (Number.isFinite(rect.width) && rect.width > 0) {
-    return rect.width;
-  }
-  const fallbackRect = el.getBoundingClientRect();
-  return Number.isFinite(fallbackRect.width) ? fallbackRect.width : 0;
-}
-
 function cancelMetricWidthAnimation(el) {
-  if (!el || typeof el._metricWidthCleanup !== "function") return;
-  el._metricWidthCleanup();
+  void el;
 }
 
 function cancelMetricRollAnimation(el) {
@@ -2516,45 +2569,8 @@ function cancelMetricRollAnimation(el) {
 }
 
 function animateMetricWidthChange(el, previousWidth) {
-  if (!el || prefersReducedMotion()) return;
-  const nextWidth = measureMetricContentWidth(el);
-  if (!Number.isFinite(previousWidth) || !Number.isFinite(nextWidth)) return;
-  if (Math.abs(previousWidth - nextWidth) < 1.5) return;
-
-  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  el.dataset.metricWidthToken = token;
-  el.classList.add("metric-width-animating");
-  el.style.width = `${Math.max(0, previousWidth).toFixed(2)}px`;
-  const cleanup = () => {
-    if (el.dataset.metricWidthToken !== token) return;
-    if (el._metricWidthTimer) {
-      window.clearTimeout(el._metricWidthTimer);
-      delete el._metricWidthTimer;
-    }
-    if (el._metricWidthAnimation) {
-      el._metricWidthAnimation.cancel();
-      delete el._metricWidthAnimation;
-    }
-    el.classList.remove("metric-width-animating");
-    el.style.width = "";
-    delete el.dataset.metricWidthToken;
-    delete el._metricWidthCleanup;
-  };
-  el._metricWidthCleanup = cleanup;
-  el._metricWidthAnimation = animateSpringValues(
-    { width: previousWidth },
-    { width: nextWidth },
-    {
-      spring: SWIFT_SPRINGS.layout,
-      onUpdate: (value) => {
-        if (el.dataset.metricWidthToken === token) {
-          el.style.width = `${Math.max(0, value.width).toFixed(2)}px`;
-        }
-      },
-      onComplete: cleanup,
-    }
-  );
-  el._metricWidthTimer = window.setTimeout(cleanup, 620);
+  void el;
+  void previousWidth;
 }
 
 function setAnimatedText(el, text, options) {
@@ -2617,7 +2633,7 @@ function formatSpringNumberValue(value, descriptor) {
     ? rounded.toFixed(decimals)
     : Math.round(rounded).toString();
   if (descriptor.grouped && decimals === 0) {
-    numberText = new Intl.NumberFormat("en-US").format(Math.round(rounded));
+    numberText = NUMBER_FORMATTER.format(Math.round(rounded));
   }
   return `${descriptor.prefix}${numberText}${descriptor.suffix}`;
 }
@@ -2714,16 +2730,12 @@ function setAnimatedNumericText(el, text, options) {
   cancelMetricRollAnimation(el);
   cancelMetricWidthAnimation(el);
   const canAnimateNumber = shouldAnimate && canUseSpringNumber(prevText, nextText);
-  const previousWidth = shouldAnimate && !canAnimateNumber ? measureMetricContentWidth(el) : 0;
   const didUpdate = canAnimateNumber
     ? renderSpringNumericText(el, prevText, nextText, opts.syncAriaLabel)
     : setAnimatedText(el, nextText, {
       ...opts,
       className: opts.className || "metric-value-anim",
     });
-  if (didUpdate && shouldAnimate && !canAnimateNumber) {
-    animateMetricWidthChange(el, previousWidth);
-  }
   return didUpdate;
 }
 
@@ -2748,7 +2760,7 @@ function formatCompactNumber(value) {
   if (absNum >= 1_000) {
     return `${(num / 1_000).toFixed(1).replace(/\\.0$/, "")}K`;
   }
-  return new Intl.NumberFormat("en-US").format(num);
+  return NUMBER_FORMATTER.format(num);
 }
 
 function formatChartNumber(value) {
@@ -2798,8 +2810,8 @@ function formatRangeButtonLabel(startISO, endISO) {
 
 function updateRangeDateButton(startISO, endISO, options) {
   const opts = options || {};
-  const trigger = document.getElementById("range-date-trigger");
-  const label = document.getElementById("range-date-label");
+  const trigger = byId("range-date-trigger");
+  const label = byId("range-date-label");
   const text = formatRangeButtonLabel(startISO, endISO);
   const shouldAnimate = opts.animate !== false;
   const didUpdate = label ? setAnimatedNumericText(label, text, {
@@ -2828,19 +2840,24 @@ function persistTheme(theme) {
 }
 
 function updateThemeDotToggle(theme) {
-  const btn = document.getElementById("theme-dot-toggle");
+  const btn = byId("theme-dot-toggle");
   if (!btn) return;
   btn.classList.add("is-bronze");
   btn.setAttribute("aria-label", "Bronze theme");
 }
 
 function getThemePalette() {
+  const rootStyleKey = document.documentElement.dataset.theme || "bronze";
+  if (themePaletteCache && themePaletteCacheKey === rootStyleKey) {
+    return themePaletteCache;
+  }
   const style = window.getComputedStyle(document.documentElement);
   const read = (name, fallback) => {
     const value = style.getPropertyValue(name).trim();
     return value || fallback;
   };
-  return {
+  themePaletteCacheKey = rootStyleKey;
+  themePaletteCache = {
     lineStart: read("--chart-line-start", "#B89C7A"),
     lineEnd: read("--chart-line-end", "#E3C89A"),
     areaStart: read("--chart-area-start", "rgba(184, 156, 122, 0.40)"),
@@ -2856,6 +2873,7 @@ function getThemePalette() {
     tooltipBorder: read("--tooltip-border", "rgba(184, 156, 122, 0.45)"),
     axisPointer: read("--axis-pointer", "rgba(227, 200, 154, 0.72)"),
   };
+  return themePaletteCache;
 }
 
 function playThemeSwitchMotion() {
@@ -2883,6 +2901,10 @@ function applyTheme(theme, options) {
   const opts = options || {};
   const currentTheme = normalizeTheme(document.documentElement.dataset.theme || "bronze");
   const nextTheme = normalizeTheme(theme);
+  if (currentTheme !== nextTheme) {
+    themePaletteCache = null;
+    themePaletteCacheKey = "";
+  }
   document.documentElement.dataset.theme = nextTheme;
   updateThemeDotToggle(nextTheme);
   if (opts.animate !== false && currentTheme !== nextTheme) {
@@ -2898,12 +2920,8 @@ function applyTheme(theme, options) {
 }
 
 function updateHeatmapLegendScale() {
-  const legendScale = document.getElementById("heatmap-legend-scale");
+  const legendScale = byId("heatmap-legend-scale");
   if (!legendScale) return;
-  if (window.LegendLite) {
-    legendScale.innerHTML = "";
-    return;
-  }
   const palette = getThemePalette();
   legendScale.innerHTML = palette.heatmapLevels
     .map((color) => `<span class="heatmap-legend-chip" style="background:${color}"></span>`)
@@ -2982,12 +3000,11 @@ function captureQuickRangeSliderState(segmented, slider) {
   if (!segmented || !slider) {
     return { x: 0, width: 0, visible: false };
   }
-  const segmentedRect = segmented.getBoundingClientRect();
-  const sliderRect = slider.getBoundingClientRect();
-  const visible = sliderRect.width > 0.5 && Number.parseFloat(window.getComputedStyle(slider).opacity || "0") > 0.01;
+  const stored = readQuickRangeSliderState(slider);
+  const visible = stored.visible && stored.width > 0.5;
   return {
-    x: Math.max(0, sliderRect.left - segmentedRect.left),
-    width: Math.max(0, sliderRect.width),
+    x: Math.max(0, stored.x),
+    width: Math.max(0, stored.width),
     visible,
   };
 }
@@ -3179,8 +3196,8 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
 
 function updateQuickRangeSlider(options) {
   const opts = options || {};
-  const segmented = document.getElementById("quick-range-segmented");
-  const slider = document.getElementById("quick-range-slider");
+  const segmented = byId("quick-range-segmented");
+  const slider = byId("quick-range-slider");
   if (!segmented || !slider) return;
   const previousState = quickRangeSliderAnimation
     ? captureQuickRangeSliderState(segmented, slider)
@@ -3193,9 +3210,13 @@ function updateQuickRangeSlider(options) {
     writeQuickRangeSliderState(slider, hiddenState);
     return;
   }
+  const buttons = Array.from(segmented.querySelectorAll("button[data-range]"));
+  const activeIndex = buttons.indexOf(activeBtn);
+  const availableWidth = Math.max(0, (segmented.clientWidth || 0) - 4);
+  const buttonWidth = buttons.length ? availableWidth / buttons.length : 0;
   const nextState = {
-    x: Math.max(0, activeBtn.offsetLeft),
-    width: Math.max(0, activeBtn.offsetWidth),
+    x: Math.max(0, 2 + Math.max(0, activeIndex) * buttonWidth),
+    width: Math.max(0, buttonWidth),
     visible: true,
   };
   if (opts.animate) {
@@ -3209,7 +3230,7 @@ function updateQuickRangeSlider(options) {
 
 function setQuickRangeActive(preset, options) {
   const opts = options || {};
-  const segmented = document.getElementById("quick-range-segmented");
+  const segmented = byId("quick-range-segmented");
   if (!segmented) return;
   const nextPreset = preset || "";
   let activeButton = null;
@@ -3243,7 +3264,7 @@ function updateQuickRangeState(startISO, endISO, options) {
     preset = quickRangePresetFor(startISO, endISO, minISO, maxISO);
   }
   if (options && options.preserveQuickRangeMotion) {
-    const segmented = document.getElementById("quick-range-segmented");
+    const segmented = byId("quick-range-segmented");
     const activeRange = segmented ? (segmented.dataset.activeRange || "") : "";
     if (activeRange === (preset || "")) {
       return;
@@ -3253,8 +3274,8 @@ function updateQuickRangeState(startISO, endISO, options) {
 }
 
 function closeCalendarPopover() {
-  const popover = document.getElementById("calendar-popover");
-  const trigger = document.getElementById("range-date-trigger");
+  const popover = byId("calendar-popover");
+  const trigger = byId("range-date-trigger");
   if (!popover) return;
   calendarState.open = false;
   calendarState.selectingPhase = "start";
@@ -3264,8 +3285,8 @@ function closeCalendarPopover() {
 }
 
 function positionCalendarPopover() {
-  const popover = document.getElementById("calendar-popover");
-  const trigger = document.getElementById("range-date-trigger");
+  const popover = byId("calendar-popover");
+  const trigger = byId("range-date-trigger");
   if (!popover || !trigger || !calendarState.open) return;
   const rect = trigger.getBoundingClientRect();
   const gap = 8;
@@ -3285,8 +3306,8 @@ function positionCalendarPopover() {
 }
 
 function renderCalendarDays() {
-  const titleEl = document.getElementById("calendar-title");
-  const daysEl = document.getElementById("calendar-days");
+  const titleEl = byId("calendar-title");
+  const daysEl = byId("calendar-days");
   if (!titleEl || !daysEl) return;
   const year = calendarState.viewYear;
   const month = calendarState.viewMonth;
@@ -3346,8 +3367,8 @@ function shiftCalendarMonth(step) {
 }
 
 function applyCalendarRange(startISO, endISO) {
-  const startInput = document.getElementById("range-start");
-  const endInput = document.getElementById("range-end");
+  const startInput = byId("range-start");
+  const endInput = byId("range-end");
   if (!startInput || !endInput) return;
   rememberQuickRangeSelection("");
   setRangeInputValue(startInput, startISO);
@@ -3356,10 +3377,10 @@ function applyCalendarRange(startISO, endISO) {
 }
 
 function openCalendarPopover() {
-  const popover = document.getElementById("calendar-popover");
-  const trigger = document.getElementById("range-date-trigger");
-  const startInput = document.getElementById("range-start");
-  const endInput = document.getElementById("range-end");
+  const popover = byId("calendar-popover");
+  const trigger = byId("range-date-trigger");
+  const startInput = byId("range-start");
+  const endInput = byId("range-end");
   if (!popover || !trigger || !startInput || !endInput) return;
   const minISO = normalizeISO((DATA.range && DATA.range.start) || "");
   const maxISO = normalizeISO((DATA.range && DATA.range.end) || "");
@@ -3449,7 +3470,7 @@ function animateMetricValue(el, text) {
 }
 
 function setDisplayText(id, value, animate) {
-  const el = document.getElementById(id);
+  const el = byId(id);
   if (!el) return;
   const text = String(value ?? "");
   const useAnimation = typeof animate === "object" ? animate.animate !== false : animate !== false;
@@ -3571,7 +3592,12 @@ function makeChartDataKey(labels, values) {
   const lastLabel = labelCount ? labels[labelCount - 1] : "";
   const firstValue = valueCount ? values[0] : 0;
   const lastValue = valueCount ? values[valueCount - 1] : 0;
-  return `${labelCount}:${firstLabel}:${lastLabel}:${valueCount}:${firstValue}:${lastValue}`;
+  let checksum = 0;
+  const step = Math.max(1, Math.floor(valueCount / 32));
+  for (let i = 0; i < valueCount; i += step) {
+    checksum = (checksum + ((i + 1) * Number(values[i] || 0))) % 1_000_000_007;
+  }
+  return `${labelCount}:${firstLabel}:${lastLabel}:${valueCount}:${firstValue}:${lastValue}:${checksum}`;
 }
 
 function playChartRefreshMotion(el) {
@@ -3586,139 +3612,377 @@ function playChartRefreshMotion(el) {
   });
 }
 
+function ensureLineChart(el) {
+  if (dailyChartInstance && dailyChartInstance.el === el) {
+    return dailyChartInstance;
+  }
+  if (dailyChartInstance && dailyChartInstance.frame) {
+    window.cancelAnimationFrame(dailyChartInstance.frame);
+  }
+  if (dailyChartInstance && dailyChartInstance.hoverFrame) {
+    window.cancelAnimationFrame(dailyChartInstance.hoverFrame);
+  }
+  el.innerHTML = "";
+  const canvas = document.createElement("canvas");
+  canvas.className = "report-line-canvas";
+  const tooltip = document.createElement("div");
+  tooltip.className = "chart-tooltip";
+  tooltip.setAttribute("aria-hidden", "true");
+  el.appendChild(canvas);
+  el.appendChild(tooltip);
+  const chart = {
+    el,
+    canvas,
+    tooltip,
+    ctx: canvas.getContext("2d"),
+    labels: [],
+    values: [],
+    drawnValues: [],
+    targetValues: [],
+    width: 0,
+    height: 0,
+    dpr: 1,
+    frame: 0,
+    hoverFrame: 0,
+    pendingPointerX: 0,
+    pointerRect: null,
+    hoverIndex: -1,
+    maxValue: 1,
+    xAxisLabelMode: "hour",
+    palette: getThemePalette(),
+  };
+  const drawHover = () => {
+    chart.hoverFrame = 0;
+    if (!chart.values.length || !chart.width || !chart.height) return;
+    const rect = chart.pointerRect;
+    if (!rect) return;
+    const x = chart.pendingPointerX - rect.left;
+    const layout = lineChartLayout(chart.width, chart.height);
+    const plotWidth = Math.max(1, chart.width - layout.left - layout.right);
+    const ratio = clampUnit((x - layout.left) / plotWidth);
+    chart.hoverIndex = Math.min(chart.values.length - 1, Math.max(0, Math.round(ratio * (chart.values.length - 1))));
+    drawLineChart(chart, chart.drawnValues.length ? chart.drawnValues : chart.values);
+  };
+  const pointerEnter = () => {
+    chart.pointerRect = canvas.getBoundingClientRect();
+  };
+  const pointerMove = (event) => {
+    if (!chart.pointerRect) {
+      chart.pointerRect = canvas.getBoundingClientRect();
+    }
+    chart.pendingPointerX = event.clientX;
+    if (!chart.hoverFrame) {
+      chart.hoverFrame = window.requestAnimationFrame(drawHover);
+    }
+  };
+  const pointerLeave = () => {
+    if (chart.hoverFrame) {
+      window.cancelAnimationFrame(chart.hoverFrame);
+      chart.hoverFrame = 0;
+    }
+    chart.pointerRect = null;
+    chart.hoverIndex = -1;
+    chart.tooltip.classList.remove("is-visible");
+    drawLineChart(chart, chart.drawnValues.length ? chart.drawnValues : chart.values);
+  };
+  canvas.addEventListener("pointerenter", pointerEnter, { passive: true });
+  canvas.addEventListener("pointermove", pointerMove, { passive: true });
+  canvas.addEventListener("pointerleave", pointerLeave, { passive: true });
+  dailyChartInstance = chart;
+  return chart;
+}
+
+function lineChartLayout(width, height) {
+  const compact = width > 0 && width < 560;
+  return {
+    left: compact ? 38 : 48,
+    right: compact ? 12 : 26,
+    top: 16,
+    bottom: compact ? 44 : 56,
+    width,
+    height,
+  };
+}
+
+function resizeLineChart(chart) {
+  if (!chart || !chart.ctx) return false;
+  const rect = chart.el.getBoundingClientRect();
+  const width = Math.max(1, Math.round(rect.width || chart.el.clientWidth || 0));
+  const height = Math.max(1, Math.round(rect.height || chart.el.clientHeight || 0));
+  const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  if (chart.width === width && chart.height === height && chart.dpr === dpr) {
+    return false;
+  }
+  chart.width = width;
+  chart.height = height;
+  chart.dpr = dpr;
+  chart.canvas.width = Math.round(width * dpr);
+  chart.canvas.height = Math.round(height * dpr);
+  chart.canvas.style.width = `${width}px`;
+  chart.canvas.style.height = `${height}px`;
+  chart.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  chart.pointerRect = null;
+  dailyChartViewportWidth = width;
+  return true;
+}
+
+function resampleValues(values, length) {
+  const source = Array.isArray(values) ? values : [];
+  if (!length) return [];
+  if (!source.length) return new Array(length).fill(0);
+  if (source.length === length) return source.map((value) => Number(value || 0));
+  if (length === 1) return [Number(source[source.length - 1] || 0)];
+  const out = [];
+  for (let i = 0; i < length; i += 1) {
+    const sourceIndex = Math.round((i / Math.max(1, length - 1)) * (source.length - 1));
+    out.push(Number(source[sourceIndex] || 0));
+  }
+  return out;
+}
+
+function smoothProgress(value) {
+  const t = clampUnit(value);
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function createLineGradient(ctx, palette, width) {
+  const gradient = ctx.createLinearGradient(0, 0, Math.max(1, width), 0);
+  gradient.addColorStop(0, palette.lineStart);
+  gradient.addColorStop(1, palette.lineEnd);
+  return gradient;
+}
+
+function createAreaGradient(ctx, palette, layout) {
+  const gradient = ctx.createLinearGradient(0, layout.top, 0, Math.max(layout.top + 1, layout.height - layout.bottom));
+  gradient.addColorStop(0, palette.lineStart);
+  gradient.addColorStop(0.28, palette.areaStart);
+  gradient.addColorStop(0.64, palette.areaMid);
+  gradient.addColorStop(1, palette.areaEnd);
+  return gradient;
+}
+
+function buildLinePoints(values, layout, maxValue) {
+  const plotWidth = Math.max(1, layout.width - layout.left - layout.right);
+  const plotHeight = Math.max(1, layout.height - layout.top - layout.bottom);
+  const count = values.length;
+  const safeMax = Math.max(1, maxValue || 1);
+  return values.map((value, index) => {
+    const x = layout.left + (count <= 1 ? 0 : (index / (count - 1)) * plotWidth);
+    const y = layout.top + plotHeight - (Math.max(0, Number(value || 0)) / safeMax) * plotHeight;
+    return { x, y, value: Number(value || 0) };
+  });
+}
+
+function traceSmoothLine(ctx, points) {
+  if (!points.length) return;
+  ctx.moveTo(points[0].x, points[0].y);
+  if (points.length === 1) {
+    ctx.lineTo(points[0].x + 0.01, points[0].y);
+    return;
+  }
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const midX = (points[i].x + points[i + 1].x) / 2;
+    const midY = (points[i].y + points[i + 1].y) / 2;
+    ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
+  }
+  const last = points[points.length - 1];
+  ctx.quadraticCurveTo(last.x, last.y, last.x, last.y);
+}
+
+function drawAxisLabels(ctx, chart, layout, maxValue) {
+  const plotBottom = layout.height - layout.bottom;
+  const plotRight = layout.width - layout.right;
+  ctx.save();
+  ctx.font = "11px sans-serif";
+  ctx.fillStyle = CHART_AXIS_TEXT;
+  ctx.strokeStyle = "rgba(148,163,184,0.10)";
+  ctx.lineWidth = 1;
+  ctx.textBaseline = "middle";
+  for (let i = 0; i <= 3; i += 1) {
+    const ratio = i / 3;
+    const y = layout.top + (plotBottom - layout.top) * ratio;
+    ctx.beginPath();
+    ctx.moveTo(layout.left, y);
+    ctx.lineTo(plotRight, y);
+    ctx.stroke();
+    const value = maxValue * (1 - ratio);
+    ctx.fillText(formatChartNumber(value), 8, y);
+  }
+  ctx.strokeStyle = CHART_AXIS_LINE;
+  ctx.beginPath();
+  ctx.moveTo(layout.left, plotBottom);
+  ctx.lineTo(plotRight, plotBottom);
+  ctx.stroke();
+
+  const labelCount = chart.labels.length;
+  if (labelCount) {
+    const ticks = Math.min(labelCount, layout.width < 560 ? 4 : 6);
+    ctx.textBaseline = "top";
+    ctx.textAlign = "center";
+    for (let i = 0; i < ticks; i += 1) {
+      const index = ticks <= 1 ? 0 : Math.round((i / (ticks - 1)) * (labelCount - 1));
+      const x = layout.left + (labelCount <= 1 ? 0 : (index / (labelCount - 1)) * (plotRight - layout.left));
+      const label = formatXAxisLabel(chart.labels[index], chart.xAxisLabelMode);
+      ctx.fillText(label, x, plotBottom + 14);
+    }
+  }
+  ctx.restore();
+}
+
+function drawLineChart(chart, values) {
+  if (!chart || !chart.ctx || !chart.width || !chart.height) return;
+  const ctx = chart.ctx;
+  const palette = chart.palette || getThemePalette();
+  const layout = lineChartLayout(chart.width, chart.height);
+  const targetMax = Math.max(1, ...chart.targetValues.map((value) => Number(value || 0)));
+  const frameMax = Math.max(1, ...values.map((value) => Number(value || 0)));
+  const maxValue = Math.max(targetMax, frameMax);
+  chart.maxValue = maxValue;
+  ctx.clearRect(0, 0, chart.width, chart.height);
+  drawAxisLabels(ctx, chart, layout, maxValue);
+  const points = buildLinePoints(values, layout, maxValue);
+  if (!points.length) return;
+  const plotBottom = layout.height - layout.bottom;
+  ctx.save();
+  ctx.beginPath();
+  traceSmoothLine(ctx, points);
+  ctx.lineTo(points[points.length - 1].x, plotBottom);
+  ctx.lineTo(points[0].x, plotBottom);
+  ctx.closePath();
+  ctx.fillStyle = createAreaGradient(ctx, palette, layout);
+  ctx.globalAlpha = 0.78;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.beginPath();
+  traceSmoothLine(ctx, points);
+  ctx.strokeStyle = createLineGradient(ctx, palette, chart.width);
+  ctx.lineWidth = 1.8;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  if (chart.hoverIndex >= 0 && chart.hoverIndex < points.length) {
+    const point = points[chart.hoverIndex];
+    ctx.strokeStyle = palette.axisPointer;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(point.x, layout.top);
+    ctx.lineTo(point.x, plotBottom);
+    ctx.stroke();
+    ctx.fillStyle = palette.lineEnd;
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, 3.4, 0, Math.PI * 2);
+    ctx.fill();
+    const tooltipX = Math.min(chart.width - 58, Math.max(58, point.x));
+    const tooltipY = Math.max(28, point.y - 6);
+    chart.tooltip.innerHTML = `${escapeHTML(formatXAxisLabel(chart.labels[chart.hoverIndex], chart.xAxisLabelMode))}<br>${escapeHTML(formatChartNumber(chart.values[chart.hoverIndex] || 0))}`;
+    chart.tooltip.style.left = `${tooltipX}px`;
+    chart.tooltip.style.top = `${tooltipY}px`;
+    chart.tooltip.classList.add("is-visible");
+  } else {
+    chart.tooltip.classList.remove("is-visible");
+  }
+  ctx.restore();
+}
+
+function animateLineChart(chart, fromValues, toValues) {
+  if (!chart || prefersReducedMotion()) {
+    chart.drawnValues = toValues.slice();
+    drawLineChart(chart, chart.drawnValues);
+    return;
+  }
+  if (chart.frame) {
+    window.cancelAnimationFrame(chart.frame);
+    chart.frame = 0;
+  }
+  const start = performance.now();
+  const duration = 320;
+  const from = resampleValues(fromValues, toValues.length);
+  const step = (timestamp) => {
+    const progress = smoothProgress((timestamp - start) / duration);
+    chart.drawnValues = toValues.map((target, index) => {
+      const initial = Number(from[index] || 0);
+      return initial + (Number(target || 0) - initial) * progress;
+    });
+    drawLineChart(chart, chart.drawnValues);
+    if (progress < 1) {
+      chart.frame = window.requestAnimationFrame(step);
+      return;
+    }
+    chart.frame = 0;
+    chart.drawnValues = toValues.slice();
+    drawLineChart(chart, chart.drawnValues);
+  };
+  chart.frame = window.requestAnimationFrame(step);
+}
+
 function lineChart(el, labels, values, options) {
   if (!el) return;
   const chartLabels = Array.isArray(labels) ? labels : [];
   const chartValues = Array.isArray(values) ? values.map(v => Number(v || 0)) : [];
-  const xAxisLabelMode = pickXAxisLabelMode(chartLabels);
   const opts = options || {};
-  if (!window.echarts) {
-    el.innerHTML = "";
-    return;
-  }
-  if (!dailyChartInstance || dailyChartInstance.isDisposed() || dailyChartInstance.getDom() !== el) {
-    if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
-      dailyChartInstance.dispose();
-    }
-    dailyChartInstance = window.echarts.init(el, null, {
-      renderer: "canvas",
-      useDirtyRect: true,
-    });
-  }
-  dailyChartViewportWidth = Math.round(el.getBoundingClientRect().width || el.clientWidth || 0);
+  const chart = ensureLineChart(el);
+  const resized = resizeLineChart(chart);
   if (!chartResizeBound) {
     window.addEventListener("resize", () => {
-      if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
-        const chartEl = dailyChartInstance.getDom();
-        const nextWidth = Math.round(chartEl.getBoundingClientRect().width || chartEl.clientWidth || 0);
-        if (nextWidth > 0 && Math.abs(nextWidth - dailyChartViewportWidth) < 1) {
-          return;
-        }
-        dailyChartViewportWidth = nextWidth;
-        if (chartResizeFrame) {
-          window.cancelAnimationFrame(chartResizeFrame);
-        }
-        chartResizeFrame = window.requestAnimationFrame(() => {
-          chartResizeFrame = 0;
-          if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
-            dailyChartInstance.resize();
-          }
-        });
+      if (!dailyChartInstance) return;
+      if (chartResizeFrame) {
+        window.cancelAnimationFrame(chartResizeFrame);
       }
+      chartResizeFrame = window.requestAnimationFrame(() => {
+        chartResizeFrame = 0;
+        if (!dailyChartInstance) return;
+        const didResize = resizeLineChart(dailyChartInstance);
+        if (didResize) {
+          drawLineChart(dailyChartInstance, dailyChartInstance.drawnValues.length ? dailyChartInstance.drawnValues : dailyChartInstance.values);
+        }
+      });
     }, { passive: true });
     chartResizeBound = true;
   }
   if (!chartValues.length) {
-    dailyChartInstance.clear();
+    chart.values = [];
+    chart.targetValues = [];
+    chart.drawnValues = [];
+    if (chart.frame) {
+      window.cancelAnimationFrame(chart.frame);
+      chart.frame = 0;
+    }
+    if (chart.hoverFrame) {
+      window.cancelAnimationFrame(chart.hoverFrame);
+      chart.hoverFrame = 0;
+    }
+    chart.pointerRect = null;
+    chart.hoverIndex = -1;
+    chart.tooltip.classList.remove("is-visible");
+    chart.ctx.clearRect(0, 0, chart.width, chart.height);
     dailyChartDataKey = "";
     return;
   }
+  chart.palette = getThemePalette();
+  const nextDataKey = makeChartDataKey(chartLabels, chartValues);
+  const dataChanged = nextDataKey !== dailyChartDataKey;
+  const previousValues = chart.drawnValues.length
+    ? chart.drawnValues.slice()
+    : (dataChanged ? new Array(chartValues.length).fill(0) : chart.values.slice());
+  chart.labels = chartLabels;
+  chart.values = chartValues;
+  chart.targetValues = chartValues.slice();
+  chart.xAxisLabelMode = pickXAxisLabelMode(chartLabels);
   const prefersReduced = prefersReducedMotion();
   const shouldRedraw = Boolean(opts.redraw) && !prefersReduced;
   const animateChartUpdate = Boolean(opts.animateChart !== false) && !prefersReduced;
-  const nextDataKey = makeChartDataKey(chartLabels, chartValues);
-  const dataChanged = nextDataKey !== dailyChartDataKey;
   dailyChartDataKey = nextDataKey;
-  const palette = getThemePalette();
-  const isCompactChart = dailyChartViewportWidth > 0 && dailyChartViewportWidth < 560;
-  const chartOption = {
-    backgroundColor: "transparent",
-    animation: animateChartUpdate,
-    animationThreshold: 2200,
-    animationDuration: animateChartUpdate ? 220 : 0,
-    animationDurationUpdate: animateChartUpdate ? 300 : 0,
-    animationEasing: "cubicOut",
-    animationEasingUpdate: "cubicOut",
-    stateAnimation: {
-      duration: animateChartUpdate ? 120 : 0,
-      easing: "cubicOut",
-    },
-    grid: { left: isCompactChart ? 38 : 48, right: isCompactChart ? 12 : 26, top: 16, bottom: isCompactChart ? 44 : 56 },
-    tooltip: {
-      trigger: "axis",
-      backgroundColor: "rgba(10,10,10,0.92)",
-      borderColor: palette.tooltipBorder,
-      borderWidth: 1,
-      textStyle: { color: "#f8fafc" },
-      transitionDuration: animateChartUpdate ? 0.04 : 0,
-      axisPointer: { type: "line", lineStyle: { color: palette.axisPointer, width: 1 } },
-      valueFormatter: (value) => formatChartNumber(value),
-    },
-    xAxis: {
-      type: "category",
-      boundaryGap: false,
-      data: chartLabels,
-      axisLabel: {
-        color: CHART_AXIS_TEXT,
-        hideOverlap: true,
-        formatter: (value) => formatXAxisLabel(value, xAxisLabelMode),
-      },
-      axisLine: { lineStyle: { color: CHART_AXIS_LINE } },
-      axisTick: { show: false },
-    },
-    yAxis: {
-      type: "value",
-      axisLabel: {
-        color: CHART_AXIS_TEXT,
-        formatter: (value) => formatChartNumber(value),
-      },
-      splitLine: { lineStyle: { color: "rgba(148,163,184,0.10)" } },
-    },
-    series: [
-      {
-        type: "line",
-        id: "hourly-total-line",
-        data: chartValues,
-        showSymbol: false,
-        smooth: 0.42,
-        sampling: "lttb",
-        progressive: 600,
-        progressiveThreshold: 1600,
-        universalTransition: false,
-        lineStyle: {
-          width: 1.8,
-          color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
-            { offset: 0, color: palette.lineStart },
-            { offset: 1, color: palette.lineEnd },
-          ]),
-          opacity: 0.9,
-        },
-        areaStyle: {
-          color: new window.echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: palette.lineStart },
-            { offset: 0.28, color: palette.areaStart },
-            { offset: 0.64, color: palette.areaMid },
-            { offset: 1, color: palette.areaEnd },
-          ]),
-        },
-        emphasis: { focus: "series" },
-      },
-    ],
-  };
-  dailyChartInstance.setOption(chartOption, {
-    notMerge: false,
-    lazyUpdate: true,
-  });
+  if (animateChartUpdate && (dataChanged || resized)) {
+    animateLineChart(chart, previousValues, chartValues);
+  } else {
+    if (chart.frame) {
+      window.cancelAnimationFrame(chart.frame);
+      chart.frame = 0;
+    }
+    chart.drawnValues = chartValues.slice();
+    drawLineChart(chart, chart.drawnValues);
+  }
   if (shouldRedraw && dataChanged) {
     playChartRefreshMotion(el);
   }
@@ -3969,14 +4233,6 @@ function firstDayOfMonthISO(iso) {
   return `${year}-${pad2(month)}-01`;
 }
 
-function buildContributionDataset(labels, totals) {
-  return labels.map((label, index) => ({
-    date: parseISODate(label),
-    value: Number(totals[index] || 0),
-    iso: label,
-  }));
-}
-
 function buildContributionThresholds(values) {
   const positives = values
     .map((value) => Number(value || 0))
@@ -4008,16 +4264,8 @@ function buildContributionThresholds(values) {
   return normalized;
 }
 
-async function destroyContributionHeatmap(instance) {
-  if (!instance || typeof instance.destroy !== "function") return;
-  try {
-    await instance.destroy();
-  } catch (_) {
-  }
-}
-
 function scrollContributionHeatmapToLatest(options) {
-  const chart = document.getElementById("chart-heatmap");
+  const chart = byId("chart-heatmap");
   if (!chart) return;
   const opts = options || {};
   const target = Math.max(0, chart.scrollWidth - chart.clientWidth);
@@ -4034,10 +4282,77 @@ function scrollContributionHeatmapToLatest(options) {
   });
 }
 
+function heatmapLevel(value, thresholds) {
+  const numericValue = Number(value || 0);
+  if (numericValue <= 0) return 0;
+  for (let i = thresholds.length - 1; i >= 0; i -= 1) {
+    if (numericValue >= thresholds[i]) return i + 1;
+  }
+  return 1;
+}
+
+function heatmapMonthLabelForISO(iso) {
+  if (!iso || iso.slice(8, 10) !== "01") return "";
+  const month = Number(iso.slice(5, 7));
+  if (!month) return "";
+  if (currentLang === "zh") {
+    return `${month}月`;
+  }
+  return (MONTH_LABELS[month - 1] || "").slice(0, 3);
+}
+
+function escapeAttr(value) {
+  return escapeHTML(value).replace(/"/g, "&quot;");
+}
+
+function showHeatmapTooltip(container, target) {
+  if (!container || !target) return;
+  const tooltip = container.querySelector(".heatmap-tooltip");
+  if (!tooltip) return;
+  const iso = target.getAttribute("data-iso") || "";
+  const value = Number(target.getAttribute("data-value") || 0);
+  const rect = target.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  const x = rect.left - containerRect.left + rect.width / 2 + container.scrollLeft;
+  const y = rect.top - containerRect.top + container.scrollTop - 2;
+  tooltip.innerHTML = `${escapeHTML(formatContributionTooltipDate(null, iso))}<br>${escapeHTML(labelFor("card_total"))}: ${escapeHTML(formatChartNumber(value))}`;
+  tooltip.style.left = `${Math.round(x)}px`;
+  tooltip.style.top = `${Math.round(y)}px`;
+  tooltip.classList.add("is-visible");
+}
+
+function hideHeatmapTooltip(container) {
+  if (!container) return;
+  container._heatmapTooltipTarget = null;
+  const tooltip = container.querySelector(".heatmap-tooltip");
+  if (tooltip) {
+    tooltip.classList.remove("is-visible");
+  }
+}
+
+function bindHeatmapInteractions(chartInner) {
+  if (!chartInner || chartInner.dataset.heatmapBound === "1") return;
+  chartInner.dataset.heatmapBound = "1";
+  chartInner.addEventListener("pointermove", (event) => {
+    const target = event.target instanceof Element ? event.target.closest(".heatmap-day-cell") : null;
+    if (!target) {
+      hideHeatmapTooltip(chartInner);
+      return;
+    }
+    if (chartInner._heatmapTooltipTarget === target) {
+      return;
+    }
+    chartInner._heatmapTooltipTarget = target;
+    showHeatmapTooltip(chartInner, target);
+  }, { passive: true });
+  chartInner.addEventListener("pointerleave", () => {
+    hideHeatmapTooltip(chartInner);
+  }, { passive: true });
+}
 
 function renderContributionHeatmap(options) {
-  const chartInner = document.getElementById("chart-heatmap-inner");
-  const legendScale = document.getElementById("heatmap-legend-scale");
+  const chartInner = byId("chart-heatmap-inner");
+  const legendScale = byId("heatmap-legend-scale");
   if (!chartInner) return;
   const contribution = buildContributionSeries();
   const opts = options || {};
@@ -4049,115 +4364,59 @@ function renderContributionHeatmap(options) {
     hasContributionHeatmapRender = true;
     return;
   }
-  if (!window.CalHeatmap) {
-    updateHeatmapLegendScale();
-    chartInner.innerHTML = `<div class="heatmap-empty">${escapeHTML(labelFor("no_data"))}</div>`;
-    hasContributionHeatmapRender = true;
-    return;
-  }
   const palette = getThemePalette();
   const thresholds = buildContributionThresholds(contribution.totals);
-  const dataset = buildContributionDataset(contribution.labels, contribution.totals);
-  const monthStartISO = firstDayOfMonthISO(contribution.startISO) || contribution.startISO;
   const renderToken = ++contributionHeatmapRenderToken;
-  const previousInstance = contributionHeatmapInstance;
-  contributionHeatmapInstance = null;
-  chartInner.innerHTML = "";
-  const draw = async () => {
-    if (previousInstance) {
-      await destroyContributionHeatmap(previousInstance);
+  updateHeatmapLegendScale();
+  const cell = 10;
+  const gap = 3;
+  const pitch = cell + gap;
+  const top = 18;
+  const left = 2;
+  const startDate = parseISODate(contribution.startISO);
+  const startWeekday = startDate.getUTCDay();
+  const weeks = Math.ceil((startWeekday + contribution.labels.length) / 7);
+  const width = left + weeks * pitch + 4;
+  const height = top + 7 * pitch + 6;
+  let labelsMarkup = "";
+  let cellsMarkup = "";
+  contribution.labels.forEach((iso, index) => {
+    const date = parseISODate(iso);
+    const dayOffset = startWeekday + index;
+    const week = Math.floor(dayOffset / 7);
+    const weekday = date.getUTCDay();
+    const x = left + week * pitch;
+    const y = top + weekday * pitch;
+    const value = Number(contribution.totals[index] || 0);
+    const level = heatmapLevel(value, thresholds);
+    const color = palette.heatmapLevels[Math.min(palette.heatmapLevels.length - 1, level)] || palette.heatmapLevels[0];
+    const monthLabel = heatmapMonthLabelForISO(iso);
+    if (monthLabel) {
+      labelsMarkup += `<text class="heatmap-month-label" x="${x}" y="0">${escapeHTML(monthLabel)}</text>`;
     }
-    if (renderToken !== contributionHeatmapRenderToken) return;
-    const cal = new window.CalHeatmap();
-    contributionHeatmapInstance = cal;
-    const plugins = [];
-    if (window.Tooltip) {
-      plugins.push([
-        window.Tooltip,
-        {
-          placement: "top",
-          text: (timestamp, value, dayjsDate) => {
-            const numericValue = Number(value || 0);
-            const dateText = formatContributionTooltipDate(dayjsDate, formatISODate(new Date(timestamp)));
-            return `${dateText}<br>${labelFor("card_total")}: ${formatChartNumber(numericValue)}`;
-          },
-        },
-      ]);
-    }
-    if (window.LegendLite && legendScale) {
-      plugins.push([
-        window.LegendLite,
-        {
-          itemSelector: "#heatmap-legend-scale",
-          includeBlank: true,
-          radius: 3,
-          width: 12,
-          height: 12,
-          gutter: 4,
-        },
-      ]);
-    } else {
-      updateHeatmapLegendScale();
-    }
-    try {
-      await cal.paint(
-        {
-          itemSelector: "#chart-heatmap-inner",
-          theme: "dark",
-          animationDuration: 0,
-          date: {
-            start: parseISODate(monthStartISO),
-            locale: currentLang === "zh" ? "zh-cn" : { weekStart: 1 },
-          },
-          range: contributionMonthRange(contribution.startISO, contribution.endISO),
-          domain: {
-            type: "month",
-            gutter: 6,
-            label: {
-              position: "top",
-              textAlign: "start",
-              offset: { x: 0, y: -6 },
-              text: (timestamp) => formatContributionMonthLabel(timestamp),
-            },
-          },
-          subDomain: {
-            type: "ghDay",
-            width: 10,
-            height: 10,
-            gutter: 3,
-            radius: 3,
-          },
-          data: {
-            source: dataset,
-            x: "date",
-            y: "value",
-          },
-          scale: {
-            color: {
-              type: "threshold",
-              range: palette.heatmapLevels,
-              domain: thresholds,
-            },
-          },
-        },
-        plugins
-      );
-      if (renderToken !== contributionHeatmapRenderToken && contributionHeatmapInstance === cal) {
-        await destroyContributionHeatmap(cal);
-        return;
+    const delay = prefersReducedMotion() ? "0ms" : `${Math.min(240, index * 1.4).toFixed(0)}ms`;
+    cellsMarkup += `<rect class="heatmap-day-cell" data-iso="${escapeAttr(iso)}" data-value="${value}" x="${x}" y="${y}" width="${cell}" height="${cell}" rx="3" ry="3" fill="${escapeAttr(color)}" stroke="rgba(255,255,255,0.05)" stroke-width="1" style="transition-delay:${delay}"></rect>`;
+  });
+  if (renderToken !== contributionHeatmapRenderToken) return;
+  const shouldAnimate = opts.redraw === true && !prefersReducedMotion();
+  chartInner.innerHTML = `
+    <svg class="heatmap-svg${shouldAnimate ? " is-entering" : " is-ready"}" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeAttr(labelFor("heatmap_chart"))}">
+      ${labelsMarkup}
+      ${cellsMarkup}
+    </svg>
+    <div class="heatmap-tooltip" aria-hidden="true"></div>
+  `;
+  bindHeatmapInteractions(chartInner);
+  if (shouldAnimate) {
+    window.requestAnimationFrame(() => {
+      const svg = chartInner.querySelector(".heatmap-svg");
+      if (svg) {
+        svg.classList.remove("is-entering");
+        svg.classList.add("is-ready");
       }
-      scrollContributionHeatmapToLatest({ animate: opts.redraw === true });
-      hasContributionHeatmapRender = true;
-    } catch (_) {
-      if (renderToken === contributionHeatmapRenderToken) {
-        contributionHeatmapInstance = null;
-        updateHeatmapLegendScale();
-        chartInner.innerHTML = `<div class="heatmap-empty">${escapeHTML(labelFor("no_data"))}</div>`;
-        hasContributionHeatmapRender = true;
-      }
-    }
-  };
-  draw();
+    });
+  }
+  scrollContributionHeatmapToLatest({ animate: opts.redraw === true });
   hasContributionHeatmapRender = true;
 }
 
@@ -4359,9 +4618,9 @@ function collectDirectoryLeaderboard(startISO, endISO) {
 function updateDirectoryPagination(totalItems) {
   const totalPages = Math.max(1, Math.ceil(totalItems / DIRECTORY_PAGE_SIZE));
   directoryLeaderboardPage = Math.min(Math.max(1, directoryLeaderboardPage), totalPages);
-  const prevBtn = document.getElementById("directory-prev");
-  const nextBtn = document.getElementById("directory-next");
-  const pageText = document.getElementById("directory-page");
+  const prevBtn = byId("directory-prev");
+  const nextBtn = byId("directory-next");
+  const pageText = byId("directory-page");
   if (prevBtn) prevBtn.disabled = directoryLeaderboardPage <= 1;
   if (nextBtn) nextBtn.disabled = directoryLeaderboardPage >= totalPages;
   if (pageText) {
@@ -4371,7 +4630,7 @@ function updateDirectoryPagination(totalItems) {
 
 function renderDirectoryLeaderboard(startISO, endISO, options) {
   const opts = options || {};
-  const list = document.getElementById("directory-list");
+  const list = byId("directory-list");
   if (!list) return;
   if (opts.resetPage) {
     directoryLeaderboardPage = 1;
@@ -4568,9 +4827,9 @@ function readFileAsText(file) {
 }
 
 function setupImportExport() {
-  const exportBtn = document.getElementById("export-data");
-  const importInput = document.getElementById("import-data");
-  const statusEl = document.getElementById("import-status");
+  const exportBtn = byId("export-data");
+  const importInput = byId("import-data");
+  const statusEl = byId("import-status");
 
   if (exportBtn) {
     exportBtn.addEventListener("click", () => {
@@ -4658,8 +4917,8 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   const hourlyLabels = hourlySeries.labels;
   const hourlyTotals = hourlySeries.totals;
 
-  const startInput = document.getElementById("range-start");
-  const endInput = document.getElementById("range-end");
+  const startInput = byId("range-start");
+  const endInput = byId("range-end");
   if (startInput) setRangeInputValue(startInput, startISO);
   if (endInput) setRangeInputValue(endInput, endISO);
   updateRangeDateButton(startISO, endISO, { animate: rangeChanged });
@@ -4669,7 +4928,7 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   });
   const animateMetrics = hasInitialMetricsRender && opts.animateMetrics !== false;
   setDisplayText("range-text", `${startISO} to ${endISO}`, animateMetrics);
-  lineChart(document.getElementById("chart-daily"), hourlyLabels, hourlyTotals, {
+  lineChart(byId("chart-daily"), hourlyLabels, hourlyTotals, {
     redraw: rangeChanged || opts.forceRedraw,
   });
   if (!hasContributionHeatmapRender || opts.refreshHeatmap) {
@@ -4694,7 +4953,7 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
   const avgPerSession = sessions ? Math.round(totalTokens / sessions) : 0;
   const cacheRate = inputTokens ? (cachedTokens / inputTokens) : 0;
 
-  const banner = document.getElementById("range-banner");
+  const banner = byId("range-banner");
   if (banner) {
     banner.classList.toggle("hidden", totalTokens > 0);
   }
@@ -4737,8 +4996,8 @@ function applyRangeInternal(startISO, endISO, previewOnly, options) {
 }
 
 function syncRangeControls(minISO, maxISO) {
-  const startInput = document.getElementById("range-start");
-  const endInput = document.getElementById("range-end");
+  const startInput = byId("range-start");
+  const endInput = byId("range-end");
   if (!startInput || !endInput || !minISO || !maxISO) return;
   startInput.min = minISO;
   startInput.max = maxISO;
@@ -4749,8 +5008,8 @@ function syncRangeControls(minISO, maxISO) {
 }
 
 function setupRangeControls() {
-  const startInput = document.getElementById("range-start");
-  const endInput = document.getElementById("range-end");
+  const startInput = byId("range-start");
+  const endInput = byId("range-end");
   const minISO = (DATA.range && DATA.range.start) || "";
   const maxISO = (DATA.range && DATA.range.end) || "";
   if (!startInput || !endInput || !minISO || !maxISO) return;
@@ -4787,8 +5046,8 @@ function setupRangeControls() {
 }
 
 function setupDirectoryPagination() {
-  const prevBtn = document.getElementById("directory-prev");
-  const nextBtn = document.getElementById("directory-next");
+  const prevBtn = byId("directory-prev");
+  const nextBtn = byId("directory-next");
   if (prevBtn) {
     prevBtn.addEventListener("click", () => {
       if (directoryLeaderboardPage <= 1 || !currentRange.start || !currentRange.end) return;
@@ -4811,16 +5070,16 @@ function setupThemeToggle() {
 }
 
 function setupCustomDatePicker() {
-  const popover = document.getElementById("calendar-popover");
-  const weekdays = document.getElementById("calendar-weekdays");
-  const days = document.getElementById("calendar-days");
-  const prevBtn = document.getElementById("calendar-prev");
-  const nextBtn = document.getElementById("calendar-next");
-  const clearBtn = document.getElementById("calendar-clear");
-  const todayBtn = document.getElementById("calendar-today");
-  const trigger = document.getElementById("range-date-trigger");
-  const startInput = document.getElementById("range-start");
-  const endInput = document.getElementById("range-end");
+  const popover = byId("calendar-popover");
+  const weekdays = byId("calendar-weekdays");
+  const days = byId("calendar-days");
+  const prevBtn = byId("calendar-prev");
+  const nextBtn = byId("calendar-next");
+  const clearBtn = byId("calendar-clear");
+  const todayBtn = byId("calendar-today");
+  const trigger = byId("range-date-trigger");
+  const startInput = byId("range-start");
+  const endInput = byId("range-end");
   if (!popover || !weekdays || !days || !prevBtn || !nextBtn || !clearBtn || !todayBtn || !trigger || !startInput || !endInput) return;
 
   weekdays.innerHTML = WEEKDAY_LABELS.map(label => `<span>${label}</span>`).join("");

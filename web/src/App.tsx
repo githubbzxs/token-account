@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { MotionConfig } from "motion/react";
 import type { ReportData } from "./types";
 
 declare global {
@@ -24,13 +23,6 @@ const emptySummary: InitialSummary = {
   outputTokens: "--",
   totalCost: "--",
 };
-
-const swiftMotionTransition = {
-  type: "spring",
-  stiffness: 420,
-  damping: 34,
-  mass: 0.86,
-} as const;
 
 export function App() {
   const [data, setData] = useState<ReportData | null>(null);
@@ -67,6 +59,16 @@ export function App() {
   useEffect(() => {
     if (!data || runtimeLoadedRef.current) return;
     runtimeLoadedRef.current = true;
+    const run = () => {
+      const script = document.createElement("script");
+      script.src = `/legacy-report-runtime.js?ts=${Date.now()}`;
+      script.async = false;
+      document.body.appendChild(script);
+    };
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(run, { timeout: 300 });
+      return;
+    }
     const script = document.createElement("script");
     script.src = `/legacy-report-runtime.js?ts=${Date.now()}`;
     script.async = false;
@@ -74,9 +76,7 @@ export function App() {
   }, [data]);
 
   return (
-    <MotionConfig reducedMotion="user" transition={swiftMotionTransition}>
-      <LegacyDashboardShell summary={summary} loadFailed={loadFailed} />
-    </MotionConfig>
+    <LegacyDashboardShell summary={summary} loadFailed={loadFailed} />
   );
 }
 
