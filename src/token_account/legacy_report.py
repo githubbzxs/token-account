@@ -745,9 +745,9 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --app-font: var(--font-en);
   --swift-duration-fast: 280ms;
   --swift-duration-normal: 620ms;
-  --swift-ease-standard: cubic-bezier(0.18, 0.86, 0.2, 1);
-  --swift-ease-spring: cubic-bezier(0.16, 1.08, 0.26, 1);
-  --swift-ease-settle: cubic-bezier(0.2, 0.88, 0.18, 1);
+  --swift-ease-standard: cubic-bezier(0.2, 0.76, 0.24, 1);
+  --swift-ease-spring: cubic-bezier(0.22, 0.86, 0.2, 1);
+  --swift-ease-settle: cubic-bezier(0.2, 0.8, 0.18, 1);
 }
 
 * {
@@ -1274,16 +1274,16 @@ html.theme-switching .chart {
     linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04)),
     rgba(var(--accent-rgb), 0.82);
   box-shadow:
-    0 6px 16px rgba(0, 0, 0, 0.16),
-    0 0 0 0.5px rgba(255, 255, 255, 0.16) inset,
-    0 1px 0 rgba(255, 255, 255, 0.18) inset;
+    0 3px 10px rgba(0, 0, 0, 0.14),
+    0 0 0 0.5px rgba(255, 255, 255, 0.15) inset,
+    0 1px 0 rgba(255, 255, 255, 0.14) inset;
   opacity: var(--slider-opacity);
   transform: translate3d(var(--slider-x), 0, 0) scaleX(var(--slider-scale-x));
   transform-origin: left center;
   will-change: transform, opacity, box-shadow;
   pointer-events: none;
   backface-visibility: hidden;
-  transition: box-shadow 180ms cubic-bezier(0.25, 1, 0.5, 1);
+  transition: box-shadow 180ms var(--swift-ease-standard);
   z-index: 0;
 }
 
@@ -1298,9 +1298,9 @@ html.theme-switching .chart {
 
 .range-segmented.is-animating .range-segmented-slider {
   box-shadow:
-    0 8px 20px rgba(0, 0, 0, 0.18),
-    0 0 0 0.5px rgba(255, 255, 255, 0.18) inset,
-    0 1px 0 rgba(255, 255, 255, 0.20) inset;
+    0 4px 12px rgba(0, 0, 0, 0.16),
+    0 0 0 0.5px rgba(255, 255, 255, 0.17) inset,
+    0 1px 0 rgba(255, 255, 255, 0.16) inset;
 }
 
 .range-segmented button {
@@ -1349,11 +1349,11 @@ html.theme-switching .chart {
 
 .range-segmented button.is-active {
   color: #ffffff;
-  --swift-label-scale: 1.01;
+  --swift-label-scale: 1.004;
 }
 
 .range-segmented.is-animating button:not(.is-active) {
-  opacity: 0.82;
+  opacity: 0.92;
 }
 
 .range-segmented.is-animating button.is-active {
@@ -1494,12 +1494,12 @@ html.theme-switching .chart {
 
 .text-fade-anim,
 .i18n-switch-anim {
-  animation: textFadeOnly 320ms var(--swift-ease-standard) both;
+  animation: textFadeOnly 240ms var(--swift-ease-standard) both;
   will-change: opacity, transform;
 }
 
 .metric-value-anim {
-  animation: metricValueSettle 460ms var(--swift-ease-settle) both;
+  animation: metricValueSettle 300ms var(--swift-ease-settle) both;
   will-change: opacity, transform;
 }
 
@@ -1511,7 +1511,7 @@ html.theme-switching .chart {
 .metric-width-animating {
   overflow: hidden;
   vertical-align: top;
-  transition: width 460ms var(--swift-ease-settle);
+  transition: width 280ms var(--swift-ease-settle);
   will-change: width;
 }
 
@@ -1770,12 +1770,12 @@ html.theme-switching .chart {
   pointer-events: none;
   opacity: 0;
   background:
-    linear-gradient(110deg, transparent 18%, rgba(var(--accent-cyan-rgb), 0.12) 46%, transparent 72%);
-  transform: translate3d(-38%, 0, 0) scaleX(0.82);
+    linear-gradient(110deg, transparent 22%, rgba(var(--accent-cyan-rgb), 0.055) 48%, transparent 74%);
+  transform: translate3d(-24%, 0, 0) scaleX(0.88);
 }
 
 .chart.chart-refreshing::after {
-  animation: chartRefreshSheen 560ms var(--swift-ease-settle) both;
+  animation: chartRefreshSheen 340ms var(--swift-ease-standard) both;
 }
 
 .chart.small {
@@ -2106,8 +2106,8 @@ html.theme-switching .chart {
 
 @keyframes textFadeOnly {
   0% {
-    opacity: 0.72;
-    transform: translate3d(0, 3px, 0) scale(0.992);
+    opacity: 0.9;
+    transform: translate3d(0, 1.5px, 0) scale(0.997);
   }
   100% {
     opacity: 1;
@@ -2118,11 +2118,8 @@ html.theme-switching .chart {
 
 @keyframes metricValueSettle {
   0% {
-    opacity: 0;
-    transform: translate3d(0, 5px, 0) scale(0.988);
-  }
-  62% {
-    opacity: 1;
+    opacity: 0.9;
+    transform: translate3d(0, 1.5px, 0) scale(0.997);
   }
   100% {
     opacity: 1;
@@ -2133,14 +2130,14 @@ html.theme-switching .chart {
 @keyframes chartRefreshSheen {
   0% {
     opacity: 0;
-    transform: translate3d(-38%, 0, 0) scaleX(0.82);
+    transform: translate3d(-24%, 0, 0) scaleX(0.88);
   }
-  34% {
-    opacity: 1;
+  42% {
+    opacity: 0.72;
   }
   100% {
     opacity: 0;
-    transform: translate3d(38%, 0, 0) scaleX(1.02);
+    transform: translate3d(24%, 0, 0) scaleX(0.96);
   }
 }
 
@@ -2349,12 +2346,12 @@ function prefersReducedMotion() {
 }
 
 const SWIFT_SPRINGS = {
-  text: { response: 0.34, damping: 0.9, restDelta: 0.0015, restSpeed: 0.035 },
-  digit: { response: 0.58, damping: 0.84, restDelta: 0.002, restSpeed: 0.035 },
-  slider: { response: 0.44, damping: 0.82, restDelta: 0.012, restSpeed: 0.08 },
-  label: { response: 0.28, damping: 0.68, restDelta: 0.0015, restSpeed: 0.035 },
-  press: { response: 0.18, damping: 0.72, restDelta: 0.001, restSpeed: 0.045 },
-  layout: { response: 0.42, damping: 0.88, restDelta: 0.03, restSpeed: 0.12 },
+  text: { response: 0.24, damping: 1, restDelta: 0.0015, restSpeed: 0.045 },
+  digit: { response: 0.34, damping: 0.98, restDelta: 0.002, restSpeed: 0.05 },
+  slider: { response: 0.24, damping: 1.02, restDelta: 0.01, restSpeed: 0.12 },
+  label: { response: 0.2, damping: 0.96, restDelta: 0.0015, restSpeed: 0.045 },
+  press: { response: 0.16, damping: 0.9, restDelta: 0.001, restSpeed: 0.055 },
+  layout: { response: 0.28, damping: 1, restDelta: 0.03, restSpeed: 0.14 },
 };
 const activeSpringAnimations = new Set();
 let springFrameId = 0;
@@ -2464,10 +2461,10 @@ function triggerSwapAnimation(el, className) {
   if (className) {
     el.classList.remove(className);
   }
-  el.style.opacity = "0";
-  el.style.transform = "translate3d(0, 5px, 0) scale(0.988)";
+  el.style.opacity = "0.92";
+  el.style.transform = "translate3d(0, 1.5px, 0) scale(0.997)";
   const animation = animateSpringValues(
-    { opacity: 0, y: 5, scale: 0.988 },
+    { opacity: 0.92, y: 1.5, scale: 0.997 },
     { opacity: 1, y: 0, scale: 1 },
     {
       spring: SWIFT_SPRINGS.text,
@@ -2557,7 +2554,7 @@ function animateMetricWidthChange(el, previousWidth) {
       onComplete: cleanup,
     }
   );
-  el._metricWidthTimer = window.setTimeout(cleanup, 1100);
+  el._metricWidthTimer = window.setTimeout(cleanup, 620);
 }
 
 function setAnimatedText(el, text, options) {
@@ -2658,7 +2655,7 @@ function renderSpringNumericText(el, prevText, nextText, syncAriaLabel) {
   const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   el.dataset.metricNumberToken = token;
   const animation = animateSpringValues(
-    { progress: 0, opacity: 0.72, y: 5 * direction, scale: 0.988 },
+    { progress: 0, opacity: 0.96, y: 1.2 * direction, scale: 0.998 },
     { progress: 1, opacity: 1, y: 0, scale: 1 },
     {
       spring: SWIFT_SPRINGS.digit,
@@ -3022,11 +3019,11 @@ function animateQuickRangeLabel(button) {
   if (typeof button._quickRangeLabelAnimation === "function") {
     button._quickRangeLabelAnimation();
   }
-  button.style.setProperty("--swift-label-scale", "0.985");
-  button.style.setProperty("--swift-label-y", "1.5px");
+  button.style.setProperty("--swift-label-scale", "0.998");
+  button.style.setProperty("--swift-label-y", "0.6px");
   const animation = animateSpringValues(
-    { scale: 0.985, y: 1.5 },
-    { scale: 1.01, y: 0 },
+    { scale: 0.998, y: 0.6 },
+    { scale: 1.004, y: 0 },
     {
       spring: SWIFT_SPRINGS.label,
       onUpdate: (value) => {
@@ -3062,8 +3059,8 @@ function runPressSpring(el, pressed) {
   }
   const currentScale = Number.parseFloat(el.dataset.swiftPressScale || "1") || 1;
   const currentY = Number.parseFloat(el.dataset.swiftPressY || "0") || 0;
-  const targetScale = pressed ? 0.974 : 1;
-  const targetY = pressed ? 1.2 : 0;
+  const targetScale = pressed ? 0.986 : 1;
+  const targetY = pressed ? 0.55 : 0;
   const animation = animateSpringValues(
     { scale: currentScale, y: currentY },
     { scale: targetScale, y: targetY },
@@ -3124,7 +3121,7 @@ function scheduleQuickRangeApply(startISO, endISO) {
       preserveQuickRangeMotion: true,
     });
   };
-  const delay = prefersReducedMotion() ? 0 : 72;
+  const delay = prefersReducedMotion() ? 0 : 32;
   if (window.requestAnimationFrame) {
     window.requestAnimationFrame(() => {
       window.setTimeout(run, delay);
@@ -3146,14 +3143,12 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     return;
   }
   clearQuickRangeSliderMotion(segmented, slider);
-  const movingRight = toState.x >= fromState.x;
-  const fromScale = toState.width > 0 ? Math.max(0.72, Math.min(1.28, fromState.width / toState.width)) : 1;
+  const fromScale = 1;
   slider.style.setProperty("--slider-width", `${Math.max(0, toState.width).toFixed(2)}px`);
   slider.style.setProperty("--slider-x", `${fromState.x.toFixed(2)}px`);
   slider.style.setProperty("--slider-scale-x", fromScale.toFixed(4));
   slider.style.setProperty("--slider-opacity", "1");
   segmented.classList.add("is-animating");
-  segmented.dataset.motionDirection = movingRight ? "right" : "left";
   slider.classList.add("is-animating");
   const animation = animateSpringValues(
     { x: fromState.x, scale: fromScale, opacity: 1 },
@@ -3161,12 +3156,11 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     {
       spring: {
         ...SWIFT_SPRINGS.slider,
-        response: Math.min(0.52, Math.max(0.34, SWIFT_SPRINGS.slider.response + travel * 0.00035)),
+        response: Math.min(0.3, Math.max(0.22, SWIFT_SPRINGS.slider.response + travel * 0.00008)),
       },
-      onUpdate: (value, velocity) => {
-        const stretch = Math.max(-0.075, Math.min(0.075, (velocity.x || 0) * 0.0018));
+      onUpdate: (value) => {
         slider.style.setProperty("--slider-x", `${value.x.toFixed(3)}px`);
-        slider.style.setProperty("--slider-scale-x", Math.max(0.68, value.scale + stretch).toFixed(4));
+        slider.style.setProperty("--slider-scale-x", "1");
         slider.style.setProperty("--slider-opacity", clampUnit(value.opacity).toFixed(4));
       },
       onComplete: () => {
@@ -3180,7 +3174,7 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     if (quickRangeSliderAnimation !== animation) return;
     commitQuickRangeSliderState(segmented, slider, toState);
   };
-  quickRangeSliderCleanupTimer = window.setTimeout(finish, 980);
+  quickRangeSliderCleanupTimer = window.setTimeout(finish, 620);
 }
 
 function updateQuickRangeSlider(options) {
@@ -3582,12 +3576,13 @@ function makeChartDataKey(labels, values) {
 
 function playChartRefreshMotion(el) {
   if (!el || prefersReducedMotion()) return;
+  if (!el.dataset.allowRefreshMotion) return;
   el.classList.remove("chart-refreshing");
   window.requestAnimationFrame(() => {
     el.classList.add("chart-refreshing");
     window.setTimeout(() => {
       el.classList.remove("chart-refreshing");
-    }, 620);
+    }, 360);
   });
 }
 
@@ -3650,13 +3645,13 @@ function lineChart(el, labels, values, options) {
     backgroundColor: "transparent",
     animation: animateChartUpdate,
     animationThreshold: 2200,
-    animationDuration: animateChartUpdate ? 360 : 0,
-    animationDurationUpdate: animateChartUpdate ? 420 : 0,
-    animationEasing: "quarticOut",
-    animationEasingUpdate: "quarticOut",
+    animationDuration: animateChartUpdate ? 220 : 0,
+    animationDurationUpdate: animateChartUpdate ? 300 : 0,
+    animationEasing: "cubicOut",
+    animationEasingUpdate: "cubicOut",
     stateAnimation: {
-      duration: animateChartUpdate ? 180 : 0,
-      easing: "quarticOut",
+      duration: animateChartUpdate ? 120 : 0,
+      easing: "cubicOut",
     },
     grid: { left: isCompactChart ? 38 : 48, right: isCompactChart ? 12 : 26, top: 16, bottom: isCompactChart ? 44 : 56 },
     tooltip: {
@@ -3665,7 +3660,7 @@ function lineChart(el, labels, values, options) {
       borderColor: palette.tooltipBorder,
       borderWidth: 1,
       textStyle: { color: "#f8fafc" },
-      transitionDuration: animateChartUpdate ? 0.08 : 0,
+      transitionDuration: animateChartUpdate ? 0.04 : 0,
       axisPointer: { type: "line", lineStyle: { color: palette.axisPointer, width: 1 } },
       valueFormatter: (value) => formatChartNumber(value),
     },
@@ -3695,7 +3690,7 @@ function lineChart(el, labels, values, options) {
         id: "hourly-total-line",
         data: chartValues,
         showSymbol: false,
-        smooth: 0.58,
+        smooth: 0.42,
         sampling: "lttb",
         progressive: 600,
         progressiveThreshold: 1600,
@@ -3723,7 +3718,6 @@ function lineChart(el, labels, values, options) {
   dailyChartInstance.setOption(chartOption, {
     notMerge: false,
     lazyUpdate: true,
-    replaceMerge: ["xAxis", "yAxis", "series"],
   });
   if (shouldRedraw && dataChanged) {
     playChartRefreshMotion(el);
