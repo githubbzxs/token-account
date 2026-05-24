@@ -1503,105 +1503,16 @@ html.theme-switching .chart {
   will-change: opacity, transform;
 }
 
+.metric-spring-number {
+  transform-origin: 50% 68%;
+  will-change: opacity, transform;
+}
+
 .metric-width-animating {
   overflow: hidden;
   vertical-align: top;
   transition: width 460ms var(--swift-ease-settle);
   will-change: width;
-}
-
-.metric-roll {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-  position: relative;
-  min-height: 1em;
-  line-height: 1;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-}
-
-.metric-roll-content {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-  min-height: 1em;
-  line-height: 1;
-  white-space: nowrap;
-  opacity: var(--roll-content-opacity, 1);
-  transform: translate3d(0, var(--roll-content-y, 0px), 0) scale(var(--roll-content-scale, 1));
-  will-change: opacity, transform;
-}
-
-.metric-roll-shrinking .metric-roll-content {
-  --roll-content-opacity: 0;
-  --roll-content-y: 5px;
-  --roll-content-scale: 0.985;
-}
-
-.metric-roll-shrinking .metric-roll-content.is-animating {
-  --roll-content-opacity: 1;
-  --roll-content-y: 0px;
-  --roll-content-scale: 1;
-}
-
-.metric-roll-ghost {
-  position: absolute;
-  z-index: 2;
-  top: 0;
-  left: 0;
-  display: inline-flex;
-  align-items: center;
-  height: 1em;
-  line-height: 1;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: var(--roll-ghost-opacity, 1);
-  transform: translate3d(0, var(--roll-ghost-y, 0px), 0) scale(var(--roll-ghost-scale, 1));
-  will-change: opacity, transform;
-}
-
-.metric-roll-ghost.is-animating {
-  --roll-ghost-opacity: 0;
-  --roll-ghost-y: -5px;
-  --roll-ghost-scale: 0.985;
-}
-
-.metric-roll-static {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: min-content;
-}
-
-.metric-roll-column {
-  display: inline-flex;
-  align-items: flex-start;
-  justify-content: center;
-  width: 0.66em;
-  height: 1em;
-  overflow: hidden;
-  mask-image: none;
-  -webkit-mask-image: none;
-}
-
-.metric-roll-track {
-  display: flex;
-  flex-direction: column;
-  will-change: transform;
-  transform: translateY(calc(var(--roll-y, var(--roll-from, 0)) * -1em));
-}
-
-.metric-roll-track.is-animating {
-  transition: none;
-}
-
-.metric-roll-cell {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 1em;
 }
 
 .card .sub {
@@ -1852,13 +1763,19 @@ html.theme-switching .chart {
   isolation: isolate;
 }
 
-.chart-line-redraw {
-  animation: chartLineDraw 1180ms var(--swift-ease-settle) both;
-  stroke-dasharray: var(--line-length);
-  stroke-dashoffset: var(--line-length);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  will-change: stroke-dashoffset, opacity;
+.chart::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    linear-gradient(110deg, transparent 18%, rgba(var(--accent-cyan-rgb), 0.12) 46%, transparent 72%);
+  transform: translate3d(-38%, 0, 0) scaleX(0.82);
+}
+
+.chart.chart-refreshing::after {
+  animation: chartRefreshSheen 560ms var(--swift-ease-settle) both;
 }
 
 .chart.small {
@@ -2213,19 +2130,17 @@ html.theme-switching .chart {
   }
 }
 
-@keyframes chartLineDraw {
+@keyframes chartRefreshSheen {
   0% {
-    stroke-dashoffset: var(--line-length);
-    opacity: 0.82;
-    stroke-width: 2.4;
+    opacity: 0;
+    transform: translate3d(-38%, 0, 0) scaleX(0.82);
   }
-  58% {
+  34% {
     opacity: 1;
   }
   100% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-    stroke-width: 1.8;
+    opacity: 0;
+    transform: translate3d(38%, 0, 0) scaleX(1.02);
   }
 }
 
@@ -2259,9 +2174,8 @@ html.theme-switching .chart {
 @media (prefers-reduced-motion: reduce) {
   .text-fade-anim,
   .metric-value-anim,
-  .metric-roll-track.is-animating,
   .i18n-switch-anim,
-  .chart-line-redraw,
+  .chart.chart-refreshing::after,
   html.theme-switching body,
   html.theme-switching .page,
   html.theme-switching .page::before,
@@ -2408,6 +2322,8 @@ let contributionHeatmapInstance = null;
 let contributionHeatmapRenderToken = 0;
 let chartResizeBound = false;
 let dailyChartViewportWidth = 0;
+let dailyChartDataKey = "";
+let chartResizeFrame = 0;
 let quickRangeResizeBound = false;
 let quickRangeSelection = "";
 let quickRangeSliderAnimation = null;
@@ -2440,6 +2356,8 @@ const SWIFT_SPRINGS = {
   press: { response: 0.18, damping: 0.72, restDelta: 0.001, restSpeed: 0.045 },
   layout: { response: 0.42, damping: 0.88, restDelta: 0.03, restSpeed: 0.12 },
 };
+const activeSpringAnimations = new Set();
+let springFrameId = 0;
 
 function springPhysics(config) {
   const response = Math.max(0.12, Number(config && config.response) || 0.32);
@@ -2468,29 +2386,30 @@ function animateSpringValues(from, to, options) {
     current[key] = Number.isFinite(startValue) ? startValue : (Number.isFinite(targetValue) ? targetValue : 0);
     velocity[key] = 0;
   });
-  let rafId = 0;
   let lastTime = 0;
   let cancelled = false;
-  const step = (timestamp) => {
-    if (cancelled) return;
-    if (!lastTime) lastTime = timestamp;
-    const dt = Math.min(0.064, Math.max(0.001, (timestamp - lastTime) / 1000));
-    lastTime = timestamp;
-    let settled = true;
-    keys.forEach((key) => {
-      const targetValue = Number(to[key]) || 0;
-      const displacement = current[key] - targetValue;
-      const acceleration = (-physics.stiffness * displacement) - (physics.damping * velocity[key]);
-      velocity[key] += acceleration * dt;
-      current[key] += velocity[key] * dt;
-      if (Math.abs(velocity[key]) > physics.restSpeed || Math.abs(targetValue - current[key]) > physics.restDelta) {
-        settled = false;
+  const animation = {
+    cancelled: false,
+    step(timestamp) {
+      if (cancelled) return true;
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min(0.064, Math.max(0.001, (timestamp - lastTime) / 1000));
+      lastTime = timestamp;
+      let settled = true;
+      keys.forEach((key) => {
+        const targetValue = Number(to[key]) || 0;
+        const displacement = current[key] - targetValue;
+        const acceleration = (-physics.stiffness * displacement) - (physics.damping * velocity[key]);
+        velocity[key] += acceleration * dt;
+        current[key] += velocity[key] * dt;
+        if (Math.abs(velocity[key]) > physics.restSpeed || Math.abs(targetValue - current[key]) > physics.restDelta) {
+          settled = false;
+        }
+      });
+      if (typeof opts.onUpdate === "function") {
+        opts.onUpdate({ ...current }, { ...velocity });
       }
-    });
-    if (typeof opts.onUpdate === "function") {
-      opts.onUpdate({ ...current }, { ...velocity });
-    }
-    if (settled) {
+      if (!settled) return false;
       keys.forEach((key) => {
         current[key] = Number(to[key]) || 0;
         velocity[key] = 0;
@@ -2501,19 +2420,32 @@ function animateSpringValues(from, to, options) {
       if (typeof opts.onComplete === "function") {
         opts.onComplete();
       }
-      return;
-    }
-    rafId = window.requestAnimationFrame(step);
+      return true;
+    },
   };
-  rafId = window.requestAnimationFrame(step);
+  activeSpringAnimations.add(animation);
+  scheduleSpringFrame();
   return {
     cancel() {
       cancelled = true;
-      if (rafId) {
-        window.cancelAnimationFrame(rafId);
-      }
+      activeSpringAnimations.delete(animation);
     },
   };
+}
+
+function scheduleSpringFrame() {
+  if (springFrameId || !activeSpringAnimations.size) return;
+  springFrameId = window.requestAnimationFrame(runSpringFrame);
+}
+
+function runSpringFrame(timestamp) {
+  springFrameId = 0;
+  activeSpringAnimations.forEach((animation) => {
+    if (animation.step(timestamp)) {
+      activeSpringAnimations.delete(animation);
+    }
+  });
+  scheduleSpringFrame();
 }
 
 function clampUnit(value) {
@@ -2560,8 +2492,7 @@ function triggerSwapAnimation(el, className) {
 
 function measureMetricContentWidth(el) {
   if (!el) return 0;
-  const content = Array.from(el.children || []).find((child) => child.classList && child.classList.contains("metric-roll-content"));
-  const measureTarget = content || el;
+  const measureTarget = el;
   const range = document.createRange();
   range.selectNodeContents(measureTarget);
   const rect = range.getBoundingClientRect();
@@ -2581,8 +2512,10 @@ function cancelMetricWidthAnimation(el) {
 }
 
 function cancelMetricRollAnimation(el) {
-  if (!el || typeof el._metricRollCleanup !== "function") return;
-  el._metricRollCleanup();
+  if (!el) return;
+  if (typeof el._metricNumberCleanup === "function") {
+    el._metricNumberCleanup();
+  }
 }
 
 function animateMetricWidthChange(el, previousWidth) {
@@ -2627,36 +2560,6 @@ function animateMetricWidthChange(el, previousWidth) {
   el._metricWidthTimer = window.setTimeout(cleanup, 1100);
 }
 
-function setRollContentSpring(node, from, to, spring) {
-  if (!node || prefersReducedMotion()) return;
-  const animation = animateSpringValues(from, to, {
-    spring: spring || SWIFT_SPRINGS.text,
-    onUpdate: (value) => {
-      if ("opacity" in value) {
-        const prop = node.classList.contains("metric-roll-ghost") ? "--roll-ghost-opacity" : "--roll-content-opacity";
-        node.style.setProperty(prop, clampUnit(value.opacity).toFixed(4));
-      }
-      if ("y" in value) {
-        const prop = node.classList.contains("metric-roll-ghost") ? "--roll-ghost-y" : "--roll-content-y";
-        node.style.setProperty(prop, `${value.y.toFixed(3)}px`);
-      }
-      if ("scale" in value) {
-        const prop = node.classList.contains("metric-roll-ghost") ? "--roll-ghost-scale" : "--roll-content-scale";
-        node.style.setProperty(prop, value.scale.toFixed(4));
-      }
-    },
-    onComplete: () => {
-      node.style.removeProperty("--roll-content-opacity");
-      node.style.removeProperty("--roll-content-y");
-      node.style.removeProperty("--roll-content-scale");
-      node.style.removeProperty("--roll-ghost-opacity");
-      node.style.removeProperty("--roll-ghost-y");
-      node.style.removeProperty("--roll-ghost-scale");
-    },
-  });
-  return animation;
-}
-
 function setAnimatedText(el, text, options) {
   if (!el) return false;
   cancelMetricRollAnimation(el);
@@ -2671,7 +2574,9 @@ function setAnimatedText(el, text, options) {
     }
     return false;
   }
-  el.classList.remove("metric-roll", "metric-roll-shrinking");
+  el.classList.remove("metric-spring-number");
+  delete el._metricNumberCurrentText;
+  delete el._metricNumberTargetText;
   el.textContent = nextText;
   el.dataset.animatedText = nextText;
   el.dataset.metricText = nextText;
@@ -2685,177 +2590,111 @@ function setAnimatedText(el, text, options) {
   return true;
 }
 
-function canUseRollingNumber(text) {
-  return /^[0-9.,%$KMB+\\- /:]+$/.test(String(text || ""));
+function parseSpringNumberText(text) {
+  const raw = String(text || "").trim();
+  if (!raw || raw === "--" || raw.toLowerCase() === "n/a") return null;
+  if (/[/:]|\\s-\\s/.test(raw)) return null;
+  const match = raw.match(/^([^0-9+\\-]*)([+\\-]?\\d[\\d,]*(?:\\.\\d+)?)([KMB%]?)(.*)$/);
+  if (!match) return null;
+  const prefix = match[1] || "";
+  const numberText = match[2] || "";
+  const suffix = match[3] || "";
+  const tail = match[4] || "";
+  if (tail.trim()) return null;
+  const value = Number(numberText.replace(/,/g, ""));
+  if (!Number.isFinite(value)) return null;
+  const decimalPart = numberText.includes(".") ? numberText.split(".").pop() || "" : "";
+  return {
+    prefix,
+    suffix,
+    value,
+    decimals: decimalPart.length,
+    grouped: numberText.includes(",") && !suffix,
+  };
 }
 
-function canRollDigits(prevText, nextText) {
-  const prev = String(prevText || "");
-  const next = String(nextText || "");
+function formatSpringNumberValue(value, descriptor) {
+  const decimals = Math.max(0, Math.min(4, descriptor.decimals || 0));
+  const rounded = Number(value || 0);
+  let numberText = decimals > 0
+    ? rounded.toFixed(decimals)
+    : Math.round(rounded).toString();
+  if (descriptor.grouped && decimals === 0) {
+    numberText = new Intl.NumberFormat("en-US").format(Math.round(rounded));
+  }
+  return `${descriptor.prefix}${numberText}${descriptor.suffix}`;
+}
+
+function canUseSpringNumber(prevText, nextText) {
+  const prev = parseSpringNumberText(prevText);
+  const next = parseSpringNumberText(nextText);
   if (!prev || !next) return false;
-  if (!canUseRollingNumber(prev) || !canUseRollingNumber(next)) return false;
-  return /[0-9]/.test(prev) && /[0-9]/.test(next);
+  return prev.prefix === next.prefix && prev.suffix === next.suffix;
 }
 
-function compareRollDirection(prevText, nextText) {
-  const prevDigits = String(prevText || "").replace(/[^0-9]/g, "").replace(/^0+/, "") || "0";
-  const nextDigits = String(nextText || "").replace(/[^0-9]/g, "").replace(/^0+/, "") || "0";
-  if (prevDigits.length !== nextDigits.length) {
-    return nextDigits.length > prevDigits.length ? 1 : -1;
+function renderSpringNumericText(el, prevText, nextText, syncAriaLabel) {
+  if (!el || prefersReducedMotion()) return false;
+  const prev = parseSpringNumberText(prevText);
+  const next = parseSpringNumberText(nextText);
+  if (!prev || !next || prev.prefix !== next.prefix || prev.suffix !== next.suffix) {
+    return false;
   }
-  return nextDigits >= prevDigits ? 1 : -1;
-}
-
-function renderRollingDigits(el, prevText, nextText, syncAriaLabel, options) {
-  const opts = options || {};
-  const shouldReduceMotion = prefersReducedMotion();
-  const preservePrevious = opts.preservePrevious && !shouldReduceMotion;
-  const direction = compareRollDirection(prevText, nextText);
-  const prevDigits = String(prevText || "").match(/[0-9]/g) || [];
-  const nextDigitChars = String(nextText || "").match(/[0-9]/g) || [];
-  let nextDigitIndex = 0;
-  const trackTargets = [];
-  const fragment = document.createDocumentFragment();
-  for (let i = 0; i < nextText.length; i += 1) {
-    const char = nextText[i];
-    if (!/[0-9]/.test(char)) {
-      const staticSpan = document.createElement("span");
-      staticSpan.className = "metric-roll-static";
-      staticSpan.textContent = char === " " ? " " : char;
-      fragment.appendChild(staticSpan);
-      continue;
-    }
-
-    const reverseIndex = nextDigitChars.length - nextDigitIndex - 1;
-    const prevDigitChar = prevDigits[prevDigits.length - reverseIndex - 1] || "0";
-    const prevDigit = Number(prevDigitChar || 0);
-    const nextDigit = Number(char);
-    const delta = direction >= 0
-      ? ((nextDigit - prevDigit + 10) % 10)
-      : -((prevDigit - nextDigit + 10) % 10);
-    const fromIndex = 10 + prevDigit;
-    const toIndex = fromIndex + delta;
-    nextDigitIndex += 1;
-
-    const column = document.createElement("span");
-    column.className = "metric-roll-column";
-    const track = document.createElement("span");
-    track.className = "metric-roll-track";
-    track.style.setProperty("--roll-from", String(fromIndex));
-    track.style.setProperty("--roll-to", String(toIndex));
-    track.style.setProperty("--roll-y", String(fromIndex));
-    track.dataset.rollFrom = String(fromIndex);
-    track.dataset.rollTo = String(toIndex);
-    trackTargets.push({ track, fromIndex, toIndex, order: nextDigitIndex });
-
-    for (let reelIndex = 0; reelIndex < 30; reelIndex += 1) {
-      const cell = document.createElement("span");
-      cell.className = "metric-roll-cell";
-      cell.textContent = String(reelIndex % 10);
-      track.appendChild(cell);
-    }
-
-    column.appendChild(track);
-    fragment.appendChild(column);
+  if (typeof el._metricNumberCleanup === "function") {
+    el._metricNumberCleanup();
   }
-
-  const content = document.createElement("span");
-  content.className = "metric-roll-content";
-  if (!shouldReduceMotion) {
-    content.style.setProperty("--roll-content-opacity", "0");
-    content.style.setProperty("--roll-content-y", "5px");
-    content.style.setProperty("--roll-content-scale", "0.985");
-  }
-  content.appendChild(fragment);
-
-  if (typeof el._metricRollCleanup === "function") {
-    el._metricRollCleanup();
-  }
-  el.textContent = "";
-  el.classList.remove("metric-roll-shrinking");
-  el.classList.add("metric-roll");
-  const runningAnimations = [];
-  if (preservePrevious) {
-    const ghost = document.createElement("span");
-    ghost.className = "metric-roll-ghost";
-    ghost.textContent = String(prevText || "");
-    el.classList.add("metric-roll-shrinking");
-    el.appendChild(ghost);
-  }
-  el.appendChild(content);
+  const direction = next.value >= prev.value ? 1 : -1;
+  const delta = next.value - prev.value;
+  const initialText = formatSpringNumberValue(prev.value, next);
+  el.textContent = initialText;
+  el._metricNumberCurrentText = initialText;
+  el._metricNumberTargetText = nextText;
   el.dataset.animatedText = nextText;
   el.dataset.metricText = nextText;
+  el.classList.remove("metric-value-anim");
+  el.classList.add("metric-spring-number");
   if (syncAriaLabel) {
     el.setAttribute("aria-label", nextText);
   }
-  if (shouldReduceMotion) {
-    return true;
-  }
-  let rollFrame = 0;
-  rollFrame = requestAnimationFrame(() => {
-    trackTargets.forEach((item, index) => {
-      const delayMs = Math.min(72, Math.max(0, (trackTargets.length - index - 1) * 9));
-      item.track.classList.add("is-animating");
-      const start = () => {
-        const animation = animateSpringValues(
-          { roll: item.fromIndex },
-          { roll: item.toIndex },
-          {
-            spring: SWIFT_SPRINGS.digit,
-            onUpdate: (value) => {
-              item.track.style.setProperty("--roll-y", value.roll.toFixed(4));
-            },
-            onComplete: () => {
-              item.track.style.setProperty("--roll-y", item.toIndex.toFixed(4));
-            },
-          }
-        );
-        runningAnimations.push(animation);
-      };
-      if (delayMs) {
-        const timer = window.setTimeout(start, delayMs);
-        runningAnimations.push({ cancel: () => window.clearTimeout(timer) });
-      } else {
-        start();
-      }
-    });
-    const contentAnimation = setRollContentSpring(content, { opacity: 0, y: 5, scale: 0.985 }, { opacity: 1, y: 0, scale: 1 }, SWIFT_SPRINGS.text);
-    if (contentAnimation) runningAnimations.push(contentAnimation);
-    el.querySelectorAll(".metric-roll-content, .metric-roll-ghost").forEach((node) => {
-      node.classList.add("is-animating");
-    });
-    el.querySelectorAll(".metric-roll-ghost").forEach((node) => {
-      const ghostAnimation = setRollContentSpring(node, { opacity: 1, y: 0, scale: 1 }, { opacity: 0, y: -5, scale: 0.985 }, SWIFT_SPRINGS.text);
-      if (ghostAnimation) runningAnimations.push(ghostAnimation);
-    });
-  });
-  if (!shouldReduceMotion) {
-    const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    let cleanupTimer = 0;
-    el.dataset.metricRollToken = token;
-    const cleanup = () => {
-      if (el.dataset.metricRollToken !== token) return;
-      if (rollFrame) {
-        window.cancelAnimationFrame(rollFrame);
-        rollFrame = 0;
-      }
-      if (cleanupTimer) {
-        window.clearTimeout(cleanupTimer);
-        cleanupTimer = 0;
-      }
-      runningAnimations.forEach((animation) => {
-        if (animation && typeof animation.cancel === "function") {
-          animation.cancel();
-        }
-      });
-      el.querySelectorAll(".metric-roll-ghost").forEach((node) => node.remove());
-      el.classList.remove("metric-roll-shrinking");
-      delete el.dataset.metricRollToken;
-      delete el._metricRollCleanup;
-    };
-    el._metricRollCleanup = cleanup;
-    cleanupTimer = window.setTimeout(cleanup, 1100);
-  }
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  el.dataset.metricNumberToken = token;
+  const animation = animateSpringValues(
+    { progress: 0, opacity: 0.72, y: 5 * direction, scale: 0.988 },
+    { progress: 1, opacity: 1, y: 0, scale: 1 },
+    {
+      spring: SWIFT_SPRINGS.digit,
+      onUpdate: (value) => {
+        if (el.dataset.metricNumberToken !== token) return;
+        const progress = clampUnit(value.progress);
+        const frameText = formatSpringNumberValue(prev.value + delta * progress, next);
+        el.textContent = frameText;
+        el._metricNumberCurrentText = frameText;
+        el.style.opacity = clampUnit(value.opacity).toFixed(4);
+        el.style.transform = `translate3d(0, ${value.y.toFixed(3)}px, 0) scale(${value.scale.toFixed(4)})`;
+      },
+      onComplete: () => {
+        if (el.dataset.metricNumberToken !== token) return;
+        el.textContent = nextText;
+        el.style.opacity = "";
+        el.style.transform = "";
+        el.classList.remove("metric-spring-number");
+        delete el._metricNumberCurrentText;
+        delete el._metricNumberTargetText;
+        delete el.dataset.metricNumberToken;
+        delete el._metricNumberCleanup;
+      },
+    }
+  );
+  el._metricNumberCleanup = () => {
+    animation.cancel();
+    el.textContent = nextText;
+    el.style.opacity = "";
+    el.style.transform = "";
+    el.classList.remove("metric-spring-number");
+    delete el._metricNumberCurrentText;
+    delete el._metricNumberTargetText;
+    delete el.dataset.metricNumberToken;
+    delete el._metricNumberCleanup;
+  };
   return true;
 }
 
@@ -2863,11 +2702,12 @@ function setAnimatedNumericText(el, text, options) {
   if (!el) return false;
   const opts = options || {};
   const nextText = String(text ?? "");
-  const prevText = el.dataset.animatedText != null
+  const targetText = el.dataset.animatedText != null
     ? el.dataset.animatedText
     : (el.dataset.metricText != null ? el.dataset.metricText : (el.textContent || ""));
+  const prevText = el._metricNumberCurrentText || targetText;
   const shouldAnimate = opts.animate !== false;
-  if (prevText === nextText) {
+  if (targetText === nextText) {
     if (opts.syncAriaLabel) {
       el.setAttribute("aria-label", nextText);
     }
@@ -2876,15 +2716,15 @@ function setAnimatedNumericText(el, text, options) {
 
   cancelMetricRollAnimation(el);
   cancelMetricWidthAnimation(el);
-  const previousWidth = shouldAnimate ? measureMetricContentWidth(el) : 0;
-  const preservePrevious = shouldAnimate && nextText.length < prevText.length;
-  const didUpdate = shouldAnimate && canRollDigits(prevText, nextText)
-    ? renderRollingDigits(el, prevText, nextText, opts.syncAriaLabel, { preservePrevious })
+  const canAnimateNumber = shouldAnimate && canUseSpringNumber(prevText, nextText);
+  const previousWidth = shouldAnimate && !canAnimateNumber ? measureMetricContentWidth(el) : 0;
+  const didUpdate = canAnimateNumber
+    ? renderSpringNumericText(el, prevText, nextText, opts.syncAriaLabel)
     : setAnimatedText(el, nextText, {
       ...opts,
       className: opts.className || "metric-value-anim",
     });
-  if (didUpdate && shouldAnimate) {
+  if (didUpdate && shouldAnimate && !canAnimateNumber) {
     animateMetricWidthChange(el, previousWidth);
   }
   return didUpdate;
@@ -3730,6 +3570,27 @@ function setupAutoSync(options) {
   });
 }
 
+function makeChartDataKey(labels, values) {
+  const labelCount = labels.length;
+  const valueCount = values.length;
+  const firstLabel = labelCount ? labels[0] : "";
+  const lastLabel = labelCount ? labels[labelCount - 1] : "";
+  const firstValue = valueCount ? values[0] : 0;
+  const lastValue = valueCount ? values[valueCount - 1] : 0;
+  return `${labelCount}:${firstLabel}:${lastLabel}:${valueCount}:${firstValue}:${lastValue}`;
+}
+
+function playChartRefreshMotion(el) {
+  if (!el || prefersReducedMotion()) return;
+  el.classList.remove("chart-refreshing");
+  window.requestAnimationFrame(() => {
+    el.classList.add("chart-refreshing");
+    window.setTimeout(() => {
+      el.classList.remove("chart-refreshing");
+    }, 620);
+  });
+}
+
 function lineChart(el, labels, values, options) {
   if (!el) return;
   const chartLabels = Array.isArray(labels) ? labels : [];
@@ -3744,7 +3605,10 @@ function lineChart(el, labels, values, options) {
     if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
       dailyChartInstance.dispose();
     }
-    dailyChartInstance = window.echarts.init(el, null, { renderer: "svg" });
+    dailyChartInstance = window.echarts.init(el, null, {
+      renderer: "canvas",
+      useDirtyRect: true,
+    });
   }
   dailyChartViewportWidth = Math.round(el.getBoundingClientRect().width || el.clientWidth || 0);
   if (!chartResizeBound) {
@@ -3756,30 +3620,43 @@ function lineChart(el, labels, values, options) {
           return;
         }
         dailyChartViewportWidth = nextWidth;
-        dailyChartInstance.resize();
+        if (chartResizeFrame) {
+          window.cancelAnimationFrame(chartResizeFrame);
+        }
+        chartResizeFrame = window.requestAnimationFrame(() => {
+          chartResizeFrame = 0;
+          if (dailyChartInstance && !dailyChartInstance.isDisposed()) {
+            dailyChartInstance.resize();
+          }
+        });
       }
-    });
+    }, { passive: true });
     chartResizeBound = true;
   }
   if (!chartValues.length) {
     dailyChartInstance.clear();
+    dailyChartDataKey = "";
     return;
   }
   const prefersReduced = prefersReducedMotion();
   const shouldRedraw = Boolean(opts.redraw) && !prefersReduced;
   const animateChartUpdate = Boolean(opts.animateChart !== false) && !prefersReduced;
+  const nextDataKey = makeChartDataKey(chartLabels, chartValues);
+  const dataChanged = nextDataKey !== dailyChartDataKey;
+  dailyChartDataKey = nextDataKey;
   const palette = getThemePalette();
   const isCompactChart = dailyChartViewportWidth > 0 && dailyChartViewportWidth < 560;
   const chartOption = {
     backgroundColor: "transparent",
     animation: animateChartUpdate,
-    animationDuration: animateChartUpdate ? 520 : 0,
-    animationDurationUpdate: animateChartUpdate ? 680 : 0,
-    animationEasing: "cubicOut",
-    animationEasingUpdate: "cubicOut",
+    animationThreshold: 2200,
+    animationDuration: animateChartUpdate ? 360 : 0,
+    animationDurationUpdate: animateChartUpdate ? 420 : 0,
+    animationEasing: "quarticOut",
+    animationEasingUpdate: "quarticOut",
     stateAnimation: {
-      duration: animateChartUpdate ? 260 : 0,
-      easing: "cubicOut",
+      duration: animateChartUpdate ? 180 : 0,
+      easing: "quarticOut",
     },
     grid: { left: isCompactChart ? 38 : 48, right: isCompactChart ? 12 : 26, top: 16, bottom: isCompactChart ? 44 : 56 },
     tooltip: {
@@ -3788,7 +3665,7 @@ function lineChart(el, labels, values, options) {
       borderColor: palette.tooltipBorder,
       borderWidth: 1,
       textStyle: { color: "#f8fafc" },
-      transitionDuration: animateChartUpdate ? 0.18 : 0,
+      transitionDuration: animateChartUpdate ? 0.08 : 0,
       axisPointer: { type: "line", lineStyle: { color: palette.axisPointer, width: 1 } },
       valueFormatter: (value) => formatChartNumber(value),
     },
@@ -3820,7 +3697,9 @@ function lineChart(el, labels, values, options) {
         showSymbol: false,
         smooth: 0.58,
         sampling: "lttb",
-        universalTransition: animateChartUpdate,
+        progressive: 600,
+        progressiveThreshold: 1600,
+        universalTransition: false,
         lineStyle: {
           width: 1.8,
           color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
@@ -3842,48 +3721,12 @@ function lineChart(el, labels, values, options) {
     ],
   };
   dailyChartInstance.setOption(chartOption, {
-    notMerge: true,
-    lazyUpdate: false,
+    notMerge: false,
+    lazyUpdate: true,
+    replaceMerge: ["xAxis", "yAxis", "series"],
   });
-  if (shouldRedraw) {
-    playChartLineRedraw(el);
-  }
-}
-
-function playChartLineRedraw(el) {
-  if (!el || prefersReducedMotion()) return;
-  const run = () => {
-    const paths = Array.from(el.querySelectorAll("svg path"));
-    paths.forEach((path) => {
-      if (!(path instanceof SVGPathElement)) return;
-      const stroke = path.getAttribute("stroke");
-      const fill = path.getAttribute("fill");
-      if (!stroke || stroke === "none") return;
-      if (fill && fill !== "none" && fill !== "transparent") return;
-      let length = 0;
-      try {
-        length = path.getTotalLength();
-      } catch (_) {
-        return;
-      }
-      if (!Number.isFinite(length) || length < 240) return;
-      path.classList.remove("chart-line-redraw");
-      path.style.setProperty("--line-length", `${length}`);
-      path.style.strokeDasharray = `${length}`;
-      path.style.strokeDashoffset = `${length}`;
-      if (window.requestAnimationFrame) {
-        window.requestAnimationFrame(() => {
-          path.classList.add("chart-line-redraw");
-        });
-      } else {
-        path.classList.add("chart-line-redraw");
-      }
-    });
-  };
-  if (window.requestAnimationFrame) {
-    window.requestAnimationFrame(() => window.requestAnimationFrame(run));
-  } else {
-    setTimeout(run, 0);
+  if (shouldRedraw && dataChanged) {
+    playChartRefreshMotion(el);
   }
 }
 
