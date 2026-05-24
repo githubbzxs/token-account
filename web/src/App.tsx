@@ -59,25 +59,89 @@ export function App() {
   useEffect(() => {
     if (!data || runtimeLoadedRef.current) return;
     runtimeLoadedRef.current = true;
-    const run = () => {
-      const script = document.createElement("script");
-      script.src = `/legacy-report-runtime.js?ts=${Date.now()}`;
-      script.async = false;
-      document.body.appendChild(script);
+    const run = async () => {
+      const runtimeUrl = `/legacy-report-runtime.js?ts=${Date.now()}`;
+      try {
+        const response = await fetch(runtimeUrl, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const runtime = await response.text();
+        if (usesLegacyChartRuntime(runtime)) {
+          await loadLegacyChartDependencies();
+        }
+        const script = document.createElement("script");
+        script.textContent = runtime;
+        document.body.appendChild(script);
+      } catch (_) {
+        const script = document.createElement("script");
+        script.src = runtimeUrl;
+        script.async = false;
+        document.body.appendChild(script);
+      }
     };
     if ("requestIdleCallback" in window) {
       window.requestIdleCallback(run, { timeout: 300 });
       return;
     }
-    const script = document.createElement("script");
-    script.src = `/legacy-report-runtime.js?ts=${Date.now()}`;
-    script.async = false;
-    document.body.appendChild(script);
+    void run();
   }, [data]);
 
   return (
     <LegacyDashboardShell summary={summary} loadFailed={loadFailed} />
   );
+}
+
+function usesLegacyChartRuntime(runtime: string): boolean {
+  return !runtime.includes("report-line-canvas") || runtime.includes("window.echarts") || runtime.includes("window.CalHeatmap");
+}
+
+async function loadLegacyChartDependencies(): Promise<void> {
+  ensureStylesheet("https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.css");
+  const scripts = [
+    "https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js",
+    "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js",
+    "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js",
+    "https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.min.js",
+    "https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/Tooltip.min.js",
+    "https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/plugins/LegendLite.min.js",
+  ];
+  for (const src of scripts) {
+    await loadScriptOnce(src);
+  }
+}
+
+function ensureStylesheet(href: string): void {
+  if (document.querySelector(`link[href="${href}"]`)) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = href;
+  document.head.appendChild(link);
+}
+
+function loadScriptOnce(src: string): Promise<void> {
+  const existing = document.querySelector(`script[src="${src}"]`);
+  if (existing instanceof HTMLScriptElement) {
+    return new Promise((resolve, reject) => {
+      if (existing.dataset.loaded === "1") {
+        resolve();
+        return;
+      }
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error(`Failed to load ${src}`)), { once: true });
+    });
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = false;
+    script.addEventListener("load", () => {
+      script.dataset.loaded = "1";
+      resolve();
+    }, { once: true });
+    script.addEventListener("error", () => reject(new Error(`Failed to load ${src}`)), { once: true });
+    document.body.appendChild(script);
+  });
 }
 
 function LegacyDashboardShell(props: { summary: InitialSummary; loadFailed: boolean }) {
