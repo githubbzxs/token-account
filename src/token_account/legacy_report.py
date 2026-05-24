@@ -1405,7 +1405,7 @@ html.theme-switching .chart {
   display: flex;
   flex-direction: column;
   transform: translate3d(0, var(--swift-press-y), 0) scale(var(--swift-press-scale));
-  will-change: transform;
+  will-change: transform, translate;
 }
 
 .metric-card {
@@ -1630,7 +1630,7 @@ html.theme-switching .chart {
   animation: rise 0.46s var(--swift-ease-standard) both;
   animation-delay: 0s;
   transform: translate3d(0, var(--swift-press-y), 0) scale(var(--swift-press-scale));
-  will-change: transform;
+  will-change: transform, translate;
 }
 
 .panel h3 {
@@ -2040,11 +2040,11 @@ html.theme-switching .chart {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    translate: 0 6px;
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    translate: 0 0;
   }
 }
 
