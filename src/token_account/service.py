@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 from threading import Lock, Thread
 from time import monotonic
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, Response
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.responses import Response as StarletteResponse
 
+from .legacy_report import I18N
 from .reporting import build_dashboard_payload, build_report_from_database, render_html
 from .storage import db_session, fetch_default_report_stamp, fetch_sources, ingest_sync_events
 
@@ -59,6 +64,48 @@ SHELL_SUMMARY = {
 HTML_CACHE_CONTROL = "public, max-age=60, stale-while-revalidate=300"
 DATA_CACHE_CONTROL = "public, max-age=10, stale-while-revalidate=30"
 DEFAULT_STAMP_CHECK_INTERVAL = 3.0
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+WEB_DIST_DIR = PROJECT_ROOT / "web" / "dist"
+WEB_INDEX_FILE = WEB_DIST_DIR / "index.html"
+WEB_ASSETS_DIR = WEB_DIST_DIR / "assets"
+LEGACY_ASSET_CACHE_CONTROL = "public, max-age=60, stale-while-revalidate=300"
+
+
+def _legacy_html_shell() -> str:
+    return render_html({}, SHELL_SUMMARY, False)
+
+
+def _extract_legacy_style() -> str:
+    html_doc = _legacy_html_shell()
+    start_marker = "<style>"
+    end_marker = "</style>"
+    start = html_doc.index(start_marker) + len(start_marker)
+    end = html_doc.index(end_marker, start)
+    return html_doc[start:end].lstrip("\n")
+
+
+def _extract_legacy_runtime() -> str:
+    html_doc = _legacy_html_shell()
+    start_marker = "<script>\nconst DATA = "
+    end_marker = "\n</script>"
+    start = html_doc.index(start_marker) + len("<script>\n")
+    end = html_doc.index(end_marker, start)
+    script = html_doc[start:end]
+    script = re.sub(
+        r"^const DATA = .+;$",
+        "const DATA = window.__TOKEN_ACCOUNT_INITIAL_DATA__ || {};",
+        script,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    script = re.sub(
+        r"^const I18N = .+;$",
+        f"const I18N = {json.dumps(I18N, ensure_ascii=False, separators=(',', ':'))};",
+        script,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    return script
 
 
 class DefaultReportCache:
@@ -154,16 +201,42 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
     app.add_middleware(GZipMiddleware, minimum_size=1024)
     app.state.config = config
     app.state.default_report_cache = DefaultReportCache(config)
+    if WEB_ASSETS_DIR.exists():
+        app.mount("/assets", StaticFiles(directory=WEB_ASSETS_DIR), name="assets")
 
     @app.on_event("startup")
     def warm_default_report_cache() -> None:
         app.state.default_report_cache.get_default()
 
-    @app.get("/", response_class=HTMLResponse)
-    def index() -> HTMLResponse:
+    @app.get("/", response_class=HTMLResponse, response_model=None)
+    def index() -> StarletteResponse:
+        if WEB_INDEX_FILE.exists():
+            return FileResponse(
+                WEB_INDEX_FILE,
+                media_type="text/html; charset=utf-8",
+                headers={"Cache-Control": HTML_CACHE_CONTROL},
+            )
         return HTMLResponse(
             app.state.default_report_cache.get_default_html(),
             headers={"Cache-Control": HTML_CACHE_CONTROL},
+        )
+
+    @app.api_route("/legacy-report.css", methods=["GET", "HEAD"])
+    def legacy_report_css(response: Response) -> Response:
+        response.headers["Cache-Control"] = LEGACY_ASSET_CACHE_CONTROL
+        return Response(
+            _extract_legacy_style(),
+            media_type="text/css; charset=utf-8",
+            headers={"Cache-Control": LEGACY_ASSET_CACHE_CONTROL},
+        )
+
+    @app.api_route("/legacy-report-runtime.js", methods=["GET", "HEAD"])
+    def legacy_report_runtime(response: Response) -> Response:
+        response.headers["Cache-Control"] = LEGACY_ASSET_CACHE_CONTROL
+        return Response(
+            _extract_legacy_runtime(),
+            media_type="application/javascript; charset=utf-8",
+            headers={"Cache-Control": LEGACY_ASSET_CACHE_CONTROL},
         )
 
     @app.get("/api/dashboard")
@@ -268,5 +341,20 @@ def create_app(*, db_file: str | Path, pricing_file: str | Path | None = None) -
         app.state.default_report_cache.schedule_refresh()
         result["sent_at"] = payload.sent_at
         return result
+
+    @app.get("/{path:path}", include_in_schema=False, response_model=None)
+    def spa_fallback(path: str) -> StarletteResponse:
+        if path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not Found")
+        if WEB_INDEX_FILE.exists():
+            return FileResponse(
+                WEB_INDEX_FILE,
+                media_type="text/html; charset=utf-8",
+                headers={"Cache-Control": HTML_CACHE_CONTROL},
+            )
+        return HTMLResponse(
+            app.state.default_report_cache.get_default_html(),
+            headers={"Cache-Control": HTML_CACHE_CONTROL},
+        )
 
     return app

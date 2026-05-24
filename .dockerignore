@@ -7,6 +7,7 @@ __pycache__/
 .venv/
 venv/
 node_modules/
+web/dist/
 
 # 本地服务数据
 report/
