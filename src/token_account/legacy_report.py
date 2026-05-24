@@ -743,10 +743,11 @@ def render_html(data: dict, summary: dict, empty: bool) -> str:
   --font-zh: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "PingFang SC", "Microsoft YaHei", serif;
   --font-en: "LXGW WenKai", "LXGW WenKai GB", "霞鹜文楷", "霞鹜文楷 GB 屏幕阅读版", "LXGW WenKai Screen", "Segoe UI", "Helvetica Neue", Arial, serif;
   --app-font: var(--font-en);
-  --swift-duration-fast: 900ms;
-  --swift-duration-normal: 2000ms;
-  --swift-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --swift-ease-spring: cubic-bezier(0.22, 0.8, 0.22, 1.02);
+  --swift-duration-fast: 280ms;
+  --swift-duration-normal: 620ms;
+  --swift-ease-standard: cubic-bezier(0.18, 0.86, 0.2, 1);
+  --swift-ease-spring: cubic-bezier(0.16, 1.08, 0.26, 1);
+  --swift-ease-settle: cubic-bezier(0.2, 0.88, 0.18, 1);
 }
 
 * {
@@ -828,6 +829,9 @@ body {
 }
 
 .theme-dot-toggle {
+  --swift-base-scale: 1;
+  --swift-press-scale: 1;
+  --swift-press-y: 0px;
   width: 20px;
   height: 20px;
   border-radius: 999px;
@@ -839,7 +843,9 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  transform: translate3d(0, var(--swift-press-y), 0) scale(calc(var(--swift-base-scale) * var(--swift-press-scale)));
+  transition: border-color 240ms var(--swift-ease-standard), box-shadow 260ms var(--swift-ease-standard);
+  will-change: transform;
 }
 
 .theme-dot-toggle::before {
@@ -851,7 +857,6 @@ body {
 }
 
 .theme-dot-toggle:hover {
-  transform: scale(1.03);
   border-color: rgba(var(--accent-cyan-rgb), 0.78);
   box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.3);
 }
@@ -863,7 +868,7 @@ body {
 }
 
 .theme-dot-toggle.is-bronze {
-  transform: scale(1.06);
+  --swift-base-scale: 1.06;
   box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.2);
 }
 
@@ -978,6 +983,8 @@ html.theme-switching .chart {
 }
 
 .range-date-trigger {
+  --swift-press-scale: 1;
+  --swift-press-y: 0px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -995,11 +1002,13 @@ html.theme-switching .chart {
   padding: 0 14px;
   min-width: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  transform: translate3d(0, var(--swift-press-y), 0) scale(var(--swift-press-scale));
   transition:
-    border-color 0.16s ease,
-    background 0.16s ease,
-    box-shadow 0.16s ease,
-    opacity 0.16s ease;
+    border-color 240ms var(--swift-ease-standard),
+    background 260ms var(--swift-ease-standard),
+    box-shadow 260ms var(--swift-ease-standard),
+    opacity 220ms var(--swift-ease-standard);
+  will-change: transform;
 }
 
 .range-date-trigger:hover {
@@ -1008,7 +1017,6 @@ html.theme-switching .chart {
 }
 
 .range-date-trigger:active {
-  opacity: 0.992;
   border-color: rgba(var(--accent-cyan-rgb), 0.28);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
@@ -1058,6 +1066,8 @@ html.theme-switching .chart {
 }
 
 .calendar-nav-btn {
+  --swift-press-scale: 1;
+  --swift-press-y: 0px;
   width: 32px;
   height: 32px;
   border-radius: 10px;
@@ -1067,6 +1077,12 @@ html.theme-switching .chart {
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
+  transform: translate3d(0, var(--swift-press-y), 0) scale(var(--swift-press-scale));
+  will-change: transform;
+  transition:
+    border-color 220ms var(--swift-ease-standard),
+    background 240ms var(--swift-ease-standard),
+    color 220ms var(--swift-ease-standard);
 }
 
 .calendar-nav-btn:hover {
@@ -1096,6 +1112,8 @@ html.theme-switching .chart {
 }
 
 .calendar-day-btn {
+  --swift-press-scale: 1;
+  --swift-press-y: 0px;
   border: 1px solid transparent;
   background: transparent;
   color: #e4e4e7;
@@ -1104,6 +1122,13 @@ html.theme-switching .chart {
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
+  transform: translate3d(0, var(--swift-press-y), 0) scale(var(--swift-press-scale));
+  will-change: transform;
+  transition:
+    border-color 210ms var(--swift-ease-standard),
+    background 230ms var(--swift-ease-standard),
+    color 210ms var(--swift-ease-standard),
+    opacity 210ms var(--swift-ease-standard);
 }
 
 .calendar-day-btn:hover:not(:disabled) {
@@ -1151,6 +1176,8 @@ html.theme-switching .chart {
 }
 
 .calendar-actions button {
+  --swift-press-scale: 1;
+  --swift-press-y: 0px;
   border: 1px solid var(--stroke);
   background: rgba(255, 255, 255, 0.04);
   color: #e4e4e7;
@@ -1158,6 +1185,12 @@ html.theme-switching .chart {
   padding: 6px 12px;
   font-size: 12px;
   cursor: pointer;
+  transform: translate3d(0, var(--swift-press-y), 0) scale(var(--swift-press-scale));
+  will-change: transform;
+  transition:
+    border-color 220ms var(--swift-ease-standard),
+    background 240ms var(--swift-ease-standard),
+    color 220ms var(--swift-ease-standard);
 }
 
 .calendar-actions button:hover {
@@ -1167,6 +1200,8 @@ html.theme-switching .chart {
 
 .range-action-btn,
 .file-button {
+  --swift-press-scale: 1;
+  --swift-press-y: 0px;
   border: 1px solid var(--stroke);
   background: rgba(255, 255, 255, 0.04);
   color: #e4e4e7;
@@ -1174,7 +1209,12 @@ html.theme-switching .chart {
   border-radius: 999px;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transform: translate3d(0, var(--swift-press-y), 0) scale(var(--swift-press-scale));
+  will-change: transform;
+  transition:
+    border-color 220ms var(--swift-ease-standard),
+    background 240ms var(--swift-ease-standard),
+    color 220ms var(--swift-ease-standard);
 }
 
 .range-action-btn:hover,
@@ -1193,6 +1233,8 @@ html.theme-switching .chart {
 }
 
 .range-segmented {
+  --swift-press-scale: 1;
+  --swift-press-y: 0px;
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -1213,15 +1255,20 @@ html.theme-switching .chart {
   max-width: none;
   overflow: hidden;
   contain: paint;
-  transform: translateZ(0);
+  transform: translate3d(0, var(--swift-press-y), 0) scale(var(--swift-press-scale));
+  will-change: transform;
 }
 
 .range-segmented-slider {
+  --slider-x: 0px;
+  --slider-width: 0px;
+  --slider-scale-x: 1;
+  --slider-opacity: 0;
   position: absolute;
   top: 2px;
   bottom: 2px;
   left: 0;
-  width: 0;
+  width: var(--slider-width);
   border-radius: 999px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04)),
@@ -1230,10 +1277,10 @@ html.theme-switching .chart {
     0 6px 16px rgba(0, 0, 0, 0.16),
     0 0 0 0.5px rgba(255, 255, 255, 0.16) inset,
     0 1px 0 rgba(255, 255, 255, 0.18) inset;
-  opacity: 0;
-  transform: translate3d(0, 0, 0);
-  transform-origin: center center;
-  will-change: transform, width, opacity, box-shadow;
+  opacity: var(--slider-opacity);
+  transform: translate3d(var(--slider-x), 0, 0) scaleX(var(--slider-scale-x));
+  transform-origin: left center;
+  will-change: transform, opacity, box-shadow;
   pointer-events: none;
   backface-visibility: hidden;
   transition: box-shadow 180ms cubic-bezier(0.25, 1, 0.5, 1);
@@ -1257,6 +1304,10 @@ html.theme-switching .chart {
 }
 
 .range-segmented button {
+  --swift-label-scale: 1;
+  --swift-label-y: 0px;
+  --swift-press-scale: 1;
+  --swift-press-y: 0px;
   position: relative;
   z-index: 1;
   flex: 1 1 0;
@@ -1281,11 +1332,11 @@ html.theme-switching .chart {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  transform: translateY(0);
+  transform: translate3d(0, calc(var(--swift-label-y) + var(--swift-press-y)), 0) scale(calc(var(--swift-label-scale) * var(--swift-press-scale)));
   transition:
-    color 0.20s cubic-bezier(0.25, 1, 0.5, 1),
-    opacity 0.18s ease,
-    transform 0.24s cubic-bezier(0.25, 1, 0.5, 1);
+    color 220ms var(--swift-ease-standard),
+    opacity 220ms var(--swift-ease-standard);
+  will-change: transform;
 }
 
 .range-segmented button:hover {
@@ -1294,12 +1345,11 @@ html.theme-switching .chart {
 
 .range-segmented button:active {
   opacity: 1;
-  transform: scale(0.968);
 }
 
 .range-segmented button.is-active {
   color: #ffffff;
-  transform: translateY(0) scale(1.01);
+  --swift-label-scale: 1.01;
 }
 
 .range-segmented.is-animating button:not(.is-active) {
@@ -1307,7 +1357,7 @@ html.theme-switching .chart {
 }
 
 .range-segmented.is-animating button.is-active {
-  animation: segmentedLabelSettle 320ms cubic-bezier(0.25, 1, 0.5, 1);
+  animation: none;
 }
 
 .range-actions {
@@ -1340,6 +1390,8 @@ html.theme-switching .chart {
 }
 
 .card {
+  --swift-press-scale: 1;
+  --swift-press-y: 0px;
   background: linear-gradient(145deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
   border: 1px solid var(--stroke);
   border-radius: 20px;
@@ -1352,6 +1404,8 @@ html.theme-switching .chart {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  transform: translate3d(0, var(--swift-press-y), 0) scale(var(--swift-press-scale));
+  will-change: transform;
 }
 
 .metric-card {
@@ -1440,19 +1494,19 @@ html.theme-switching .chart {
 
 .text-fade-anim,
 .i18n-switch-anim {
-  animation: textFadeOnly 360ms ease both;
-  will-change: opacity;
+  animation: textFadeOnly 320ms var(--swift-ease-standard) both;
+  will-change: opacity, transform;
 }
 
 .metric-value-anim {
-  animation: metricValueSettle 520ms var(--swift-ease-standard) both;
-  will-change: opacity, transform, filter;
+  animation: metricValueSettle 460ms var(--swift-ease-settle) both;
+  will-change: opacity, transform;
 }
 
 .metric-width-animating {
   overflow: hidden;
   vertical-align: top;
-  transition: width 520ms var(--swift-ease-standard);
+  transition: width 460ms var(--swift-ease-settle);
   will-change: width;
 }
 
@@ -1475,23 +1529,21 @@ html.theme-switching .chart {
   min-height: 1em;
   line-height: 1;
   white-space: nowrap;
+  opacity: var(--roll-content-opacity, 1);
+  transform: translate3d(0, var(--roll-content-y, 0px), 0) scale(var(--roll-content-scale, 1));
+  will-change: opacity, transform;
 }
 
 .metric-roll-shrinking .metric-roll-content {
-  opacity: 0;
-  transform: translate3d(0, 5px, 0) scale(0.985);
-  filter: blur(4px);
-  transition:
-    opacity 460ms var(--swift-ease-standard),
-    transform 520ms var(--swift-ease-standard),
-    filter 520ms var(--swift-ease-standard);
-  will-change: opacity, transform, filter;
+  --roll-content-opacity: 0;
+  --roll-content-y: 5px;
+  --roll-content-scale: 0.985;
 }
 
 .metric-roll-shrinking .metric-roll-content.is-animating {
-  opacity: 1;
-  transform: translate3d(0, 0, 0) scale(1);
-  filter: blur(0);
+  --roll-content-opacity: 1;
+  --roll-content-y: 0px;
+  --roll-content-scale: 1;
 }
 
 .metric-roll-ghost {
@@ -1505,20 +1557,15 @@ html.theme-switching .chart {
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;
-  opacity: 1;
-  transform: translate3d(0, 0, 0) scale(1);
-  filter: blur(0);
-  transition:
-    opacity 420ms var(--swift-ease-standard),
-    transform 520ms var(--swift-ease-standard),
-    filter 520ms var(--swift-ease-standard);
-  will-change: opacity, transform, filter;
+  opacity: var(--roll-ghost-opacity, 1);
+  transform: translate3d(0, var(--roll-ghost-y, 0px), 0) scale(var(--roll-ghost-scale, 1));
+  will-change: opacity, transform;
 }
 
 .metric-roll-ghost.is-animating {
-  opacity: 0;
-  transform: translate3d(0, -5px, 0) scale(0.985);
-  filter: blur(4px);
+  --roll-ghost-opacity: 0;
+  --roll-ghost-y: -5px;
+  --roll-ghost-scale: 0.985;
 }
 
 .metric-roll-static {
@@ -1543,12 +1590,11 @@ html.theme-switching .chart {
   display: flex;
   flex-direction: column;
   will-change: transform;
-  transform: translateY(calc(var(--roll-from, 0) * -1em));
+  transform: translateY(calc(var(--roll-y, var(--roll-from, 0)) * -1em));
 }
 
 .metric-roll-track.is-animating {
-  transition: transform 820ms cubic-bezier(0.2, 0.86, 0.22, 1);
-  transform: translateY(calc(var(--roll-to, 0) * -1em));
+  transition: none;
 }
 
 .metric-roll-cell {
@@ -1574,6 +1620,8 @@ html.theme-switching .chart {
 }
 
 .panel {
+  --swift-press-scale: 1;
+  --swift-press-y: 0px;
   background: linear-gradient(150deg, rgba(26, 27, 32, 0.94), rgba(20, 20, 24, 0.9));
   border: 1px solid var(--stroke);
   border-radius: 20px;
@@ -1581,6 +1629,8 @@ html.theme-switching .chart {
   box-shadow: var(--shadow);
   animation: rise 0.46s var(--swift-ease-standard) both;
   animation-delay: 0s;
+  transform: translate3d(0, var(--swift-press-y), 0) scale(var(--swift-press-scale));
+  will-change: transform;
 }
 
 .panel h3 {
@@ -1721,6 +1771,8 @@ html.theme-switching .chart {
 }
 
 .directory-page-btn {
+  --swift-press-scale: 1;
+  --swift-press-y: 0px;
   border: 1px solid var(--stroke);
   background: rgba(255, 255, 255, 0.04);
   color: #e4e4e7;
@@ -1728,7 +1780,13 @@ html.theme-switching .chart {
   padding: 5px 10px;
   font-size: 11px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transform: translate3d(0, var(--swift-press-y), 0) scale(var(--swift-press-scale));
+  will-change: transform;
+  transition:
+    border-color 220ms var(--swift-ease-standard),
+    background 240ms var(--swift-ease-standard),
+    color 220ms var(--swift-ease-standard),
+    opacity 220ms var(--swift-ease-standard);
 }
 
 .directory-page-btn:hover:not(:disabled) {
@@ -1795,11 +1853,12 @@ html.theme-switching .chart {
 }
 
 .chart-line-redraw {
-  animation: chartLineDraw 3000ms cubic-bezier(0.18, 0.78, 0.2, 1) both;
+  animation: chartLineDraw 1180ms var(--swift-ease-settle) both;
   stroke-dasharray: var(--line-length);
   stroke-dashoffset: var(--line-length);
   stroke-linecap: round;
   stroke-linejoin: round;
+  will-change: stroke-dashoffset, opacity;
 }
 
 .chart.small {
@@ -2131,9 +2190,11 @@ html.theme-switching .chart {
 @keyframes textFadeOnly {
   0% {
     opacity: 0.72;
+    transform: translate3d(0, 3px, 0) scale(0.992);
   }
   100% {
     opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
@@ -2141,17 +2202,14 @@ html.theme-switching .chart {
 @keyframes metricValueSettle {
   0% {
     opacity: 0;
-    transform: translate3d(0, 6px, 0) scale(0.985);
-    filter: blur(5px);
+    transform: translate3d(0, 5px, 0) scale(0.988);
   }
   62% {
     opacity: 1;
-    filter: blur(0);
   }
   100% {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0);
   }
 }
 
@@ -2355,6 +2413,8 @@ let quickRangeSelection = "";
 let quickRangeSliderAnimation = null;
 let quickRangeSliderCleanupTimer = 0;
 let quickRangeApplyToken = 0;
+let swiftPressFeedbackBound = false;
+let swiftPressedElement = null;
 const THEME_STORAGE_KEY = "token-report-theme";
 let themeSwitchTimer = null;
 const calendarState = {
@@ -2372,17 +2432,130 @@ function prefersReducedMotion() {
   return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 }
 
+const SWIFT_SPRINGS = {
+  text: { response: 0.34, damping: 0.9, restDelta: 0.0015, restSpeed: 0.035 },
+  digit: { response: 0.58, damping: 0.84, restDelta: 0.002, restSpeed: 0.035 },
+  slider: { response: 0.44, damping: 0.82, restDelta: 0.012, restSpeed: 0.08 },
+  label: { response: 0.28, damping: 0.68, restDelta: 0.0015, restSpeed: 0.035 },
+  press: { response: 0.18, damping: 0.72, restDelta: 0.001, restSpeed: 0.045 },
+  layout: { response: 0.42, damping: 0.88, restDelta: 0.03, restSpeed: 0.12 },
+};
+
+function springPhysics(config) {
+  const response = Math.max(0.12, Number(config && config.response) || 0.32);
+  const dampingRatio = Math.max(0.25, Math.min(1.08, Number(config && config.damping) || 0.86));
+  const omega = (Math.PI * 2) / response;
+  return {
+    stiffness: omega * omega,
+    damping: 2 * dampingRatio * omega,
+    restDelta: Number(config && config.restDelta) || 0.001,
+    restSpeed: Number(config && config.restSpeed) || 0.04,
+  };
+}
+
+function animateSpringValues(from, to, options) {
+  const opts = options || {};
+  const physics = springPhysics(opts.spring || SWIFT_SPRINGS.text);
+  const keys = Object.keys(to || {});
+  if (!keys.length) {
+    return { cancel() {} };
+  }
+  const current = {};
+  const velocity = {};
+  keys.forEach((key) => {
+    const startValue = Number(from && from[key]);
+    const targetValue = Number(to[key]);
+    current[key] = Number.isFinite(startValue) ? startValue : (Number.isFinite(targetValue) ? targetValue : 0);
+    velocity[key] = 0;
+  });
+  let rafId = 0;
+  let lastTime = 0;
+  let cancelled = false;
+  const step = (timestamp) => {
+    if (cancelled) return;
+    if (!lastTime) lastTime = timestamp;
+    const dt = Math.min(0.064, Math.max(0.001, (timestamp - lastTime) / 1000));
+    lastTime = timestamp;
+    let settled = true;
+    keys.forEach((key) => {
+      const targetValue = Number(to[key]) || 0;
+      const displacement = current[key] - targetValue;
+      const acceleration = (-physics.stiffness * displacement) - (physics.damping * velocity[key]);
+      velocity[key] += acceleration * dt;
+      current[key] += velocity[key] * dt;
+      if (Math.abs(velocity[key]) > physics.restSpeed || Math.abs(targetValue - current[key]) > physics.restDelta) {
+        settled = false;
+      }
+    });
+    if (typeof opts.onUpdate === "function") {
+      opts.onUpdate({ ...current }, { ...velocity });
+    }
+    if (settled) {
+      keys.forEach((key) => {
+        current[key] = Number(to[key]) || 0;
+        velocity[key] = 0;
+      });
+      if (typeof opts.onUpdate === "function") {
+        opts.onUpdate({ ...current }, { ...velocity });
+      }
+      if (typeof opts.onComplete === "function") {
+        opts.onComplete();
+      }
+      return;
+    }
+    rafId = window.requestAnimationFrame(step);
+  };
+  rafId = window.requestAnimationFrame(step);
+  return {
+    cancel() {
+      cancelled = true;
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+    },
+  };
+}
+
+function clampUnit(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  if (num < 0) return 0;
+  if (num > 1) return 1;
+  return num;
+}
+
 function triggerSwapAnimation(el, className) {
   if (!el || prefersReducedMotion()) return;
-  el.classList.remove(className);
-  const applyClass = () => {
-    el.classList.add(className);
-  };
-  if (window.requestAnimationFrame) {
-    window.requestAnimationFrame(applyClass);
-    return;
+  if (typeof el._swiftTextAnimation === "function") {
+    el._swiftTextAnimation();
   }
-  setTimeout(applyClass, 0);
+  if (className) {
+    el.classList.remove(className);
+  }
+  el.style.opacity = "0";
+  el.style.transform = "translate3d(0, 5px, 0) scale(0.988)";
+  const animation = animateSpringValues(
+    { opacity: 0, y: 5, scale: 0.988 },
+    { opacity: 1, y: 0, scale: 1 },
+    {
+      spring: SWIFT_SPRINGS.text,
+      onUpdate: (value) => {
+        el.style.opacity = clampUnit(value.opacity).toFixed(4);
+        el.style.transform = `translate3d(0, ${value.y.toFixed(3)}px, 0) scale(${value.scale.toFixed(4)})`;
+      },
+      onComplete: () => {
+        el.style.opacity = "";
+        el.style.transform = "";
+        delete el._swiftTextAnimation;
+      },
+    }
+  );
+  el._swiftTextAnimation = () => {
+    animation.cancel();
+    el.style.opacity = "";
+    el.style.transform = "";
+    delete el._swiftTextAnimation;
+  };
 }
 
 function measureMetricContentWidth(el) {
@@ -2421,40 +2594,67 @@ function animateMetricWidthChange(el, previousWidth) {
   const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   el.dataset.metricWidthToken = token;
   el.classList.add("metric-width-animating");
-  el.style.width = `${Math.ceil(previousWidth)}px`;
-  void el.offsetWidth;
-
+  el.style.width = `${Math.max(0, previousWidth).toFixed(2)}px`;
   const cleanup = () => {
     if (el.dataset.metricWidthToken !== token) return;
     if (el._metricWidthTimer) {
       window.clearTimeout(el._metricWidthTimer);
       delete el._metricWidthTimer;
     }
+    if (el._metricWidthAnimation) {
+      el._metricWidthAnimation.cancel();
+      delete el._metricWidthAnimation;
+    }
     el.classList.remove("metric-width-animating");
     el.style.width = "";
     delete el.dataset.metricWidthToken;
     delete el._metricWidthCleanup;
   };
-  const handleTransitionEnd = (event) => {
-    if (event.target !== el || event.propertyName !== "width") return;
-    el.removeEventListener("transitionend", handleTransitionEnd);
-    cleanup();
-  };
-
-  el._metricWidthCleanup = () => {
-    el.removeEventListener("transitionend", handleTransitionEnd);
-    cleanup();
-  };
-  el.addEventListener("transitionend", handleTransitionEnd);
-  window.requestAnimationFrame(() => {
-    if (el.dataset.metricWidthToken === token) {
-      el.style.width = `${Math.ceil(nextWidth)}px`;
+  el._metricWidthCleanup = cleanup;
+  el._metricWidthAnimation = animateSpringValues(
+    { width: previousWidth },
+    { width: nextWidth },
+    {
+      spring: SWIFT_SPRINGS.layout,
+      onUpdate: (value) => {
+        if (el.dataset.metricWidthToken === token) {
+          el.style.width = `${Math.max(0, value.width).toFixed(2)}px`;
+        }
+      },
+      onComplete: cleanup,
     }
+  );
+  el._metricWidthTimer = window.setTimeout(cleanup, 1100);
+}
+
+function setRollContentSpring(node, from, to, spring) {
+  if (!node || prefersReducedMotion()) return;
+  const animation = animateSpringValues(from, to, {
+    spring: spring || SWIFT_SPRINGS.text,
+    onUpdate: (value) => {
+      if ("opacity" in value) {
+        const prop = node.classList.contains("metric-roll-ghost") ? "--roll-ghost-opacity" : "--roll-content-opacity";
+        node.style.setProperty(prop, clampUnit(value.opacity).toFixed(4));
+      }
+      if ("y" in value) {
+        const prop = node.classList.contains("metric-roll-ghost") ? "--roll-ghost-y" : "--roll-content-y";
+        node.style.setProperty(prop, `${value.y.toFixed(3)}px`);
+      }
+      if ("scale" in value) {
+        const prop = node.classList.contains("metric-roll-ghost") ? "--roll-ghost-scale" : "--roll-content-scale";
+        node.style.setProperty(prop, value.scale.toFixed(4));
+      }
+    },
+    onComplete: () => {
+      node.style.removeProperty("--roll-content-opacity");
+      node.style.removeProperty("--roll-content-y");
+      node.style.removeProperty("--roll-content-scale");
+      node.style.removeProperty("--roll-ghost-opacity");
+      node.style.removeProperty("--roll-ghost-y");
+      node.style.removeProperty("--roll-ghost-scale");
+    },
   });
-  el._metricWidthTimer = window.setTimeout(() => {
-    el.removeEventListener("transitionend", handleTransitionEnd);
-    cleanup();
-  }, 780);
+  return animation;
 }
 
 function setAnimatedText(el, text, options) {
@@ -2514,6 +2714,7 @@ function renderRollingDigits(el, prevText, nextText, syncAriaLabel, options) {
   const prevDigits = String(prevText || "").match(/[0-9]/g) || [];
   const nextDigitChars = String(nextText || "").match(/[0-9]/g) || [];
   let nextDigitIndex = 0;
+  const trackTargets = [];
   const fragment = document.createDocumentFragment();
   for (let i = 0; i < nextText.length; i += 1) {
     const char = nextText[i];
@@ -2542,7 +2743,10 @@ function renderRollingDigits(el, prevText, nextText, syncAriaLabel, options) {
     track.className = "metric-roll-track";
     track.style.setProperty("--roll-from", String(fromIndex));
     track.style.setProperty("--roll-to", String(toIndex));
-    track.style.transitionDelay = `${Math.max(0, nextText.length - i - 1) * 8}ms`;
+    track.style.setProperty("--roll-y", String(fromIndex));
+    track.dataset.rollFrom = String(fromIndex);
+    track.dataset.rollTo = String(toIndex);
+    trackTargets.push({ track, fromIndex, toIndex, order: nextDigitIndex });
 
     for (let reelIndex = 0; reelIndex < 30; reelIndex += 1) {
       const cell = document.createElement("span");
@@ -2557,6 +2761,11 @@ function renderRollingDigits(el, prevText, nextText, syncAriaLabel, options) {
 
   const content = document.createElement("span");
   content.className = "metric-roll-content";
+  if (!shouldReduceMotion) {
+    content.style.setProperty("--roll-content-opacity", "0");
+    content.style.setProperty("--roll-content-y", "5px");
+    content.style.setProperty("--roll-content-scale", "0.985");
+  }
   content.appendChild(fragment);
 
   if (typeof el._metricRollCleanup === "function") {
@@ -2565,6 +2774,7 @@ function renderRollingDigits(el, prevText, nextText, syncAriaLabel, options) {
   el.textContent = "";
   el.classList.remove("metric-roll-shrinking");
   el.classList.add("metric-roll");
+  const runningAnimations = [];
   if (preservePrevious) {
     const ghost = document.createElement("span");
     ghost.className = "metric-roll-ghost";
@@ -2581,31 +2791,70 @@ function renderRollingDigits(el, prevText, nextText, syncAriaLabel, options) {
   if (shouldReduceMotion) {
     return true;
   }
-  requestAnimationFrame(() => {
-    el.querySelectorAll(".metric-roll-track").forEach((track) => {
-      track.classList.add("is-animating");
+  let rollFrame = 0;
+  rollFrame = requestAnimationFrame(() => {
+    trackTargets.forEach((item, index) => {
+      const delayMs = Math.min(72, Math.max(0, (trackTargets.length - index - 1) * 9));
+      item.track.classList.add("is-animating");
+      const start = () => {
+        const animation = animateSpringValues(
+          { roll: item.fromIndex },
+          { roll: item.toIndex },
+          {
+            spring: SWIFT_SPRINGS.digit,
+            onUpdate: (value) => {
+              item.track.style.setProperty("--roll-y", value.roll.toFixed(4));
+            },
+            onComplete: () => {
+              item.track.style.setProperty("--roll-y", item.toIndex.toFixed(4));
+            },
+          }
+        );
+        runningAnimations.push(animation);
+      };
+      if (delayMs) {
+        const timer = window.setTimeout(start, delayMs);
+        runningAnimations.push({ cancel: () => window.clearTimeout(timer) });
+      } else {
+        start();
+      }
     });
+    const contentAnimation = setRollContentSpring(content, { opacity: 0, y: 5, scale: 0.985 }, { opacity: 1, y: 0, scale: 1 }, SWIFT_SPRINGS.text);
+    if (contentAnimation) runningAnimations.push(contentAnimation);
     el.querySelectorAll(".metric-roll-content, .metric-roll-ghost").forEach((node) => {
       node.classList.add("is-animating");
     });
+    el.querySelectorAll(".metric-roll-ghost").forEach((node) => {
+      const ghostAnimation = setRollContentSpring(node, { opacity: 1, y: 0, scale: 1 }, { opacity: 0, y: -5, scale: 0.985 }, SWIFT_SPRINGS.text);
+      if (ghostAnimation) runningAnimations.push(ghostAnimation);
+    });
   });
-  if (preservePrevious) {
+  if (!shouldReduceMotion) {
     const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     let cleanupTimer = 0;
     el.dataset.metricRollToken = token;
     const cleanup = () => {
       if (el.dataset.metricRollToken !== token) return;
+      if (rollFrame) {
+        window.cancelAnimationFrame(rollFrame);
+        rollFrame = 0;
+      }
       if (cleanupTimer) {
         window.clearTimeout(cleanupTimer);
         cleanupTimer = 0;
       }
+      runningAnimations.forEach((animation) => {
+        if (animation && typeof animation.cancel === "function") {
+          animation.cancel();
+        }
+      });
       el.querySelectorAll(".metric-roll-ghost").forEach((node) => node.remove());
       el.classList.remove("metric-roll-shrinking");
       delete el.dataset.metricRollToken;
       delete el._metricRollCleanup;
     };
     el._metricRollCleanup = cleanup;
-    cleanupTimer = window.setTimeout(cleanup, 900);
+    cleanupTimer = window.setTimeout(cleanup, 1100);
   }
   return true;
 }
@@ -2914,17 +3163,116 @@ function writeQuickRangeSliderState(slider, state) {
 
 function applyQuickRangeSliderState(slider, state) {
   if (!slider) return;
-  slider.style.opacity = state.visible ? "1" : "0";
-  slider.style.width = state.visible ? `${state.width.toFixed(2)}px` : "0";
-  slider.style.transform = state.visible
-    ? `translate3d(${state.x.toFixed(2)}px, 0, 0)`
-    : "translate3d(0, 0, 0)";
+  const x = state.visible ? state.x : 0;
+  const width = state.visible ? Math.max(0, state.width) : 0;
+  slider.style.setProperty("--slider-opacity", state.visible ? "1" : "0");
+  slider.style.setProperty("--slider-width", `${width.toFixed(2)}px`);
+  slider.style.setProperty("--slider-x", `${x.toFixed(2)}px`);
+  slider.style.setProperty("--slider-scale-x", "1");
 }
 
 function commitQuickRangeSliderState(segmented, slider, state) {
   applyQuickRangeSliderState(slider, state);
   writeQuickRangeSliderState(slider, state);
   clearQuickRangeSliderMotion(segmented, slider);
+}
+
+function animateQuickRangeLabel(button) {
+  if (!button || prefersReducedMotion()) return;
+  if (typeof button._quickRangeLabelAnimation === "function") {
+    button._quickRangeLabelAnimation();
+  }
+  button.style.setProperty("--swift-label-scale", "0.985");
+  button.style.setProperty("--swift-label-y", "1.5px");
+  const animation = animateSpringValues(
+    { scale: 0.985, y: 1.5 },
+    { scale: 1.01, y: 0 },
+    {
+      spring: SWIFT_SPRINGS.label,
+      onUpdate: (value) => {
+        button.style.setProperty("--swift-label-scale", value.scale.toFixed(4));
+        button.style.setProperty("--swift-label-y", `${value.y.toFixed(3)}px`);
+      },
+      onComplete: () => {
+        button.style.removeProperty("--swift-label-scale");
+        button.style.removeProperty("--swift-label-y");
+        delete button._quickRangeLabelAnimation;
+      },
+    }
+  );
+  button._quickRangeLabelAnimation = () => {
+    animation.cancel();
+    button.style.removeProperty("--swift-label-scale");
+    button.style.removeProperty("--swift-label-y");
+    delete button._quickRangeLabelAnimation;
+  };
+}
+
+function pressFeedbackElement(target) {
+  if (!(target instanceof Element)) return null;
+  return target.closest(
+    ".range-segmented button, .range-date-trigger, .calendar-nav-btn, .calendar-day-btn:not(:disabled), .calendar-actions button, .range-action-btn, .file-button, .directory-page-btn:not(:disabled), .theme-dot-toggle, .card, .panel"
+  );
+}
+
+function runPressSpring(el, pressed) {
+  if (!el || prefersReducedMotion()) return;
+  if (typeof el._swiftPressAnimation === "function") {
+    el._swiftPressAnimation();
+  }
+  const currentScale = Number.parseFloat(el.dataset.swiftPressScale || "1") || 1;
+  const currentY = Number.parseFloat(el.dataset.swiftPressY || "0") || 0;
+  const targetScale = pressed ? 0.974 : 1;
+  const targetY = pressed ? 1.2 : 0;
+  const animation = animateSpringValues(
+    { scale: currentScale, y: currentY },
+    { scale: targetScale, y: targetY },
+    {
+      spring: SWIFT_SPRINGS.press,
+      onUpdate: (value) => {
+        el.dataset.swiftPressScale = value.scale.toFixed(4);
+        el.dataset.swiftPressY = value.y.toFixed(3);
+        el.style.setProperty("--swift-press-scale", value.scale.toFixed(4));
+        el.style.setProperty("--swift-press-y", `${value.y.toFixed(3)}px`);
+      },
+      onComplete: () => {
+        if (!pressed) {
+          el.style.removeProperty("--swift-press-scale");
+          el.style.removeProperty("--swift-press-y");
+          delete el.dataset.swiftPressScale;
+          delete el.dataset.swiftPressY;
+        }
+        delete el._swiftPressAnimation;
+      },
+    }
+  );
+  el._swiftPressAnimation = () => {
+    animation.cancel();
+    delete el._swiftPressAnimation;
+  };
+}
+
+function bindSwiftPressFeedback() {
+  if (swiftPressFeedbackBound) return;
+  swiftPressFeedbackBound = true;
+  document.addEventListener("pointerdown", (event) => {
+    const el = pressFeedbackElement(event.target);
+    if (!el) return;
+    swiftPressedElement = el;
+    runPressSpring(el, true);
+  }, { passive: true });
+  const release = () => {
+    if (!swiftPressedElement) return;
+    runPressSpring(swiftPressedElement, false);
+    swiftPressedElement = null;
+  };
+  document.addEventListener("pointerup", release, { passive: true });
+  document.addEventListener("pointercancel", release, { passive: true });
+  document.addEventListener("pointerleave", (event) => {
+    if (event.target === document || event.target === document.documentElement) {
+      release();
+    }
+  }, { passive: true });
 }
 
 function scheduleQuickRangeApply(startISO, endISO) {
@@ -2936,17 +3284,19 @@ function scheduleQuickRangeApply(startISO, endISO) {
       preserveQuickRangeMotion: true,
     });
   };
+  const delay = prefersReducedMotion() ? 0 : 72;
   if (window.requestAnimationFrame) {
-    window.requestAnimationFrame(run);
+    window.requestAnimationFrame(() => {
+      window.setTimeout(run, delay);
+    });
     return;
   }
-  window.setTimeout(run, 16);
+  window.setTimeout(run, delay);
 }
 
 function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   const canAnimate =
     !prefersReducedMotion() &&
-    typeof slider.animate === "function" &&
     fromState.visible &&
     toState.visible;
   const travel = Math.abs(toState.x - fromState.x);
@@ -2957,38 +3307,32 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
   }
   clearQuickRangeSliderMotion(segmented, slider);
   const movingRight = toState.x >= fromState.x;
-  const settleOffset = Math.min(0.6, Math.max(0.12, travel * 0.003));
-  const settleX = toState.x + (movingRight ? settleOffset : -settleOffset);
-  const duration = Math.min(320, Math.max(210, 210 + travel * 0.34));
-  applyQuickRangeSliderState(slider, fromState);
+  const fromScale = toState.width > 0 ? Math.max(0.72, Math.min(1.28, fromState.width / toState.width)) : 1;
+  slider.style.setProperty("--slider-width", `${Math.max(0, toState.width).toFixed(2)}px`);
+  slider.style.setProperty("--slider-x", `${fromState.x.toFixed(2)}px`);
+  slider.style.setProperty("--slider-scale-x", fromScale.toFixed(4));
+  slider.style.setProperty("--slider-opacity", "1");
   segmented.classList.add("is-animating");
   segmented.dataset.motionDirection = movingRight ? "right" : "left";
   slider.classList.add("is-animating");
-  const animation = slider.animate(
-    [
-      {
-        transform: `translate3d(${fromState.x.toFixed(2)}px, 0, 0)`,
-        width: `${fromState.width.toFixed(2)}px`,
-        opacity: 1,
-        offset: 0,
-      },
-      {
-        transform: `translate3d(${settleX.toFixed(2)}px, 0, 0)`,
-        width: `${toState.width.toFixed(2)}px`,
-        opacity: 1,
-        offset: 0.82,
-      },
-      {
-        transform: `translate3d(${toState.x.toFixed(2)}px, 0, 0)`,
-        width: `${toState.width.toFixed(2)}px`,
-        opacity: 1,
-        offset: 1,
-      },
-    ],
+  const animation = animateSpringValues(
+    { x: fromState.x, scale: fromScale, opacity: 1 },
+    { x: toState.x, scale: 1, opacity: 1 },
     {
-      duration,
-      easing: "cubic-bezier(0.2, 0.9, 0.2, 1)",
-      fill: "both",
+      spring: {
+        ...SWIFT_SPRINGS.slider,
+        response: Math.min(0.52, Math.max(0.34, SWIFT_SPRINGS.slider.response + travel * 0.00035)),
+      },
+      onUpdate: (value, velocity) => {
+        const stretch = Math.max(-0.075, Math.min(0.075, (velocity.x || 0) * 0.0018));
+        slider.style.setProperty("--slider-x", `${value.x.toFixed(3)}px`);
+        slider.style.setProperty("--slider-scale-x", Math.max(0.68, value.scale + stretch).toFixed(4));
+        slider.style.setProperty("--slider-opacity", clampUnit(value.opacity).toFixed(4));
+      },
+      onComplete: () => {
+        if (quickRangeSliderAnimation !== animation) return;
+        commitQuickRangeSliderState(segmented, slider, toState);
+      },
     }
   );
   quickRangeSliderAnimation = animation;
@@ -2996,8 +3340,7 @@ function animateQuickRangeSlider(segmented, slider, fromState, toState) {
     if (quickRangeSliderAnimation !== animation) return;
     commitQuickRangeSliderState(segmented, slider, toState);
   };
-  animation.finished.then(finish).catch(() => {});
-  quickRangeSliderCleanupTimer = window.setTimeout(finish, duration + 80);
+  quickRangeSliderCleanupTimer = window.setTimeout(finish, 980);
 }
 
 function updateQuickRangeSlider(options) {
@@ -3035,11 +3378,18 @@ function setQuickRangeActive(preset, options) {
   const segmented = document.getElementById("quick-range-segmented");
   if (!segmented) return;
   const nextPreset = preset || "";
+  let activeButton = null;
   segmented.querySelectorAll("button[data-range]").forEach((btn) => {
     const nextActive = Boolean(nextPreset) && btn.dataset.range === nextPreset;
     btn.classList.toggle("is-active", nextActive);
+    if (nextActive) {
+      activeButton = btn;
+    }
   });
   segmented.dataset.activeRange = nextPreset;
+  if (opts.animate === true && activeButton) {
+    animateQuickRangeLabel(activeButton);
+  }
   updateQuickRangeSlider({ animate: opts.animate === true });
 }
 
@@ -3417,18 +3767,18 @@ function lineChart(el, labels, values, options) {
   }
   const prefersReduced = prefersReducedMotion();
   const shouldRedraw = Boolean(opts.redraw) && !prefersReduced;
-  const animateChartUpdate = false;
+  const animateChartUpdate = Boolean(opts.animateChart !== false) && !prefersReduced;
   const palette = getThemePalette();
   const isCompactChart = dailyChartViewportWidth > 0 && dailyChartViewportWidth < 560;
   const chartOption = {
     backgroundColor: "transparent",
     animation: animateChartUpdate,
-    animationDuration: animateChartUpdate ? 420 : 0,
-    animationDurationUpdate: animateChartUpdate ? 560 : 0,
-    animationEasing: "quarticOut",
-    animationEasingUpdate: "quarticOut",
+    animationDuration: animateChartUpdate ? 520 : 0,
+    animationDurationUpdate: animateChartUpdate ? 680 : 0,
+    animationEasing: "cubicOut",
+    animationEasingUpdate: "cubicOut",
     stateAnimation: {
-      duration: animateChartUpdate ? 280 : 0,
+      duration: animateChartUpdate ? 260 : 0,
       easing: "cubicOut",
     },
     grid: { left: isCompactChart ? 38 : 48, right: isCompactChart ? 12 : 26, top: 16, bottom: isCompactChart ? 44 : 56 },
@@ -3438,7 +3788,7 @@ function lineChart(el, labels, values, options) {
       borderColor: palette.tooltipBorder,
       borderWidth: 1,
       textStyle: { color: "#f8fafc" },
-      transitionDuration: animateChartUpdate ? 0.14 : 0,
+      transitionDuration: animateChartUpdate ? 0.18 : 0,
       axisPointer: { type: "line", lineStyle: { color: palette.axisPointer, width: 1 } },
       valueFormatter: (value) => formatChartNumber(value),
     },
@@ -3470,7 +3820,7 @@ function lineChart(el, labels, values, options) {
         showSymbol: false,
         smooth: 0.58,
         sampling: "lttb",
-        universalTransition: false,
+        universalTransition: animateChartUpdate,
         lineStyle: {
           width: 1.8,
           color: new window.echarts.graphic.LinearGradient(0, 0, 1, 0, [
@@ -4766,6 +5116,7 @@ function bootDashboard() {
   applyI18n("en", { animate: false, source: "boot" });
   rebuildHourEventMap();
   setupThemeToggle();
+  bindSwiftPressFeedback();
   window.requestAnimationFrame(() => {
     document.documentElement.classList.add("theme-ready");
   });

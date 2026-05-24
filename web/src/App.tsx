@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import { MotionConfig } from "motion/react";
 import type { ReportData } from "./types";
 
 declare global {
@@ -23,6 +24,13 @@ const emptySummary: InitialSummary = {
   outputTokens: "--",
   totalCost: "--",
 };
+
+const swiftMotionTransition = {
+  type: "spring",
+  stiffness: 420,
+  damping: 34,
+  mass: 0.86,
+} as const;
 
 export function App() {
   const [data, setData] = useState<ReportData | null>(null);
@@ -65,7 +73,11 @@ export function App() {
     document.body.appendChild(script);
   }, [data]);
 
-  return <LegacyDashboardShell summary={summary} loadFailed={loadFailed} />;
+  return (
+    <MotionConfig reducedMotion="user" transition={swiftMotionTransition}>
+      <LegacyDashboardShell summary={summary} loadFailed={loadFailed} />
+    </MotionConfig>
+  );
 }
 
 function LegacyDashboardShell(props: { summary: InitialSummary; loadFailed: boolean }) {
